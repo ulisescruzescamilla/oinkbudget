@@ -2,15 +2,7 @@ module.exports = function (api) {
   api.cache(true);
 
   return {
-    presets: [
-      [
-        'babel-preset-expo',
-        {
-          jsxImportSource: 'nativewind',
-        },
-      ],
-      'nativewind/babel',
-    ],
+    presets: [['babel-preset-expo'], 'nativewind/babel'],
 
     plugins: [
       [
@@ -24,7 +16,15 @@ module.exports = function (api) {
           },
         },
       ],
-      'react-native-reanimated/plugin',
+      'react-native-worklets/plugin',
+      [
+        "react-native-iconify/babel", {
+          "icons": [
+            "line-md:home",
+            "ri:home-2-fill"
+          ]
+        }
+      ]
     ],
   };
 };
