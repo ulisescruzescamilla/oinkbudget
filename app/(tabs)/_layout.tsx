@@ -1,14 +1,16 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
+import { Iconify } from 'react-native-iconify';
+
 
 export default function TabLayout() {
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: 'primary' }}>
+    <Tabs screenOptions={{ tabBarActiveTintColor: '#8637CF' }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
+          title: 'Inicio',
+          tabBarIcon: ({ color }) =>  <Iconify icon="ri:home-2-fill" size={24} color={color} />,
         }}
       />
       <Tabs.Screen

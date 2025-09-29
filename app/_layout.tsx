@@ -1,3 +1,5 @@
+// @@iconify-code-gen
+
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -46,11 +48,10 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const pathname = usePathname();
-  const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
 
   return (
-    <GluestackUIProvider mode={colorMode}>
-      <ThemeProvider value={colorMode === 'dark' ? DarkTheme : DefaultTheme}>
+    <GluestackUIProvider mode={'light'}>
+      <ThemeProvider value={DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>

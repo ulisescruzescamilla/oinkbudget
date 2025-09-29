@@ -39,7 +39,7 @@ export default function Tab() {
                     >
                         <Heading className="text-2xl color-white">Balance</Heading>
                     </LinearGradient>
-                    <Card size="lg" variant="elevated" className="m-4">
+                    <Card size="md" variant="elevated" className="m-4">
                         {accounts.map((account, i) => (
                             <View key={i} className='flex flex-row gap-4'>
                                 <Text className='text-lg font-bold text-zinc-800'>{account.name}</Text>
@@ -57,7 +57,7 @@ export default function Tab() {
                     >
                         <Heading className="text-2xl color-white">Presupuestos</Heading>
                     </LinearGradient>
-                    <Card size="lg" variant="elevated" className="m-4">
+                    <Card size="md" variant="elevated" className="m-4">
                         <ScrollView style={{ width: '100%' }}>
                             <VStack space="3xl" className="w-full mt-2">
                                 {budgets.map((budged, i) => (
