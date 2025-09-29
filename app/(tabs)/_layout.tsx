@@ -5,7 +5,7 @@ import { Iconify } from 'react-native-iconify';
 
 export default function TabLayout() {
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: '#8637CF' }}>
+    <Tabs screenOptions={{ tabBarActiveTintColor: '#8637CF', headerShown: false }}>
       <Tabs.Screen
         name="index"
         options={{

@@ -11,12 +11,11 @@ import {
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { useColorScheme } from '@/components/useColorScheme';
-import { Slot, usePathname } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Fab, FabIcon } from '@/components/ui/fab';
-import { MoonIcon, SunIcon } from '@/components/ui/icon';
+import { usePathname } from 'expo-router';
+
 import { Stack } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'react-native';
 
 
 export {
@@ -47,13 +46,15 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const pathname = usePathname();
 
   return (
     <GluestackUIProvider mode={'light'}>
       <ThemeProvider value={DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <StatusBar />
+        <Stack screenOptions={{ headerShown: false }}>
+          <SafeAreaView style={{ flex: 1 }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </SafeAreaView>
         </Stack>
       </ThemeProvider>
     </GluestackUIProvider>
