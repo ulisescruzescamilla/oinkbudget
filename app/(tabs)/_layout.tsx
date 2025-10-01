@@ -5,12 +5,12 @@ import { Iconify } from 'react-native-iconify';
 
 export default function TabLayout() {
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: '#8637CF', headerShown: false }}>
+    <Tabs screenOptions={{ tabBarActiveTintColor: '#8637CF', headerShown: false, tabBarHideOnKeyboard: true }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ color }) =>  <Iconify icon="ri:home-2-fill" size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Iconify icon="ri:home-2-fill" size={24} color={color} />,
         }}
       />
       <Tabs.Screen

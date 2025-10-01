@@ -5,6 +5,7 @@ export interface ExpenseType {
   amount: number;
   description: string;
   date: Date;
-  budget: BudgetType;
+  budget?: BudgetType;
+  budget_id: number;
   // TODO file attached
 }

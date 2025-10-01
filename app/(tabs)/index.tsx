@@ -1,6 +1,6 @@
 import { Progress, ProgressFilledTrack } from '@/components/ui/progress';
 import { VStack } from '@/components/ui/vstack';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
 import { LinearGradient } from '@/components/ui/linear-gradient';
@@ -92,9 +92,9 @@ export default function Tab() {
               <Text className="text-2xl text-white">Agregar gasto</Text>
             </LinearGradient>
           </TouchableOpacity>
-          {/* Action sheet add */}
-          <AddExpense isOpen={toggleAddExpense} handleClose={setToggleAddExpense} />
         </View>
+        {/* Action sheet add */}
+        <AddExpense isOpen={toggleAddExpense} handleClose={setToggleAddExpense} />
       </VStack>
     </SafeAreaView>
   );
