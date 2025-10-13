@@ -1,3 +1,4 @@
+import { AccountType } from "./AccountType";
 import { BudgetType } from "./BudgetType";
 
 export interface ExpenseType {
@@ -7,5 +8,7 @@ export interface ExpenseType {
   date: Date;
   budget?: BudgetType;
   budget_id: number;
+  account: AccountType;
+  account_id: number;
   // TODO file attached
 }

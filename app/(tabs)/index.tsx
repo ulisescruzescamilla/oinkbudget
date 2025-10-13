@@ -11,14 +11,14 @@ import { useState } from 'react';
 import AddExpense from '@/components/mine/actions/AddExpense';
 
 const budgets: BudgetType[] = [
-  { expense_amount: 50, limit: 500, name: 'ropa', percentage_value: 30, color: 'bg-emerald-600' },
-  { expense_amount: 50, limit: 500, name: 'servicios', percentage_value: 50, color: 'bg-teal-600' },
-  { expense_amount: 50, limit: 500, name: 'alimentos', percentage_value: 70, color: "bg-indigo-300" },
-  { expense_amount: 50, limit: 500, name: 'despensa', percentage_value: 60, color: "bg-blue-700" },
-  { expense_amount: 50, limit: 500, name: 'ropa', percentage_value: 30, color: 'bg-lime-100' },
-  { expense_amount: 50, limit: 500, name: 'servicios', percentage_value: 50, color: 'bg-teal-600' },
-  { expense_amount: 50, limit: 500, name: 'alimentos', percentage_value: 70, color: "bg-indigo-300" },
-  { expense_amount: 50, limit: 500, name: 'despensa', percentage_value: 60, color: "bg-blue-700" },
+  { expense_amount: 50, max_limit: 500, name: 'ropa', percentage_value: 30, color: 'bg-emerald-600' },
+  { expense_amount: 50, max_limit: 500, name: 'servicios', percentage_value: 50, color: 'bg-teal-600' },
+  { expense_amount: 50, max_limit: 500, name: 'alimentos', percentage_value: 70, color: "bg-indigo-300" },
+  { expense_amount: 50, max_limit: 500, name: 'despensa', percentage_value: 60, color: "bg-blue-700" },
+  { expense_amount: 50, max_limit: 500, name: 'ropa', percentage_value: 30, color: 'bg-lime-100' },
+  { expense_amount: 50, max_limit: 500, name: 'servicios', percentage_value: 50, color: 'bg-teal-600' },
+  { expense_amount: 50, max_limit: 500, name: 'alimentos', percentage_value: 70, color: "bg-indigo-300" },
+  { expense_amount: 50, max_limit: 500, name: 'despensa', percentage_value: 60, color: "bg-blue-700" },
 ]
 
 const accounts = [
@@ -69,7 +69,7 @@ export default function Tab() {
                   <View key={i}>
                     <View className='flex flex-row gap-4'>
                       <Heading >{budged.name}</Heading>
-                      <Text>{`\$${budged.expense_amount} de \$${budged.limit}`}</Text>
+                      <Text>{`\$${budged.expense_amount} de \$${budged.max_limit}`}</Text>
                     </View>
                     <Progress id={budged.name} value={budged.percentage_value} className="w-full" size='md'>
                       <ProgressFilledTrack className={budged.color} />

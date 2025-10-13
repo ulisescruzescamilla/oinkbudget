@@ -25,7 +25,10 @@ module.exports = function (api) {
             "tabler:wallet",
             "tabler:credit-card",
             "fa-brands:cc-mastercard",
-            "fa-brands:cc-visa"
+            "fa-brands:cc-visa",
+            "tabler:transfer",
+            "tabler:building-bank",
+            "mdi:graph-bar",
           ]
         }
       ]

@@ -1,5 +1,5 @@
 // @@iconify-code-gen
-
+import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -11,11 +11,12 @@ import {
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'expo-router';
-
+import { SQLiteProvider } from 'expo-sqlite';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
+import { initDatabase, testDB } from '@/database';
+import * as SQLite from 'expo-sqlite'
 
 
 export {
@@ -45,18 +46,24 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+const db = SQLite.openDatabaseSync("database.db");
+
 function RootLayoutNav() {
 
+  useDrizzleStudio(db)
+
   return (
-    <GluestackUIProvider mode={'light'}>
-      <ThemeProvider value={DefaultTheme}>
-        <StatusBar />
-        <Stack screenOptions={{ headerShown: false }}>
-          <SafeAreaView style={{ flex: 1 }}>
+    <SQLiteProvider databaseName='database.db' onInit={initDatabase}>
+      <GluestackUIProvider mode={'light'}>
+        <ThemeProvider value={DefaultTheme}>
+          <StatusBar />
+          <Stack screenOptions={{ headerShown: false }}>
+            {/* <SafeAreaView style={{ flex: 1 }}> */}
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </SafeAreaView>
-        </Stack>
-      </ThemeProvider>
-    </GluestackUIProvider>
+            {/* </SafeAreaView> */}
+          </Stack>
+        </ThemeProvider>
+      </GluestackUIProvider>
+    </SQLiteProvider>
   );
 }

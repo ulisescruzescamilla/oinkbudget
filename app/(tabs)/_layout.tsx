@@ -14,10 +14,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="history"
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="cog" color={color} />,
+          title: 'Movimientos',
+          tabBarIcon: ({ color }) => <Iconify icon="tabler:transfer" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="accounts"
+        options={{
+          title: 'Cuentas',
+          tabBarIcon: ({ color }) => <Iconify icon="tabler:building-bank" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="budgets"
+        options={{
+          title: 'Presupuestos',
+          tabBarIcon: ({ color }) => <Iconify icon="mdi:graph-bar" size={24} color={color} />,
         }}
       />
     </Tabs>

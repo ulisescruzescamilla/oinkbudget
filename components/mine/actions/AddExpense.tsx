@@ -11,8 +11,8 @@ import { Platform, ScrollView, TouchableOpacity, KeyboardAvoidingView, Keyboard 
 import SelectOptions from "../select";
 import { DatePickerAndroid } from "../date_picker";
 import type { ExpenseType } from '@/types/ExpenseType';
-import { saveExpense } from "@/services/expense/ExpenseService";
 import { AlertCircleIcon } from '@/components/ui/icon';
+import { createExpense } from "@/database/expenseRepository";
 
 interface AddExpenseProps {
   isOpen: boolean;
@@ -23,6 +23,7 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
 
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
 
+  const [accountIsInvalid, setAccountIsInvalid] = useState<boolean>(false);
   const [amontIsInvalid, setAmountIsInvalid] = useState(false);
   const [descriptionIsInvalid, setDescriptionIsInvalid] = useState(false)
   const [budgetIsInvalid, setBudgetIsInvalid] = useState(false);
@@ -31,10 +32,12 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
   const [dateTouched, setDateTouched] = useState<'today' | 'other'>('today')
   const [date, setDate] = useState(new Date())
   const [budget, setBudget] = useState<string>()
+  const [account, setAccount] = useState<string>()
   const [showCalendar, setShowCalendar] = useState<boolean>(false)
 
   const descriptionRef = useRef(null)
   const budgedRef = useRef(null)
+  const accountRef = useRef(null)
 
   const onChange = (event, selectedDate: Date) => {
     if (Platform.OS === 'android') {
@@ -81,15 +84,20 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
       setBudgetIsInvalid(true)
     }
 
+    if (!account) {
+      setAccountIsInvalid(true)
+    }
+
     // make payload
     const payload: ExpenseType = {
       amount: parseFloat(amountExpense),
       description,
       date,
+      account_id: parseInt(account),
       budget_id: parseInt(budget)
     }
 
-    saveExpense(payload)
+    createExpense(payload)
   };
 
 
@@ -172,11 +180,30 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
               <FormControlLabel>
                 <FormControlLabelText>Presupuesto</FormControlLabelText>
               </FormControlLabel>
-              <SelectOptions ref={budgedRef} onValueChange={(op) => setBudget(op)} options={[{ value: '1', label: 'Ropa' }, { value: '2', label: 'Transporte' }]} variant='underlined' />
+              <SelectOptions ref={budgedRef} onValueChange={(op) => { setBudget(op); accountRef.current.focus(); }} options={[{ value: '1', label: 'Ropa' }, { value: '2', label: 'Transporte' }]} variant='underlined' />
               <FormControlError>
                 <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
                 <FormControlErrorText className="text-red-500">
                   El presupuesto es obligatorio
+                </FormControlErrorText>
+              </FormControlError>
+            </FormControl>
+
+
+            <FormControl
+              isInvalid={accountIsInvalid}
+              size="md"
+              isRequired={true}
+              ref={accountRef}
+            >
+              <FormControlLabel>
+                <FormControlLabelText>Cuenta</FormControlLabelText>
+              </FormControlLabel>
+              <SelectOptions ref={accountRef} onValueChange={(op) => setAccount(op)} options={[{ value: '1', label: 'Efectivo' }, { value: '2', label: 'TDD BBVA' }]} variant='underlined' />
+              <FormControlError>
+                <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
+                <FormControlErrorText className="text-red-500">
+                  Seleccione una cuenta
                 </FormControlErrorText>
               </FormControlError>
             </FormControl>
