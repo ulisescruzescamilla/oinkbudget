@@ -13,7 +13,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { SQLiteProvider } from 'expo-sqlite';
 import { Stack } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 import { initDatabase, testDB } from '@/database';
 import * as SQLite from 'expo-sqlite'
@@ -58,12 +58,14 @@ function RootLayoutNav() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <GluestackUIProvider mode={'light'}>
           <ThemeProvider value={DefaultTheme}>
-            <StatusBar />
-            <Stack screenOptions={{ headerShown: false }}>
-              {/* <SafeAreaView style={{ flex: 1 }}> */}
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              {/* </SafeAreaView> */}
-            </Stack>
+            <SafeAreaProvider>
+              <StatusBar />
+              <Stack screenOptions={{ headerShown: false }}>
+                {/* <SafeAreaView style={{ flex: 1 }}> */}
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                {/* </SafeAreaView> */}
+              </Stack>
+            </SafeAreaProvider>
           </ThemeProvider>
         </GluestackUIProvider>
       </GestureHandlerRootView>

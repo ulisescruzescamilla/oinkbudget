@@ -4,10 +4,11 @@ import { TouchableOpacity } from "react-native"
 
 interface PrimaryButtonProps {
   onPress: () => void,
-  children: React.ReactNode
+  children: React.ReactNode,
+  className?: string,
 }
 
-export const PrimaryButton = ({ onPress, children }: PrimaryButtonProps) => {
+export const PrimaryButton = ({ onPress, children, className }: PrimaryButtonProps) => {
   const isChildrenString = typeof children === 'string'
 
   return (

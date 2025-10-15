@@ -1,4 +1,5 @@
 export interface BudgetType {
+  id?: number;
   name: string;
   max_limit: number;
   expense_amount: number;

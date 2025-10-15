@@ -12,6 +12,9 @@ import { PrimaryButton } from "../buttons";
 import { createAccount } from "@/database/accountRepository";
 import { useSQLiteContext } from "expo-sqlite";
 import * as SQLite from 'expo-sqlite'
+import { ActionCard } from "./ActionCard";
+import { InputText } from "../forms/InputText";
+import { InputOptions } from "../forms/InputOptions";
 
 
 // TODO refactor Action card with open/handler props
@@ -36,12 +39,10 @@ const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProp
   const [amountError, setAmountError] = useState<boolean>(false)
   const [typeError, setTypeError] = useState<boolean>(false)
   // variables
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false)
   const [name, setName] = useState<string>(editAccount ? editAccount.name : '')
   const [amount, setAmount] = useState<string>(editAccount ? editAccount.amount.toString() : '')
   const [type, setType] = useState<KindOfAccountType>(editAccount ? editAccount.type : 'debit_card')
   // refs
-  const nameRef = useRef(null)
   const amountRef = useRef(null)
   const typeRef = useRef(null)
   // DB
@@ -84,31 +85,6 @@ const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProp
     }
   }, [editable, editAccount])
 
-  useEffect(() => {
-    const showSubscription = Keyboard.addListener('keyboardDidShow', handleKeyboardShow)
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', handleKeyboardHide)
-
-    return () => {
-      // TODO reset values properly
-      showSubscription.remove()
-      setName('')
-      setAmount('')
-      setType('debit_card')
-      setNameError(false)
-      setAmountError(false)
-      setTypeError(false)
-      hideSubscription.remove()
-    };
-  }, [])
-
-  const handleKeyboardShow = event => {
-    setIsKeyboardVisible(true)
-  };
-
-  const handleKeyboardHide = event => {
-    setIsKeyboardVisible(false)
-  };
-
   const onSubmit = () => {
     if (!name || name.length > 255) {
       setNameError(true)
@@ -118,124 +94,70 @@ const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProp
       setAmountError(true)
     }
 
+    if (!type) {
+      setTypeError(true)
+    }
+
     handleClose(false)
 
+    const account = {
+      name: name.trim(),
+      amount: parseFloat(amount),
+      type
+    } as AccountType
+
     if (editable) {
-      updateAccount({
-        id: editAccount.id,
-        name: name.trim(),
-        amount: parseFloat(amount),
-        type
-      } as AccountType)
+      updateAccount({ id: editAccount?.id, ...account } as AccountType)
     } else {
-      insertAccount({
-        name: name.trim(),
-        amount: parseFloat(amount),
-        type
-      } as AccountType)
+      insertAccount(account)
     }
 
   }
 
   return (
-    <Actionsheet isOpen={open} onClose={() => handleClose(!open)}>
-      <ActionsheetBackdrop />
-      <ActionsheetContent>
-        <ActionsheetDragIndicatorWrapper>
-          <ActionsheetDragIndicator />
-        </ActionsheetDragIndicatorWrapper>
-        <View className={isKeyboardVisible ? 'w-full p-4 h-4/5' : 'w-full p-4 min-h-1/2 max-h-3/4'}>
-          <VStack className="w-full" space='sm'>
-            {/* Name */}
-            <FormControl
-              isInvalid={nameError}
-              size="md"
-              isDisabled={false}
-              isReadOnly={false}
-              isRequired={true}
-            >
-              <FormControlLabel>
-                <FormControlLabelText>Nombre de la cuenta</FormControlLabelText>
-              </FormControlLabel>
-              <Input size="xl" variant="underlined">
-                <InputField
-                  type='text'
-                  autoFocus={true}
-                  ref={nameRef}
-                  keyboardType="numbers-and-punctuation"
-                  placeholder="Nombre"
-                  variant={'outline'}
-                  value={name}
-                  onEndEditing={() => amountRef.current.focus()}
-                  onChangeText={setName}
-                />
-              </Input>
-              <FormControlError>
-                <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
-                <FormControlErrorText className="text-red-500">
-                  El nombre es requerido y menor a 255 caracteres
-                </FormControlErrorText>
-              </FormControlError>
-            </FormControl>
-            {/* Amount */}
-            <FormControl
-              isInvalid={amountError}
-              size="md"
-              isDisabled={false}
-              isReadOnly={false}
-              isRequired={true}
-            >
-              <FormControlLabel>
-                <FormControlLabelText>Monto actual</FormControlLabelText>
-              </FormControlLabel>
-              <Input size="xl" variant="underlined">
-                <InputField
-                  autoComplete='off'
-                  type='text'
-                  ref={amountRef}
-                  keyboardType="numeric" // or "number-pad"
-                  placeholder="$"
-                  variant={'outline'}
-                  value={amount}
-                  onEndEditing={() => typeRef.current.focus()}
-                  onChangeText={setAmount}
-                />
-              </Input>
-              <FormControlError>
-                <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
-                <FormControlErrorText className="text-red-500">
-                  El monto es requerido
-                </FormControlErrorText>
-              </FormControlError>
-            </FormControl>
-            {/* Tipo */}
-            <FormControl
-              isInvalid={typeError}
-              size="md"
-              isDisabled={false}
-              isReadOnly={false}
-              isRequired={true}
-            >
-              <FormControlLabel>
-                <FormControlLabelText>Tipo de cuenta</FormControlLabelText>
-              </FormControlLabel>
-              <SelectOptions defaultValue={editAccount?.name} options={typeOptions} ref={typeRef} onValueChange={setType} variant="underlined" size='lg' />
-              <FormControlError>
-                <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
-                <FormControlErrorText className="text-red-500">
-                  El tipo de cuenta es requerido
-                </FormControlErrorText>
-              </FormControlError>
-            </FormControl>
-            <View className="mt-4">
-              <PrimaryButton onPress={onSubmit} className="w-full mt-4">
-                {editable ? 'Guardar cambios' : 'Agregar Cuenta'}
-              </PrimaryButton>
-            </View>
-          </VStack>
+    <ActionCard open={open} handleClose={handleClose}>
+      <VStack className="w-full" space='sm'>
+        {/* Name */}
+        <InputText
+          isInvalid={nameError}
+          autoFocus={true}
+          value={name}
+          label="Nombre de la cuenta"
+          placeholder="Nombre"
+          keyboardType="numbers-and-punctuation"
+          onEditing={() => amountRef.current.focus()}
+          onChangeText={setName}
+          errorLabel="El nombre es requerido y menor a 255 caracteres"
+        />
+        {/* Amount */}
+        <InputText
+          isInvalid={amountError}
+          ref={amountRef}
+          value={amount}
+          label="Nombre de la cuenta"
+          placeholder="$"
+          keyboardType="numeric"
+          onEditing={() => typeRef.current.focus()}
+          onChangeText={setAmount}
+          errorLabel="El monto es requerido"
+        />
+        {/* Tipo */}
+        <InputOptions
+          defaultValue={editAccount?.type || ''}
+          options={typeOptions}
+          onValueChange={value => setType(value as KindOfAccountType)}
+          isInvalid={typeError}
+          ref={typeRef}
+          label="Tipo de cuenta"
+          errorLabel="El tipo de cuenta es requerido"
+        />
+        <View className="mt-4">
+          <PrimaryButton onPress={onSubmit}>
+            {editable ? 'Guardar cambios' : 'Agregar Cuenta'}
+          </PrimaryButton>2
         </View>
-      </ActionsheetContent>
-    </Actionsheet>
+      </VStack>
+    </ActionCard>
   )
 }
 
