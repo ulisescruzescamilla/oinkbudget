@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 import { initDatabase, testDB } from '@/database';
 import * as SQLite from 'expo-sqlite'
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 
 export {
@@ -54,16 +55,18 @@ function RootLayoutNav() {
 
   return (
     <SQLiteProvider databaseName='database.db' onInit={initDatabase}>
-      <GluestackUIProvider mode={'light'}>
-        <ThemeProvider value={DefaultTheme}>
-          <StatusBar />
-          <Stack screenOptions={{ headerShown: false }}>
-            {/* <SafeAreaView style={{ flex: 1 }}> */}
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            {/* </SafeAreaView> */}
-          </Stack>
-        </ThemeProvider>
-      </GluestackUIProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <GluestackUIProvider mode={'light'}>
+          <ThemeProvider value={DefaultTheme}>
+            <StatusBar />
+            <Stack screenOptions={{ headerShown: false }}>
+              {/* <SafeAreaView style={{ flex: 1 }}> */}
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              {/* </SafeAreaView> */}
+            </Stack>
+          </ThemeProvider>
+        </GluestackUIProvider>
+      </GestureHandlerRootView>
     </SQLiteProvider>
   );
 }

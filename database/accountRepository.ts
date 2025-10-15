@@ -1,12 +1,11 @@
 import { AccountType } from "@/types/AccountType"
 import { getDBConnection } from "."
-import * as SQLite from 'expo-sqlite'
 
 export const createAccount = async (account: AccountType) => {
-  const database = SQLite.useSQLiteContext()
+  const db = getDBConnection()
 
   try {
-      database.runAsync("INSERT INTO accounts (name, type, amount) VALUES (?,?,?);", [
+      db.runAsync("INSERT INTO accounts (name, type, amount) VALUES (?,?,?);", [
         account.name,
         account.type,
         account.amount

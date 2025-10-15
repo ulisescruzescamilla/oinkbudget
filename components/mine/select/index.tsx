@@ -11,8 +11,9 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { ChevronDownIcon } from '@/components/ui/icon';
+import { View } from '@/components/Themed';
 
-type Item = {
+export type Item = {
   label: string;
   value: string;
   isDisabled?: boolean;
@@ -30,9 +31,13 @@ interface SelectOptionsProps {
 const SelectOptions = ({ options, placeholder, variant = 'outline', size = 'md', onValueChange, ref = null }: SelectOptionsProps) => {
   return (
     <Select ref={ref} onValueChange={onValueChange}>
-      <SelectTrigger variant={variant} size={size}>
-        <SelectInput placeholder={placeholder || 'Selecciona una opción'} />
-        <SelectIcon className="mr-3" as={ChevronDownIcon} />
+      <SelectTrigger className='flex flex-row' variant={variant} size={size}>
+        <View className='w-3/4'>
+          <SelectInput placeholder={placeholder || 'Selecciona una opción'} />
+        </View>
+        <View className='items-end w-1/4'>
+          <SelectIcon className="mr-3" as={ChevronDownIcon} />
+        </View>
       </SelectTrigger>
       <SelectPortal>
         <SelectBackdrop />

@@ -11,6 +11,8 @@ import SelectOptions from "../select";
 import { PrimaryButton } from "../buttons";
 import { createAccount } from "@/database/accountRepository";
 import { useSQLiteContext } from "expo-sqlite";
+import * as SQLite from 'expo-sqlite'
+
 
 // TODO refactor Action card with open/handler props
 
@@ -40,6 +42,22 @@ const AddAccount = ({ open, handleClose }: AddAccountProps) => {
   const nameRef = useRef(null)
   const amountRef = useRef(null)
   const typeRef = useRef(null)
+  // DB
+  const database = SQLite.useSQLiteContext()
+
+  const insertAccount = async (account: AccountType) => {
+    try {
+      database.runAsync("INSERT INTO accounts (name, type, amount) VALUES (?,?,?);", [
+        account.name,
+        account.type,
+        account.amount
+      ])
+
+    } catch (error) {
+      console.error(error)
+      // todo make a notification component
+    }
+  }
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', handleKeyboardShow)
@@ -47,6 +65,13 @@ const AddAccount = ({ open, handleClose }: AddAccountProps) => {
 
     return () => {
       showSubscription.remove()
+      setName('')
+      setAmount('')
+      setType('debit_card')
+      setNameError(false)
+      setAmountError(false)
+      setTypeError(false)
+      hideSubscription.remove()
     };
   }, [])
 
@@ -67,15 +92,13 @@ const AddAccount = ({ open, handleClose }: AddAccountProps) => {
       setAmountError(true)
     }
 
-    const payload: AccountType = {
-      name,
-      type,
-      amount: parseFloat(amount)
-    }
-
-    createAccount(payload)
-
     handleClose(false)
+
+    insertAccount({
+      name,
+      amount: parseFloat(amount),
+      type
+    } as AccountType)
   }
 
   return (

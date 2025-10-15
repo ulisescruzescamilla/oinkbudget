@@ -29,6 +29,11 @@ module.exports = function (api) {
             "tabler:transfer",
             "tabler:building-bank",
             "mdi:graph-bar",
+            "tabler:dots-vertical",
+            "tabler:trash",
+            "tabler:minus-vertical",
+            "tabler:grip-vertical",
+            "fe:pencil",
           ]
         }
       ]
