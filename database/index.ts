@@ -7,8 +7,6 @@ export const getDBConnection = async () => {
     db = await SQLite.openDatabaseAsync("database.db")
   }
 
-  console.debug('db', db)
-
   return db;
 }
 

@@ -27,6 +27,7 @@ const Tab = () => {
   const [accounts, setAccounts] = useState<AccountType[]>([])
 
   const [accountSelected, setAccountSelected] = useState<AccountType | undefined>()
+  const [isEditable, setIsEditable] = useState<boolean>(false)
 
   const database = SQLite.useSQLiteContext()
 
@@ -77,7 +78,13 @@ const Tab = () => {
               {accounts.map((account, index) => (
                 <SwipeableRow key={index} options={
                   <View className="flex flex-row gap-2 bg-transparent">
-                    <Iconify icon='fe:pencil' width={32} />
+                    <TouchableOpacity onPress={() => {
+                      setIsEditable(true)
+                      setAccountSelected(account)
+                      setActionOpen(true)
+                    }}>
+                      <Iconify icon='fe:pencil' width={32} />
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => {
                       setAccountSelected(account)
                       setDeleteOpen(true)
@@ -106,7 +113,7 @@ const Tab = () => {
           </ScrollView>
         </Card>
       </View>
-      <AddAccount open={isActionOpen} handleClose={setActionOpen} />
+      <AddAccount open={isActionOpen} handleClose={setActionOpen} editAccount={accountSelected} editable={isEditable} />
       <View style={styles.buttonlayout}>
         <PrimaryButton onPress={() => setActionOpen(true)}>
           {'Crear Cuenta'}

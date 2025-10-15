@@ -25,12 +25,13 @@ interface SelectOptionsProps {
   variant?: 'outline' | 'underlined' | 'rounded',
   size?: 'sm' | 'md' | 'lg' | 'xl',
   onValueChange: (option: string) => any,
-  ref?: any | undefined
+  ref?: any | undefined,
+  defaultValue?: string | undefined
 }
 
-const SelectOptions = ({ options, placeholder, variant = 'outline', size = 'md', onValueChange, ref = null }: SelectOptionsProps) => {
+const SelectOptions = ({ options, placeholder, variant = 'outline', size = 'md', onValueChange, ref = null, defaultValue = undefined }: SelectOptionsProps) => {
   return (
-    <Select ref={ref} onValueChange={onValueChange}>
+    <Select selectedValue={defaultValue} ref={ref} onValueChange={onValueChange}>
       <SelectTrigger className='flex flex-row' variant={variant} size={size}>
         <View className='w-3/4'>
           <SelectInput placeholder={placeholder || 'Selecciona una opción'} />

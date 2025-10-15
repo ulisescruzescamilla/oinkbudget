@@ -7,7 +7,7 @@ import { VStack } from "@/components/ui/vstack";
 import { AccountType, KindOfAccountType } from "@/types/AccountType";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard } from "react-native";
-import SelectOptions from "../select";
+import SelectOptions, { Item } from "../select";
 import { PrimaryButton } from "../buttons";
 import { createAccount } from "@/database/accountRepository";
 import { useSQLiteContext } from "expo-sqlite";
@@ -18,7 +18,9 @@ import * as SQLite from 'expo-sqlite'
 
 interface AddAccountProps {
   open: boolean,
-  handleClose: (open: boolean) => void
+  handleClose: (open: boolean) => void,
+  editAccount?: AccountType,
+  editable?: boolean
 }
 
 const typeOptions = [
@@ -27,7 +29,7 @@ const typeOptions = [
   { value: 'credit_card', label: 'Tarjeta de crédito' },
 ]
 
-const AddAccount = ({ open, handleClose }: AddAccountProps) => {
+const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProps) => {
 
   // errors
   const [nameError, setNameError] = useState<boolean>(false)
@@ -35,9 +37,9 @@ const AddAccount = ({ open, handleClose }: AddAccountProps) => {
   const [typeError, setTypeError] = useState<boolean>(false)
   // variables
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false)
-  const [name, setName] = useState<string>('')
-  const [amount, setAmount] = useState<string>('')
-  const [type, setType] = useState<KindOfAccountType>('debit_card')
+  const [name, setName] = useState<string>(editAccount ? editAccount.name : '')
+  const [amount, setAmount] = useState<string>(editAccount ? editAccount.amount.toString() : '')
+  const [type, setType] = useState<KindOfAccountType>(editAccount ? editAccount.type : 'debit_card')
   // refs
   const nameRef = useRef(null)
   const amountRef = useRef(null)
@@ -59,11 +61,35 @@ const AddAccount = ({ open, handleClose }: AddAccountProps) => {
     }
   }
 
+  const updateAccount = async (account: AccountType) => {
+    try {
+      database.runAsync("UPDATE accounts SET name = ?, amount = ?, type = ? WHERE id = ?;", [
+        account.name,
+        account.amount,
+        account.type,
+        account.id
+      ])
+
+    } catch (error) {
+      console.error(error)
+      // todo make a notification component
+    }
+  }
+
+  useEffect(() => {
+    if (editable && editAccount) {
+      setName(editAccount.name)
+      setAmount(editAccount.amount.toString())
+      setType(editAccount.type)
+    }
+  }, [editable, editAccount])
+
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', handleKeyboardShow)
     const hideSubscription = Keyboard.addListener('keyboardDidHide', handleKeyboardHide)
 
     return () => {
+      // TODO reset values properly
       showSubscription.remove()
       setName('')
       setAmount('')
@@ -94,11 +120,21 @@ const AddAccount = ({ open, handleClose }: AddAccountProps) => {
 
     handleClose(false)
 
-    insertAccount({
-      name,
-      amount: parseFloat(amount),
-      type
-    } as AccountType)
+    if (editable) {
+      updateAccount({
+        id: editAccount.id,
+        name: name.trim(),
+        amount: parseFloat(amount),
+        type
+      } as AccountType)
+    } else {
+      insertAccount({
+        name: name.trim(),
+        amount: parseFloat(amount),
+        type
+      } as AccountType)
+    }
+
   }
 
   return (
@@ -183,7 +219,7 @@ const AddAccount = ({ open, handleClose }: AddAccountProps) => {
               <FormControlLabel>
                 <FormControlLabelText>Tipo de cuenta</FormControlLabelText>
               </FormControlLabel>
-              <SelectOptions options={typeOptions} ref={typeRef} onValueChange={setType} variant="underlined" size='lg' />
+              <SelectOptions defaultValue={editAccount?.name} options={typeOptions} ref={typeRef} onValueChange={setType} variant="underlined" size='lg' />
               <FormControlError>
                 <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
                 <FormControlErrorText className="text-red-500">
@@ -193,7 +229,7 @@ const AddAccount = ({ open, handleClose }: AddAccountProps) => {
             </FormControl>
             <View className="mt-4">
               <PrimaryButton onPress={onSubmit} className="w-full mt-4">
-                Agregar cuenta
+                {editable ? 'Guardar cambios' : 'Agregar Cuenta'}
               </PrimaryButton>
             </View>
           </VStack>
