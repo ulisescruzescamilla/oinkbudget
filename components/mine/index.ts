@@ -5,6 +5,9 @@ import { PrimaryButton } from './buttons'
 import { SwipeableRow } from './swipeable'
 import { InputText } from './forms/InputText'
 import { InputOptions } from './forms/InputOptions'
+import { InputSlider } from './forms/InputSlider'
+import {SimpleAccordion} from './accordion/SimpleAccordion'
+import { InputCalendar } from './forms/InputCalendar'
 
 export {
   ProgressBar,
@@ -12,6 +15,10 @@ export {
   SelectOptions,
   PrimaryButton,
   SwipeableRow,
+  // forms
   InputText,
-  InputOptions
+  InputOptions,
+  InputSlider,
+  SimpleAccordion,
+  InputCalendar
 }

@@ -1,18 +1,18 @@
-import { View } from "@/components/Themed";
-import { Actionsheet, ActionsheetBackdrop, ActionsheetContent, ActionsheetDragIndicator, ActionsheetDragIndicatorWrapper, ActionsheetItem } from "@/components/ui/actionsheet"
-import { Button, ButtonText } from "@/components/ui/button";
-import { FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlLabel, FormControlLabelText } from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { LinearGradient } from "@/components/ui/linear-gradient";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { useEffect, useRef, useState } from "react";
-import { Platform, ScrollView, TouchableOpacity, KeyboardAvoidingView, Keyboard } from "react-native";
-import SelectOptions from "../select";
-import { DatePickerAndroid } from "../date_picker";
+import { ToastAndroid, View } from "react-native";
+import type { Item } from "../select";
 import type { ExpenseType } from '@/types/ExpenseType';
-import { AlertCircleIcon } from '@/components/ui/icon';
 import { createExpense } from "@/database/expenseRepository";
+import { ActionCard } from "./ActionCard";
+import { InputText } from "../forms/InputText";
+import { InputOptions } from "../forms/InputOptions";
+import { InputCalendar } from "../forms/InputCalendar";
+import { PrimaryButton } from "../buttons";
+import { getAllAccounts, setAmountToAccount } from "@/database/accountRepository";
+import { getAllBudgets } from "@/database/budgetRepository";
+import { AccountType } from "@/types/AccountType";
 
 interface AddExpenseProps {
   isOpen: boolean;
@@ -21,225 +21,152 @@ interface AddExpenseProps {
 
 const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
 
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
-
-  const [accountIsInvalid, setAccountIsInvalid] = useState<boolean>(false);
-  const [amontIsInvalid, setAmountIsInvalid] = useState(false);
-  const [descriptionIsInvalid, setDescriptionIsInvalid] = useState(false)
-  const [budgetIsInvalid, setBudgetIsInvalid] = useState(false);
+  // form values
   const [amountExpense, setAmountExpense] = useState<string>('')
   const [description, setDescription] = useState<string>('')
-  const [dateTouched, setDateTouched] = useState<'today' | 'other'>('today')
   const [date, setDate] = useState(new Date())
   const [budget, setBudget] = useState<string>()
   const [account, setAccount] = useState<string>()
-  const [showCalendar, setShowCalendar] = useState<boolean>(false)
-
+  // form data
+  const [accounts, setAccounts] = useState<AccountType[]>()
+  const [accountOptions, setAccountOptions] = useState<Item[]>()
+  const [budgetOptions, setBudgetOptions] = useState<Item[]>()
+  // errors
+  const [accountIsInvalid, setAccountIsInvalid] = useState<boolean>(false);
+  const [amonutIsInvalid, setAmountIsInvalid] = useState(false);
+  const [descriptionIsInvalid, setDescriptionIsInvalid] = useState(false)
+  const [budgetIsInvalid, setBudgetIsInvalid] = useState(false);
+  // ref
   const descriptionRef = useRef(null)
   const budgedRef = useRef(null)
   const accountRef = useRef(null)
 
-  const onChange = (event, selectedDate: Date) => {
-    if (Platform.OS === 'android') {
-      setShowCalendar(false)
-    } else {
-      console.error('iOS not supported')
-    }
-
-    if (selectedDate) {
-      setDate(selectedDate)
-    }
+  const reset = () => {
+    setAmountExpense('')
+    setDescription('')
+    setDate(new Date)
+    setBudget('')
+    setAccount('')
   }
 
-  useEffect(() => {
-    const showSubscription = Keyboard.addListener('keyboardDidShow', handleKeyboardShow)
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', handleKeyboardHide)
 
-    return () => {
-      showSubscription.remove()
-    };
-  }, [])
-
-  const handleKeyboardShow = event => {
-    setIsKeyboardVisible(true)
-  };
-
-  const handleKeyboardHide = event => {
-    setIsKeyboardVisible(false)
-  };
-
-
-  const handleSubmit = () => {
+  const onsubmit = () => {
 
     // validations
     if (!amountExpense || parseFloat(amountExpense) === 0) {
       setAmountIsInvalid(true)
+      return
     }
 
     if (!description || description.length <= 1 || description.length >= 255) {
       setDescriptionIsInvalid(true)
+      return
     }
 
     if (!budget) {
       setBudgetIsInvalid(true)
+      return
     }
 
     if (!account) {
       setAccountIsInvalid(true)
+      return
     }
 
-    // make payload
-    const payload: ExpenseType = {
-      amount: parseFloat(amountExpense),
+    const account_id = parseInt(account)
+    const expenseAmount = parseFloat(amountExpense)
+
+    createExpense({
+      amount: expenseAmount,
       description,
       date,
-      account_id: parseInt(account),
+      account_id: account_id,
       budget_id: parseInt(budget)
-    }
+    } as ExpenseType)
+      .then(() => {
+        if (accounts) {
+          const updateAccount = accounts.find((r) => r.id === account_id)
+          const currentAmount = parseFloat(updateAccount?.amount)
+          setAmountToAccount(account_id, currentAmount - expenseAmount)
+        }
 
-    createExpense(payload)
-  };
+        handleClose(false)
+        reset()
+        ToastAndroid.show("Gasto agregado con éxito", ToastAndroid.BOTTOM)
+      })
+  }
+
+
+  useEffect(() => {
+    // account options
+    getAllAccounts().then(accounts => {
+      setAccounts(accounts)
+      setAccountOptions(accounts.map(r => ({ value: r.id?.toString(), label: r.name })) as Item[])
+    })
+    // budget options
+    getAllBudgets().then(budgets => {
+      setBudgetOptions(budgets.map(r => ({ value: r.id?.toString(), label: r.name })) as Item[])
+    })
+  }, [isOpen])
 
 
   return (
-    <Actionsheet isOpen={isOpen} onClose={() => handleClose(!isOpen)}>
-      <ActionsheetBackdrop />
-      <ActionsheetContent>
-        <ActionsheetDragIndicatorWrapper>
-          <ActionsheetDragIndicator />
-        </ActionsheetDragIndicatorWrapper>
-        <View className={isKeyboardVisible ? 'w-full p-4 h-4/5' : 'w-full p-4 min-h-1/2 max-h-3/4'}>
-          <VStack className="w-full" space='sm'>
-            {/* Amount */}
-            <FormControl
-              isInvalid={amontIsInvalid}
-              size="md"
-              isDisabled={false}
-              isReadOnly={false}
-              isRequired={true}
-            >
-              <FormControlLabel>
-                <FormControlLabelText>Monto</FormControlLabelText>
-              </FormControlLabel>
-              <Input size="xl" variant="underlined">
-                <InputField
-                  type='text'
-                  autoFocus={true}
-                  keyboardType="numeric" // or "number-pad"
-                  placeholder="$"
-                  variant={'outline'}
-                  value={amountExpense}
-                  onEndEditing={() => descriptionRef.current.focus()}
-                  onChangeText={(text) => {
-                    setAmountExpense(text);
-                  }}
-                />
-              </Input>
-              <FormControlError>
-                <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
-                <FormControlErrorText className="text-red-500">
-                  El monto es requerido y debe ser diferente de cero
-                </FormControlErrorText>
-              </FormControlError>
-            </FormControl>
+    <ActionCard open={isOpen} handleClose={() => handleClose(!isOpen)}>
+      <VStack className="w-full" space='sm'>
+        {/* Amount */}
+        <InputText
+          isInvalid={amonutIsInvalid}
+          label="Monto"
+          keyboardType="numeric"
+          value={amountExpense}
+          onEndEditing={() => descriptionRef.current.focus()}
+          onChangeText={setAmountExpense}
+          errorLabel="El monto debe ser mayor a cero y es requerido"
+        />
+        {/* Description */}
+        <InputText
+          isInvalid={descriptionIsInvalid}
+          label="Descripción"
+          ref={descriptionRef}
+          onEndEditing={() => budgedRef.current.focus()}
+          keyboardType="numbers-and-punctuation"
+          value={description}
+          onChangeText={setDescription}
+          errorLabel="La descripción es al menos 1 caracter o menos de 255 caracteres"
+        />
 
-            <FormControl
-              isInvalid={descriptionIsInvalid}
-              size="md"
-              isRequired={false}
-            >
-              <FormControlLabel>
-                <FormControlLabelText>Descripción</FormControlLabelText>
-              </FormControlLabel>
-              <Input size="xl" variant="underlined">
-                <InputField
-                  type='text'
-                  ref={descriptionRef}
-                  onEndEditing={() => budgedRef.current.focus()}
-                  keyboardType="numbers-and-punctuation"
-                  placeholder="producto/servicio"
-                  variant={'outline'}
-                  value={description}
-                  onChangeText={setDescription}
-                />
-              </Input>
-              <FormControlError>
-                <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
-                <FormControlErrorText className="text-red-500">
-                  La descripción es al menos 1 caracter o menos de 255 caracteres
-                </FormControlErrorText>
-              </FormControlError>
-            </FormControl>
-
-            <FormControl
-              isInvalid={budgetIsInvalid}
-              size="md"
-              isRequired={true}
-              ref={budgedRef}
-            >
-              <FormControlLabel>
-                <FormControlLabelText>Presupuesto</FormControlLabelText>
-              </FormControlLabel>
-              <SelectOptions ref={budgedRef} onValueChange={(op) => { setBudget(op); accountRef.current.focus(); }} options={[{ value: '1', label: 'Ropa' }, { value: '2', label: 'Transporte' }]} variant='underlined' />
-              <FormControlError>
-                <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
-                <FormControlErrorText className="text-red-500">
-                  El presupuesto es obligatorio
-                </FormControlErrorText>
-              </FormControlError>
-            </FormControl>
-
-
-            <FormControl
-              isInvalid={accountIsInvalid}
-              size="md"
-              isRequired={true}
-              ref={accountRef}
-            >
-              <FormControlLabel>
-                <FormControlLabelText>Cuenta</FormControlLabelText>
-              </FormControlLabel>
-              <SelectOptions ref={accountRef} onValueChange={(op) => setAccount(op)} options={[{ value: '1', label: 'Efectivo' }, { value: '2', label: 'TDD BBVA' }]} variant='underlined' />
-              <FormControlError>
-                <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
-                <FormControlErrorText className="text-red-500">
-                  Seleccione una cuenta
-                </FormControlErrorText>
-              </FormControlError>
-            </FormControl>
-
-            <FormControl
-              size="md"
-              isRequired={true}
-            >
-              <FormControlLabel>
-                <FormControlLabelText>Fecha</FormControlLabelText>
-              </FormControlLabel>
-              {showCalendar && (
-                <DatePickerAndroid date={date} onChange={onChange} />
-              )}
-              <View className="flex flex-row gap-4">
-                <Button onPress={() => { setDate(new Date); setDateTouched('today'); }} className={dateTouched == 'today' ? 'bg-violet-600 border-transparent' : ''} variant={'outline'}><Text className={dateTouched == 'today' ? 'text-white' : ''}>Hoy</Text></Button>
-                <Button variant={'outline'} onPress={() => { setDateTouched('other'); setShowCalendar(true) }} className={dateTouched == 'other' ? 'bg-violet-600 border-transparent' : ''}><Text className={dateTouched == 'other' ? 'text-white' : ''}>{dateTouched == 'today' ? "Otra fecha" : date.toLocaleDateString()}</Text></Button>
-              </View>
-            </FormControl>
-            {/* Submit button */}
-            <View className="mt-3">
-              <TouchableOpacity onPress={handleSubmit}>
-                <LinearGradient
-                  className="items-center w-full p-3 rounded-full"
-                  colors={['#8637CF', '#0F55A1']}
-                  start={[0, 1]}
-                  end={[1, 0]}
-                >
-                  <Text className="text-2xl text-white">Guardar</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </VStack>
-        </View >
-      </ActionsheetContent >
-    </Actionsheet >
+        {/* Budget */}
+        <InputOptions
+          isInvalid={budgetIsInvalid}
+          defaultValue=""
+          label="Presupuesto"
+          options={budgetOptions ?? []}
+          onValueChange={setBudget}
+          errorLabel="El presupuesto es obligatorio"
+        />
+        {/* Account */}
+        <InputOptions
+          label="Cuenta"
+          defaultValue=""
+          isInvalid={accountIsInvalid}
+          onValueChange={setAccount}
+          options={accountOptions ?? []}
+          errorLabel="Seleccione una cuenta"
+        />
+        {/* Date */}
+        <InputCalendar
+          label="Fecha"
+          date={date}
+          setDate={setDate}
+        />
+        {/* Submit button */}
+        <View className="mt-3">
+          <PrimaryButton onPress={() => onsubmit()}>
+            <Text className="text-2xl text-white">Guardar</Text>
+          </PrimaryButton>
+        </View>
+      </VStack>
+    </ActionCard>
   )
 }
 

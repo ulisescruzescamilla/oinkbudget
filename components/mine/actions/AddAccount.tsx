@@ -1,20 +1,12 @@
-import { View } from "@/components/Themed";
-import { Actionsheet, ActionsheetBackdrop, ActionsheetContent, ActionsheetDragIndicator, ActionsheetDragIndicatorWrapper } from "@/components/ui/actionsheet";
-import { FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlLabel, FormControlLabelText } from "@/components/ui/form-control";
-import { AlertCircleIcon } from "@/components/ui/icon";
-import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
 import { AccountType, KindOfAccountType } from "@/types/AccountType";
 import { useEffect, useRef, useState } from "react";
-import { Keyboard } from "react-native";
-import SelectOptions, { Item } from "../select";
 import { PrimaryButton } from "../buttons";
-import { createAccount } from "@/database/accountRepository";
-import { useSQLiteContext } from "expo-sqlite";
 import * as SQLite from 'expo-sqlite'
 import { ActionCard } from "./ActionCard";
 import { InputText } from "../forms/InputText";
 import { InputOptions } from "../forms/InputOptions";
+import { Text, View } from 'react-native'
 
 
 // TODO refactor Action card with open/handler props
@@ -153,8 +145,8 @@ const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProp
         />
         <View className="mt-4">
           <PrimaryButton onPress={onSubmit}>
-            {editable ? 'Guardar cambios' : 'Agregar Cuenta'}
-          </PrimaryButton>2
+            <Text className="text-2xl text-white">{editable ? 'Guardar cambios' : 'Agregar Cuenta'}</Text>
+          </PrimaryButton>
         </View>
       </VStack>
     </ActionCard>

@@ -34,6 +34,7 @@ module.exports = function (api) {
             "tabler:minus-vertical",
             "tabler:grip-vertical",
             "fe:pencil",
+            "tabler:plus",
           ]
         }
       ]

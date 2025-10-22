@@ -59,7 +59,7 @@ function RootLayoutNav() {
         <GluestackUIProvider mode={'light'}>
           <ThemeProvider value={DefaultTheme}>
             <SafeAreaProvider>
-              <StatusBar />
+              <StatusBar barStyle={'light-content'} />
               <Stack screenOptions={{ headerShown: false }}>
                 {/* <SafeAreaView style={{ flex: 1 }}> */}
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

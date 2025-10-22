@@ -24,7 +24,9 @@ export const initDatabase = async () => {
   max_limit REAL NOT NULL,
   expense_amount REAL NOT NULL,
   percentage_value REAL NOT NULL,
-  color TEXT NOT NULL
+  color TEXT NOT NULL,
+  account_id INTEGER NOT NULL,
+  FOREIGN KEY (account_id) REFERENCES accounts(id)
   );
 
   CREATE TABLE IF NOT EXISTS accounts (

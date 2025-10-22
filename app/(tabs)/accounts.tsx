@@ -4,19 +4,26 @@ import { View } from "@/components/Themed"
 import { Card } from "@/components/ui/card"
 import { Heading } from "@/components/ui/heading"
 import { LinearGradient } from "@/components/ui/linear-gradient"
-import { Text } from "@/components/ui/text"
+import { Text } from "react-native"
 import { VStack } from "@/components/ui/vstack"
-import { getAllAccounts } from "@/database/accountRepository"
+import { deleteAccount, getAllAccounts } from "@/database/accountRepository"
 import { AccountType } from "@/types/AccountType"
 import { cashFormat } from "@/utils/formatting"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { ScrollView, StyleSheet, TouchableOpacity } from "react-native"
 import Iconify from "react-native-iconify"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { TransferAccount } from "@/components/mine/actions/TransferAccount"
 import * as SQLite from 'expo-sqlite';
 import { DeleteValidationModal } from "@/components/mine/actions/DeleteValidationModal"
+import { getTotal } from "@/database/balanceRepository"
+import AddIncome from "@/components/mine/actions/AddIncome"
+import { useFocusEffect } from "expo-router"
 
+
+interface BalanceType {
+  total: number;
+}
 
 const Tab = () => {
 
@@ -27,22 +34,24 @@ const Tab = () => {
   const [accounts, setAccounts] = useState<AccountType[]>([])
 
   const [accountSelected, setAccountSelected] = useState<AccountType | undefined>()
+  const [balance, setBalance] = useState<BalanceType>()
   const [isEditable, setIsEditable] = useState<boolean>(false)
 
-  const database = SQLite.useSQLiteContext()
+  useFocusEffect(
+    useCallback(() => {
+      getAllAccounts().then(fetchedAccounts => setAccounts(fetchedAccounts))
+      getTotal().then(r => setBalance({ ...balance, total: r.total }))
 
-  const deleteAccount = async (account: AccountType) => {
-    try {
-      await database.runAsync("DELETE FROM accounts WHERE id = ?;", [
-        account.id
-      ])
-    } catch (error) {
-      console.error(error)
-    }
-  }
+      return () => {
+        // This code will run when the screen blurs (e.g., navigating away)
+        console.log('Screen blurred!');
+      };
+    }, [])
+  );
 
   useEffect(() => {
     getAllAccounts().then(fetchedAccounts => setAccounts(fetchedAccounts))
+    getTotal().then(r => setBalance({ ...balance, total: r.total }))
   }, [isActionOpen, isTransferOpen, isDeleteOpen])
 
   return (
@@ -66,6 +75,15 @@ const Tab = () => {
       >
         <Heading className="text-2xl color-white">Cuentas</Heading>
       </LinearGradient>
+      {/* General balance */}
+      <Card size="md" variant="elevated" className="p-3 m-3">
+        <VStack>
+          <Heading>Total de tus cuentas</Heading>
+          <Text className="text-lg">{cashFormat(balance?.total)}</Text>
+        </VStack>
+      </Card>
+
+      {/* Account list */}
       <Card size="md" variant="elevated" className="p-2 m-4">
         <ScrollView>
           {!accounts.length && (
@@ -114,7 +132,7 @@ const Tab = () => {
       <AddAccount open={isActionOpen} handleClose={setActionOpen} editAccount={accountSelected} editable={isEditable} />
       <View style={styles.buttonlayout}>
         <PrimaryButton onPress={() => setActionOpen(true)}>
-          {'Crear Cuenta'}
+          <Text className="text-2xl text-white">Crear cuenta</Text>
         </PrimaryButton>
       </View>
     </SafeAreaView>
