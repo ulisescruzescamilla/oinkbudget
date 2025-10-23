@@ -40,10 +40,19 @@ export const initDatabase = async () => {
   id INTEGER PRIMARY KEY NOT NULL,
   amount REAL NOT NULL,
   description TEXT NOT NULL,
-  budget_id INTEGER NOT NULL,
   account_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (budget_id) REFERENCES budgets(id),
+  FOREIGN KEY (account_id) REFERENCES accounts(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS balances (
+  id INTEGER PRIMARY KEY NOT NULL,
+  amount REAL NOT NULL,
+  description TEXT NOT NULL,
+  type TEXT NOT NULL,
+  current_balance REAL NOT NULL,
+  account_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (account_id) REFERENCES accounts(id)
   );
 

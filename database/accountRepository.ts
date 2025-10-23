@@ -39,19 +39,6 @@ export const deleteAccount = async(account: AccountType) => {
   }
 }
 
-export const setAmountToAccount = async(account_id: number, amount: number) => {
-  const db = getDBConnection()
-
-  try {
-    return (await db).runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [
-        amount,
-        account_id
-      ])
-  } catch (error) {
-    console.error(error)
-  }
-}
-
 export const updateAccount = async(newData: AccountType) => {
   const db = getDBConnection()
 

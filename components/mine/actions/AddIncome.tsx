@@ -7,8 +7,10 @@ import { VStack } from "@/components/ui/vstack";
 import { InputCalendar } from "../forms/InputCalendar";
 import { InputOptions } from "../forms/InputOptions";
 import { AccountType } from "@/types/AccountType";
-import { getAllAccounts, setAmountToAccount } from "@/database/accountRepository";
+import { getAllAccounts } from "@/database/accountRepository";
 import type { Item } from "../select";
+import { insertToBalance } from "@/database/balanceRepository";
+import { BalanceType } from "@/types/BalanceType";
 
 
 interface AddIncomeProps {
@@ -25,7 +27,6 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
 
   // form data
   const [accountOptions, setAccountOptions] = useState<Item[]>([])
-  const [accounts, setAccounts] = useState<AccountType[]>([])
 
   // erors
   const [amountError, setAmountError] = useState<boolean>(false)
@@ -35,7 +36,6 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
   useEffect(() => {
     getAllAccounts()
       .then(accounts => {
-        setAccounts(accounts)
         setAccountOptions(accounts.map(r => ({ value: r.id?.toString(), label: r.name })) as Item[])
       })
   }, [open])
@@ -64,20 +64,24 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
     }
 
     const account_id = parseInt(accountSelected)
-    const account = accounts.find(a => a.id === account_id)
 
-
-    if (account) {
-      const newAmount = account.amount + parseFloat(amount)
-
-      setAmountToAccount(account_id, newAmount)
-        .then(() => {
-          handleClose(false)
-          // reset values
-          reset()
-          ToastAndroid.show('Se ha agregado el ingreso correctamente', ToastAndroid.BOTTOM);
-        })
+    const payload: BalanceType = {
+      amount: parseFloat(amount),
+      type: 'income',
+      description,
+      created_at: date,
+      account_id,
+      current_balance: 0 // TODO calc current balance
     }
+
+    insertToBalance(payload)
+      .then(() => {
+        handleClose(false)
+        // reset values
+        reset()
+        ToastAndroid.show('Se ha agregado el ingreso correctamente', ToastAndroid.BOTTOM);
+      })
+
   }
 
   return (

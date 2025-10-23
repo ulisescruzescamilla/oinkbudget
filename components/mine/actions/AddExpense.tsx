@@ -10,9 +10,11 @@ import { InputText } from "../forms/InputText";
 import { InputOptions } from "../forms/InputOptions";
 import { InputCalendar } from "../forms/InputCalendar";
 import { PrimaryButton } from "../buttons";
-import { getAllAccounts, setAmountToAccount } from "@/database/accountRepository";
+import { getAllAccounts } from "@/database/accountRepository";
 import { getAllBudgets } from "@/database/budgetRepository";
 import { AccountType } from "@/types/AccountType";
+import { insertToBalance } from "@/database/balanceRepository";
+import { BalanceType } from "@/types/BalanceType";
 
 interface AddExpenseProps {
   isOpen: boolean;
@@ -76,20 +78,17 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
     const account_id = parseInt(account)
     const expenseAmount = parseFloat(amountExpense)
 
-    createExpense({
+    const payload: BalanceType = {
       amount: expenseAmount,
+      type: 'expense',
       description,
-      date,
-      account_id: account_id,
-      budget_id: parseInt(budget)
-    } as ExpenseType)
-      .then(() => {
-        if (accounts) {
-          const updateAccount = accounts.find((r) => r.id === account_id)
-          const currentAmount = parseFloat(updateAccount?.amount)
-          setAmountToAccount(account_id, currentAmount - expenseAmount)
-        }
+      created_at: date,
+      account_id,
+      current_balance: 0 // TODO calc current balance
+    }
 
+    insertToBalance(payload)
+      .then(() => {
         handleClose(false)
         reset()
         ToastAndroid.show("Gasto agregado con éxito", ToastAndroid.BOTTOM)
