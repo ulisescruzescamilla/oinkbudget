@@ -9,7 +9,7 @@ import { InputOptions } from "../forms/InputOptions";
 import { AccountType } from "@/types/AccountType";
 import { getAllAccounts } from "@/database/accountRepository";
 import type { Item } from "../select";
-import { insertToBalance } from "@/database/balanceRepository";
+import { getTotal, insertToBalance } from "@/database/balanceRepository";
 import { BalanceType } from "@/types/BalanceType";
 
 
@@ -65,13 +65,16 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
 
     const account_id = parseInt(accountSelected)
 
+    let total = 0
+    getTotal().then(row => { total = row?.total ?? 0 })
+
     const payload: BalanceType = {
       amount: parseFloat(amount),
       type: 'income',
       description,
       created_at: date,
       account_id,
-      current_balance: 0 // TODO calc current balance
+      current_balance: total + parseFloat(amount)
     }
 
     insertToBalance(payload)

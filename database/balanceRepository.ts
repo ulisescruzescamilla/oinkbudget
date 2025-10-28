@@ -2,20 +2,64 @@ import { BalanceType } from "@/types/BalanceType"
 import { getDBConnection } from "."
 
 export const getTotal = async (): Promise<{total: number} | undefined | null> => {
-  const db = getDBConnection()
+  const db = await getDBConnection()
 
   try {
-    return (await db).getFirstAsync("SELECT SUM(amount) as total FROM accounts;")
+    return db.getFirstAsync("SELECT SUM(amount) as total FROM accounts;")
   } catch (error) {
     console.error(error)
   }
 }
 
 export const getBalance = async () => {
-  const db = getDBConnection()
+  const db = await getDBConnection()
 
   try {
-    return (await db).runAsync("SELECT * FROM balances;")
+
+    const query = `
+    SELECT balances.*, accounts.name as account_name FROM balances
+    JOIN accounts ON balances.account_id = accounts.id
+    ORDER BY created_at ASC, id;
+    `
+
+    return db.getAllAsync<BalanceType>(query)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const getBalanceByDate = async () => {
+  const db = await getDBConnection()
+  try {
+    const query = `
+    SELECT 
+      CASE 
+      WHEN DATE(created_at) = DATE('now') THEN 'HOY'
+      ELSE strftime('%d/%m/%Y', created_at)
+      END as date
+    FROM balances
+    GROUP BY DATE(created_at)
+    ORDER BY DATE(created_at) DESC;
+    `
+    return db.getAllAsync<{date: string}>(query)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const getBalanceByDateDetails = async (date: string) => {
+  const db = await getDBConnection()
+
+  try {
+
+    const query = `
+    SELECT balances.*, accounts.name as account_name FROM balances
+    JOIN accounts ON balances.account_id = accounts.id
+    WHERE DATE(balances.created_at) = DATE(?)
+    ORDER BY created_at ASC, id;
+    `
+
+    return db.getAllAsync<BalanceType>(query, [date])
   } catch (error) {
     console.error(error)
   }

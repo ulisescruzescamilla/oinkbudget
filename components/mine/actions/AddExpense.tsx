@@ -13,7 +13,7 @@ import { PrimaryButton } from "../buttons";
 import { getAllAccounts } from "@/database/accountRepository";
 import { getAllBudgets } from "@/database/budgetRepository";
 import { AccountType } from "@/types/AccountType";
-import { insertToBalance } from "@/database/balanceRepository";
+import { getTotal, insertToBalance } from "@/database/balanceRepository";
 import { BalanceType } from "@/types/BalanceType";
 
 interface AddExpenseProps {
@@ -77,6 +77,8 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
 
     const account_id = parseInt(account)
     const expenseAmount = parseFloat(amountExpense)
+    let total = 0
+    getTotal().then(row => { total = row?.total ?? 0 })
 
     const payload: BalanceType = {
       amount: expenseAmount,
@@ -84,7 +86,7 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
       description,
       created_at: date,
       account_id,
-      current_balance: 0 // TODO calc current balance
+      current_balance: total - expenseAmount
     }
 
     insertToBalance(payload)

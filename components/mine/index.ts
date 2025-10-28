@@ -8,6 +8,7 @@ import { InputOptions } from './forms/InputOptions'
 import { InputSlider } from './forms/InputSlider'
 import {SimpleAccordion} from './accordion/SimpleAccordion'
 import { InputCalendar } from './forms/InputCalendar'
+import { ColorAccordion } from './accordion/ColorAccordion'
 
 export {
   ProgressBar,
@@ -20,5 +21,6 @@ export {
   InputOptions,
   InputSlider,
   SimpleAccordion,
-  InputCalendar
+  InputCalendar,
+  ColorAccordion
 }

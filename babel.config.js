@@ -35,6 +35,12 @@ module.exports = function (api) {
             "tabler:grip-vertical",
             "fe:pencil",
             "tabler:plus",
+            "tabler:trending-up",
+            "tabler:trending-down",
+            "mdi:chevron-down",
+            "mdi:chevron-up",
+            "raphael:arrowup",
+            "raphael:arrowdown"
           ]
         }
       ]
