@@ -17,6 +17,27 @@ interface BudgetAccordionProps {
   onEdit: () => void,
 }
 
+const BudgetAccordionHeader = ({ isExpanded, budget }: { isExpanded: boolean, budget: BudgetType }) => {
+  return (
+    <AccordionTitleText className={isExpanded ? "" : "p-1 border border-gray-300 rounded-md"}>
+      {isExpanded ? (<GradientView className="p-3 rounded-md">
+        <Heading className="flex-1 color-white">{budget.name}</Heading>
+        <Heading className="color-white">{`${budget.percentage_value} %`}</Heading>
+        <View className="ml-2">
+          <Iconify icon="mdi:chevron-up" color="white" />
+        </View>
+      </GradientView>) : (
+        <View className="flex flex-row items-center justify-between w-full p-2 bg-transparent ">
+          <Heading className="flex-1 ">{budget.name}</Heading>
+          <Heading className="">{`${budget.percentage_value} %`}</Heading>
+          <View className="ml-2">
+            <Iconify icon="mdi:chevron-down" color="black" />
+          </View>
+        </View>)}
+    </AccordionTitleText>
+  );
+}
+
 export const BudgetAccordion = ({ budget, onDelete, onEdit }: BudgetAccordionProps) => {
 
   if (!budget) {
@@ -40,20 +61,12 @@ export const BudgetAccordion = ({ budget, onDelete, onEdit }: BudgetAccordionPro
           <AccordionTrigger>
             {({ isExpanded }: { isExpanded: boolean }) => {
               return (
-                <AccordionTitleText>
-                  <GradientView className="w-full rounded-md">
-                    <Heading className="flex-1 color-white">{budget.name}</Heading>
-                    <Heading className="color-white">{`${budget.percentage_value} %`}</Heading>
-                    <View className="ml-2">
-                      <Iconify icon={isExpanded ? "mdi:chevron-up" : "mdi:chevron-down"} color="white" />
-                    </View>
-                  </GradientView>
-                </AccordionTitleText>
+                <BudgetAccordionHeader isExpanded={isExpanded} budget={budget} />
               );
             }}
           </AccordionTrigger>
         </AccordionHeader>
-        <AccordionContent>
+        <AccordionContent className="p-5">
           <ScrollView>
             <VStack>
               <View><Heading>Monto gastado</Heading></View>

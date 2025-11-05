@@ -12,6 +12,7 @@ import {BudgetAccordion} from './accordion/BudgetAccordion'
 import { GradientView } from './view/GradientView'
 import { SecondaryButton } from './buttons/SecondaryButton'
 import { CancelButton } from './buttons/CancelButton'
+import { ThemedAccordion } from './accordion/ThemedAccordion'
 
 export {
   ProgressBar,
@@ -30,5 +31,6 @@ export {
   // views
   GradientView,
   SecondaryButton,
-  CancelButton
+  CancelButton,
+  ThemedAccordion
 }

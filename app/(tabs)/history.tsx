@@ -1,20 +1,25 @@
-import { ColorAccordion } from "@/components/mine"
+import { ColorAccordion, ThemedAccordion } from "@/components/mine"
 import { Badge, BadgeText } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Heading } from "@/components/ui/heading"
 import { LinearGradient } from "@/components/ui/linear-gradient"
 import { getBalanceByDate, getBalanceByDateDetails } from "@/database/balanceRepository"
 import { useFocusEffect } from "expo-router"
-import { useCallback, useState } from "react"
-import { View } from "react-native"
+import { useCallback, useEffect, useState } from "react"
+import { Text, View } from "react-native"
 import { ScrollView } from "react-native-gesture-handler"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { TouchableOpacity } from "react-native"
+import { VStack } from "@/components/ui/vstack"
+import { cashFormat } from "@/utils/formatting"
+import Iconify from "react-native-iconify"
 
 const Tab = () => {
 
   const [dates, setDate] = useState<string[]>([])
   const [filter, setFilter] = useState<'date' | 'account' | 'type'>('date')
+  const [selected, setSelected] = useState<string>('')
+  const [data, setData] = useState<any[] | undefined>([])
 
   useFocusEffect(
     useCallback(() => {
@@ -26,6 +31,15 @@ const Tab = () => {
       })
     }, [])
   );
+
+  useEffect(() => {
+    if (filter === 'date' && selected) {
+      const date = selected === 'HOY' ? new Date().toISOString().split('T')[0] : dates[0].split('/').reverse().join('-')
+      getBalanceByDateDetails(date).then(rows => {
+        setData(rows)
+      })
+    }
+  }, [filter, selected])
 
   return (
     <SafeAreaView style={styles.content}>
@@ -64,13 +78,40 @@ const Tab = () => {
         )}
         <ScrollView>
           {dates.map((dateStr, index) => (
-            <ColorAccordion
+            <ThemedAccordion
               key={index}
-              heading={dateStr}
-              fetchData={() => {
-                const str = dateStr === 'HOY' ? new Date().toISOString().split('T')[0] : dateStr.split('/').reverse().join('-')
-                return getBalanceByDateDetails(str)
-              }} />
+              header={(isExpanded) => (
+                <TouchableOpacity onPress={() => setSelected(dateStr)}>
+                  <Heading className={isExpanded ? "text-white" : ""}>{dateStr}</Heading>
+                </TouchableOpacity>
+              )
+              }
+              content={
+                <VStack>
+                  <View className="flex flex-row p-2">
+                    <Text className="flex-1 font-bold">Monto</Text>
+                    <Text className="flex-1 font-bold">Cuenta</Text>
+                    <Text className="flex-1 font-bold">Descripción</Text>
+                    <Text className="font-bold flex-4">I/O</Text>
+                  </View>
+                  <ScrollView>
+                    {data?.map((data, index) => (
+                      <View className="flex flex-row p-2" key={index}>
+                        <Text className="flex-1">{data.type === 'income' ? cashFormat(data.amount) : `-${cashFormat(data.amount)}`}</Text>
+                        <Text className="flex-1">{data.account_name}</Text>
+                        <Text className="flex-1">{data.description}</Text>
+                        <View className="flex-4">
+                          {data.type === 'income' ? (
+                            <Iconify icon="raphael:arrowup" color="green" />
+                          ) : (
+                            <Iconify icon="raphael:arrowdown" color="red" />
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </VStack>
+              } />
           ))}
         </ScrollView>
       </Card>
