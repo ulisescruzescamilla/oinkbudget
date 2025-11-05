@@ -7,15 +7,17 @@ import { InputSlider } from "../forms/InputSlider"
 import { Text, View } from "react-native"
 import { PrimaryButton } from "../buttons/PrimaryButton"
 import { BudgetType } from "@/types/BudgetType"
-import { getMaxPercentage, insertBudget } from "@/database/budgetRepository"
+import { getMaxPercentage, insertBudget, updateBudget } from "@/database/budgetRepository"
 import { getTotal } from "@/database/balanceRepository"
 
 interface AddBudgetProps {
   open: boolean,
   handleClose: () => void,
+  budget?: BudgetType | null,
+  isEdit?: boolean,
 }
 
-export const AddBudget = ({ open, handleClose }: AddBudgetProps) => {
+export const AddBudget = ({ open, handleClose, budget = null, isEdit = false }: AddBudgetProps) => {
   const [name, setName] = useState<string>("")
   const [percentage, setPercentage] = useState<number>(30)
   const [maxLimit, setMaxLimit] = useState<number>(0)
@@ -24,10 +26,31 @@ export const AddBudget = ({ open, handleClose }: AddBudgetProps) => {
   const [nameError, setNameError] = useState<boolean>(false)
   const [percentageError, setPercentageError] = useState<boolean>(false)
 
+  // Reset form when modal opens/closes or when budget changes
+  useEffect(() => {
+    if (open) {
+      if (isEdit && budget) {
+        // Fill form with existing budget data
+        setName(budget.name)
+        setPercentage(budget.percentage_value)
+      } else {
+        // Reset form for new budget
+        setName("")
+        setPercentage(30)
+      }
+      // Reset errors
+      setNameError(false)
+      setPercentageError(false)
+    }
+  }, [open, isEdit, budget])
+
   useEffect(() => {
     getMaxPercentage()
-      .then(row => setMaxLimit(100 - (row?.sum_percentage ?? 0)))
-  }, [open])
+      .then((row: any) => {
+        const currentPercentage = isEdit && budget ? budget.percentage_value : 0
+        setMaxLimit(100 - ((row?.sum_percentage ?? 0) - currentPercentage))
+      })
+  }, [open, isEdit, budget])
 
   const submit = () => {
     if (name.length === 0 || name.length > 255) {
@@ -45,18 +68,25 @@ export const AddBudget = ({ open, handleClose }: AddBudgetProps) => {
       total = r?.total ?? 0
       const amountPercentage = (total * percentage) / 100
 
-      insertBudget({
+      const budgetData: BudgetType = {
+        id: isEdit && budget ? budget.id : null,
         name: name.trim(),
         max_limit: amountPercentage,
-        expense_amount: 0,
+        expense_amount: isEdit && budget ? budget.expense_amount : 0,
         percentage_value: percentage,
-        color: '#8637CF', // TODO add a color picker
-      } as BudgetType).then((i) => {
-        // close action card
-        handleClose()
-      })
-    })
+        color: isEdit && budget ? budget.color : '#8637CF', // TODO add a color picker
+      }
 
+      if (isEdit && budget) {
+        updateBudget(budgetData).then(() => {
+          handleClose()
+        })
+      } else {
+        insertBudget(budgetData).then(() => {
+          handleClose()
+        })
+      }
+    })
   }
 
   return (
@@ -86,7 +116,11 @@ export const AddBudget = ({ open, handleClose }: AddBudgetProps) => {
         />
       </VStack>
       <View className='mt-4'>
-        <PrimaryButton onPress={() => submit()}><Text className="text-2xl text-white">Agregar presupuesto</Text></PrimaryButton>
+        <PrimaryButton onPress={() => submit()}>
+          <Text className="text-2xl text-white">
+            {isEdit ? "Actualizar presupuesto" : "Agregar presupuesto"}
+          </Text>
+        </PrimaryButton>
       </View>
     </ActionCard>
   )

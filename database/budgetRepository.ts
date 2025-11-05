@@ -48,6 +48,22 @@ export const getMaxPercentage = async () => {
   }
 }
 
+export const updateBudget = async (budget: BudgetType) => {
+  const db = await getDBConnection()
+  try {
+    return await db.runAsync("UPDATE budgets SET name = ?, max_limit = ?, expense_amount = ?, percentage_value = ?, color = ? WHERE id = ?;", [
+      budget.name,
+      budget.max_limit,
+      budget.expense_amount,
+      budget.percentage_value,
+      budget.color,
+      budget.id
+    ])
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 export const getBudgetById = async (id: number): Promise<BudgetType | null> => {
   const db = await getDBConnection()
   try {

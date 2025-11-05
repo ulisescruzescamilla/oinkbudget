@@ -15,16 +15,24 @@ import { useFocusEffect } from "expo-router"
 const Tab = () => {
   const [toogle, setToggle] = useState<boolean>(false)
   const [deleteToggle, setDeleteToggle] = useState<boolean>(false)
+  const [isEdit, setIsEdit] = useState<boolean>(false)
 
   // View data
   const [budgets, setBudgets] = useState<BudgetType[]>([])
   console.debug("Budgets:", budgets)
-  const [budgetSelected, setBudgetSelected] = useState<BudgetType>()
+  const [budgetSelected, setBudgetSelected] = useState<BudgetType | null>(null)
+
+  const handleCloseModal = () => {
+    setToggle(false)
+    setIsEdit(false)
+    setBudgetSelected(null)
+  }
 
   const onDeleteBudget = () => {
     if (budgetSelected) {
       deleteBudget(budgetSelected)
       setDeleteToggle(false)
+      setBudgetSelected(null)
     }
   }
 
@@ -41,7 +49,12 @@ const Tab = () => {
   return (
     <SafeAreaView style={styles.content}>
       {/* Add / Edit Budget Accordion */}
-      <AddBudget open={toogle} handleClose={() => setToggle(false)} />
+      <AddBudget
+        open={toogle}
+        handleClose={handleCloseModal}
+        budget={budgetSelected}
+        isEdit={isEdit}
+      />
       {/* Modal delete confirmation */}
       <DeleteValidationModal showModal={deleteToggle} setShowModal={setDeleteToggle} deleteAction={onDeleteBudget}>
         <Heading>¿Estás seguro de eliminar este presupuesto y sus registros?</Heading>
@@ -66,14 +79,18 @@ const Tab = () => {
             }}
             onEdit={() => {
               setBudgetSelected(budget)
+              setIsEdit(true)
               setToggle(true)
-              // TODO pass budget to AddBudget component for editing
             }}
           />
         ))}
       </Card>
       <View style={styles.bottomButtonContainer}>
-        <PrimaryButton onPress={() => setToggle(true)}>
+        <PrimaryButton onPress={() => {
+          setIsEdit(false)
+          setBudgetSelected(null)
+          setToggle(true)
+        }}>
           <Text className="text-2xl text-white">Agregar Presupuesto</Text>
         </PrimaryButton>
       </View>
