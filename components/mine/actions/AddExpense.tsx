@@ -9,7 +9,7 @@ import { ActionCard } from "./ActionCard";
 import { InputText } from "../forms/InputText";
 import { InputOptions } from "../forms/InputOptions";
 import { InputCalendar } from "../forms/InputCalendar";
-import { PrimaryButton } from "../buttons";
+import { PrimaryButton } from "../buttons/PrimaryButton";
 import { getAllAccounts } from "@/database/accountRepository";
 import { getAllBudgets } from "@/database/budgetRepository";
 import { AccountType } from "@/types/AccountType";

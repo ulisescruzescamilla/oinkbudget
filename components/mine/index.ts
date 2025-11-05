@@ -1,7 +1,7 @@
 import ProgressBar from './progress/ProgressBar'
 import { DatePickerAndroid } from './date_picker'
 import SelectOptions from './select'
-import { PrimaryButton } from './buttons'
+import { PrimaryButton } from './buttons/PrimaryButton'
 import { SwipeableRow } from './swipeable'
 import { InputText } from './forms/InputText'
 import { InputOptions } from './forms/InputOptions'
@@ -10,6 +10,8 @@ import { InputCalendar } from './forms/InputCalendar'
 import { ColorAccordion } from './accordion/ColorAccordion'
 import {BudgetAccordion} from './accordion/BudgetAccordion'
 import { GradientView } from './view/GradientView'
+import { SecondaryButton } from './buttons/SecondaryButton'
+import { CancelButton } from './buttons/CancelButton'
 
 export {
   ProgressBar,
@@ -27,4 +29,6 @@ export {
   BudgetAccordion,
   // views
   GradientView,
+  SecondaryButton,
+  CancelButton
 }

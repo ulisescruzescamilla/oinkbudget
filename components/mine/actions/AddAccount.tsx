@@ -1,7 +1,7 @@
 import { VStack } from "@/components/ui/vstack";
 import { AccountType, KindOfAccountType } from "@/types/AccountType";
 import { useEffect, useRef, useState } from "react";
-import { PrimaryButton } from "../buttons";
+import { PrimaryButton } from "../buttons/PrimaryButton";
 import * as SQLite from 'expo-sqlite'
 import { ActionCard } from "./ActionCard";
 import { InputText } from "../forms/InputText";

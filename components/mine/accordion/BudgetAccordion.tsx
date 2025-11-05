@@ -8,14 +8,16 @@ import { ScrollView } from "react-native-gesture-handler";
 import Iconify from "react-native-iconify";
 import { GradientView } from "../view/GradientView";
 import { Button } from "@/components/ui/button";
+import { SecondaryButton } from "../buttons/SecondaryButton";
+import { CancelButton } from "../buttons/CancelButton";
 
 interface BudgetAccordionProps {
   budget: BudgetType,
-  setItem: (item: any) => void,
-  toogleItem: (toggle: boolean) => void,
+  onDelete: () => void,
+  onEdit: () => void,
 }
 
-export const BudgetAccordion = ({ budget, setItem, toogleItem }: BudgetAccordionProps) => {
+export const BudgetAccordion = ({ budget, onDelete, onEdit }: BudgetAccordionProps) => {
 
   if (!budget) {
     return (
@@ -61,7 +63,19 @@ export const BudgetAccordion = ({ budget, setItem, toogleItem }: BudgetAccordion
               <View><Heading>Monto restante</Heading></View>
               <View><Text>{cashFormat(budget.max_limit - budget.expense_amount)}</Text></View>
               <View className="mt-2">
-                <Button className="bg-[#0F55A1]" onPress={() => { }}><Text className="text-lg color-white">Ver detalle</Text></Button>
+                <SecondaryButton onPress={() => { }} >
+                  <Text className="text-lg color-white">Ver detalle</Text>
+                </SecondaryButton>
+              </View>
+              <View className="mt-2">
+                <Button variant="outline" action='primary' onPress={onEdit}>
+                  <Text className="text-lg ">Editar</Text>
+                </Button>
+              </View>
+              <View className="mt-2">
+                <CancelButton onPress={onDelete}>
+                  <Text className="text-lg text-white">Eliminar</Text>
+                </CancelButton>
               </View>
             </VStack>
           </ScrollView>

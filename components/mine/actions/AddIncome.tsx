@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { InputText } from "../forms/InputText";
 import { ActionCard } from "./ActionCard"
-import { PrimaryButton } from "../buttons";
+import { PrimaryButton } from "../buttons/PrimaryButton";
 import { Text, ToastAndroid, View } from "react-native";
 import { VStack } from "@/components/ui/vstack";
 import { InputCalendar } from "../forms/InputCalendar";

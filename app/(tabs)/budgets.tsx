@@ -36,11 +36,13 @@ const Tab = () => {
 
   useEffect(() => {
     getAllBudgets().then((data) => setBudgets(data))
-  }, [setToggle, deleteBudget])
+  }, [setToggle, onDeleteBudget])
 
   return (
     <SafeAreaView style={styles.content}>
+      {/* Add / Edit Budget Accordion */}
       <AddBudget open={toogle} handleClose={() => setToggle(false)} />
+      {/* Modal delete confirmation */}
       <DeleteValidationModal showModal={deleteToggle} setShowModal={setDeleteToggle} deleteAction={onDeleteBudget}>
         <Heading>¿Estás seguro de eliminar este presupuesto y sus registros?</Heading>
       </DeleteValidationModal>
@@ -58,8 +60,15 @@ const Tab = () => {
           <BudgetAccordion
             key={budget.id}
             budget={budget}
-            setItem={setBudgetSelected}
-            toogleItem={setDeleteToggle}
+            onDelete={() => {
+              setBudgetSelected(budget)
+              setDeleteToggle(true)
+            }}
+            onEdit={() => {
+              setBudgetSelected(budget)
+              setToggle(true)
+              // TODO pass budget to AddBudget component for editing
+            }}
           />
         ))}
       </Card>
