@@ -74,6 +74,7 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
       description,
       created_at: date,
       account_id,
+      budget_id: null,
       current_balance: total + parseFloat(amount)
     }
 

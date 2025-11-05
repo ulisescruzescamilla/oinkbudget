@@ -86,6 +86,7 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
       description,
       created_at: date,
       account_id,
+      budget_id: parseInt(budget!),
       current_balance: total - expenseAmount
     }
 

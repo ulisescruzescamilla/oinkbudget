@@ -6,9 +6,10 @@ import { SwipeableRow } from './swipeable'
 import { InputText } from './forms/InputText'
 import { InputOptions } from './forms/InputOptions'
 import { InputSlider } from './forms/InputSlider'
-import {SimpleAccordion} from './accordion/SimpleAccordion'
 import { InputCalendar } from './forms/InputCalendar'
 import { ColorAccordion } from './accordion/ColorAccordion'
+import {BudgetAccordion} from './accordion/BudgetAccordion'
+import { GradientView } from './view/GradientView'
 
 export {
   ProgressBar,
@@ -20,7 +21,10 @@ export {
   InputText,
   InputOptions,
   InputSlider,
-  SimpleAccordion,
   InputCalendar,
-  ColorAccordion
+  ColorAccordion,
+  // accordions,
+  BudgetAccordion,
+  // views
+  GradientView,
 }

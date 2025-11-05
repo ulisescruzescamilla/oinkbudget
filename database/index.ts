@@ -24,9 +24,7 @@ export const initDatabase = async () => {
   max_limit REAL NOT NULL,
   expense_amount REAL NOT NULL,
   percentage_value REAL NOT NULL,
-  color TEXT NOT NULL,
-  account_id INTEGER NOT NULL,
-  FOREIGN KEY (account_id) REFERENCES accounts(id)
+  color TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS accounts (
@@ -41,8 +39,10 @@ export const initDatabase = async () => {
   amount REAL NOT NULL,
   description TEXT NOT NULL,
   account_id INTEGER NOT NULL,
+  budget_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (account_id) REFERENCES accounts(id)
+  FOREIGN KEY (account_id) REFERENCES accounts(id),
+  FOREIGN KEY (budget_id) REFERENCES budgets(id)
   );
 
   CREATE TABLE IF NOT EXISTS balances (
@@ -51,9 +51,11 @@ export const initDatabase = async () => {
   description TEXT NOT NULL,
   type TEXT NOT NULL,
   current_balance REAL NOT NULL,
+  budget_id INTEGER,
   account_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (account_id) REFERENCES accounts(id)
+  FOREIGN KEY (account_id) REFERENCES accounts(id),
+  FOREIGN KEY (budget_id) REFERENCES budgets(id)
   );
 
   `)

@@ -1,17 +1,13 @@
 import { ColorAccordion } from "@/components/mine"
 import { Badge, BadgeText } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Divider } from "@/components/ui/divider"
 import { Heading } from "@/components/ui/heading"
 import { LinearGradient } from "@/components/ui/linear-gradient"
-import { getBalance, getBalanceByDate, getBalanceByDateDetails } from "@/database/balanceRepository"
-import { BalanceType } from "@/types/BalanceType"
-import { cashFormat } from "@/utils/formatting"
+import { getBalanceByDate, getBalanceByDateDetails } from "@/database/balanceRepository"
 import { useFocusEffect } from "expo-router"
 import { useCallback, useState } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 import { ScrollView } from "react-native-gesture-handler"
-import Iconify from "react-native-iconify"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { TouchableOpacity } from "react-native"
 
@@ -61,6 +57,11 @@ const Tab = () => {
       </Card>
       {/* Content */}
       <Card size="md" variant="elevated" className="p-2 m-4">
+        {dates.length === 0 && (
+          <View className="flex flex-row items-center justify-center p-4">
+            <Heading>No hay movimientos para mostrar</Heading>
+          </View>
+        )}
         <ScrollView>
           {dates.map((dateStr, index) => (
             <ColorAccordion

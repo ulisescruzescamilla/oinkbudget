@@ -8,6 +8,7 @@ export interface BalanceType {
   description: string;
   account_id: number;
   account?: AccountType;
+  budget_id: number | null;
   type: TypeBalance;
   created_at: Date;
 }

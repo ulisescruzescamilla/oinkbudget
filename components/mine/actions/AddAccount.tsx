@@ -126,7 +126,7 @@ const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProp
           isInvalid={amountError}
           ref={amountRef}
           value={amount}
-          label="Nombre de la cuenta"
+          label="Monto de la cuenta"
           placeholder="$"
           keyboardType="numeric"
           onEditing={() => typeRef.current.focus()}
