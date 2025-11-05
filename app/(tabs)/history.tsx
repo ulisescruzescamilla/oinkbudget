@@ -1,0 +1,128 @@
+import { ColorAccordion, ThemedAccordion } from "@/components/mine"
+import { Badge, BadgeText } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
+import { Heading } from "@/components/ui/heading"
+import { LinearGradient } from "@/components/ui/linear-gradient"
+import { getBalanceByDate, getBalanceByDateDetails } from "@/database/balanceRepository"
+import { useFocusEffect } from "expo-router"
+import { useCallback, useEffect, useState } from "react"
+import { Text, View } from "react-native"
+import { ScrollView } from "react-native-gesture-handler"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { TouchableOpacity } from "react-native"
+import { VStack } from "@/components/ui/vstack"
+import { cashFormat } from "@/utils/formatting"
+import Iconify from "react-native-iconify"
+
+const Tab = () => {
+
+  const [dates, setDate] = useState<string[]>([])
+  const [filter, setFilter] = useState<'date' | 'account' | 'type'>('date')
+  const [selected, setSelected] = useState<string>('')
+  const [data, setData] = useState<any[] | undefined>([])
+
+  useFocusEffect(
+    useCallback(() => {
+      getBalanceByDate().then(rows => {
+        if (rows) {
+          const dateStrings = rows.map(r => r.date)
+          setDate(dateStrings)
+        }
+      })
+    }, [])
+  );
+
+  useEffect(() => {
+    if (filter === 'date' && selected) {
+      const date = selected === 'HOY' ? new Date().toISOString().split('T')[0] : dates[0].split('/').reverse().join('-')
+      getBalanceByDateDetails(date).then(rows => {
+        setData(rows)
+      })
+    }
+  }, [filter, selected])
+
+  return (
+    <SafeAreaView style={styles.content}>
+      {/* Content */}
+      <LinearGradient
+        className="w-full p-2"
+        colors={['#8637CF', '#0F55A1']}
+        start={[0, 1]}
+        end={[1, 0]}
+      >
+        <Heading className="text-2xl color-white">Movimientos</Heading>
+      </LinearGradient>
+      {/* Filters */}
+      <Card size={'md'} variant={'elevated'} className="flex flex-row items-center gap-3 p-4 m-4 mb-0">
+        <View>
+          <TouchableOpacity>
+            <Badge size="lg" className={filter === 'date' ? 'bg-[#8637CF] text-white rounded-md px-4 py-1' : ''}>
+              <BadgeText className={filter === 'date' ? 'text-white' : ''}>Por fecha</BadgeText>
+            </Badge>
+          </TouchableOpacity>
+        </View>
+        <View>
+          <TouchableOpacity>
+            <Badge size="lg" className={filter === 'account' ? 'bg-[#8637CF] text-white rounded-md px-4 py-1' : ''}>
+              <BadgeText className={filter === 'account' ? 'text-white' : ''}>Por cuentas</BadgeText>
+            </Badge>
+          </TouchableOpacity>
+        </View>
+      </Card>
+      {/* Content */}
+      <Card size="md" variant="elevated" className="p-2 m-4">
+        {dates.length === 0 && (
+          <View className="flex flex-row items-center justify-center p-4">
+            <Heading>No hay movimientos para mostrar</Heading>
+          </View>
+        )}
+        <ScrollView>
+          {dates.map((dateStr, index) => (
+            <ThemedAccordion
+              key={index}
+              header={(isExpanded) => (
+                <TouchableOpacity onPress={() => setSelected(dateStr)}>
+                  <Heading className={isExpanded ? "text-white" : ""}>{dateStr}</Heading>
+                </TouchableOpacity>
+              )
+              }
+              content={
+                <VStack>
+                  <View className="flex flex-row p-2">
+                    <Text className="flex-1 font-bold">Monto</Text>
+                    <Text className="flex-1 font-bold">Cuenta</Text>
+                    <Text className="flex-1 font-bold">Descripción</Text>
+                    <Text className="font-bold flex-4">I/O</Text>
+                  </View>
+                  <ScrollView>
+                    {data?.map((data, index) => (
+                      <View className="flex flex-row p-2" key={index}>
+                        <Text className="flex-1">{data.type === 'income' ? cashFormat(data.amount) : `-${cashFormat(data.amount)}`}</Text>
+                        <Text className="flex-1">{data.account_name}</Text>
+                        <Text className="flex-1">{data.description}</Text>
+                        <View className="flex-4">
+                          {data.type === 'income' ? (
+                            <Iconify icon="raphael:arrowup" color="green" />
+                          ) : (
+                            <Iconify icon="raphael:arrowdown" color="red" />
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </VStack>
+              } />
+          ))}
+        </ScrollView>
+      </Card>
+    </SafeAreaView >
+  )
+}
+
+const styles = {
+  content: {
+    flex: 1,
+  },
+}
+
+export default Tab

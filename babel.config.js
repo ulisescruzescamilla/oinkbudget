@@ -21,7 +21,26 @@ module.exports = function (api) {
         "react-native-iconify/babel", {
           "icons": [
             "line-md:home",
-            "ri:home-2-fill"
+            "ri:home-2-fill",
+            "tabler:wallet",
+            "tabler:credit-card",
+            "fa-brands:cc-mastercard",
+            "fa-brands:cc-visa",
+            "tabler:transfer",
+            "tabler:building-bank",
+            "mdi:graph-bar",
+            "tabler:dots-vertical",
+            "tabler:trash",
+            "tabler:minus-vertical",
+            "tabler:grip-vertical",
+            "fe:pencil",
+            "tabler:plus",
+            "tabler:trending-up",
+            "tabler:trending-down",
+            "mdi:chevron-down",
+            "mdi:chevron-up",
+            "raphael:arrowup",
+            "raphael:arrowdown"
           ]
         }
       ]
