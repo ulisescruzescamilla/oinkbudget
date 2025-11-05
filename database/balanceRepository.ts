@@ -28,26 +28,7 @@ export const getBalance = async () => {
   }
 }
 
-export const getBalanceByDate = async () => {
-  const db = await getDBConnection()
-  try {
-    const query = `
-    SELECT 
-      CASE 
-      WHEN DATE(created_at) = DATE('now') THEN 'HOY'
-      ELSE strftime('%d/%m/%Y', created_at)
-      END as date
-    FROM balances
-    GROUP BY DATE(created_at)
-    ORDER BY DATE(created_at) DESC;
-    `
-    return db.getAllAsync<{date: string}>(query)
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-export const getBalanceByDateDetails = async (date: string) => {
+export const getBalanceByDate = async (date: string) => {
   const db = await getDBConnection()
 
   try {

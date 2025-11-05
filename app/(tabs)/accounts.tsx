@@ -14,10 +14,8 @@ import { ScrollView, StyleSheet, TouchableOpacity } from "react-native"
 import Iconify from "react-native-iconify"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { TransferAccount } from "@/components/mine/actions/TransferAccount"
-import * as SQLite from 'expo-sqlite';
 import { DeleteValidationModal } from "@/components/mine/actions/DeleteValidationModal"
 import { getTotal } from "@/database/balanceRepository"
-import AddIncome from "@/components/mine/actions/AddIncome"
 import { useFocusEffect } from "expo-router"
 
 
