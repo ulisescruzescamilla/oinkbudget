@@ -51,11 +51,9 @@ export const initDatabase = async () => {
   description TEXT NOT NULL,
   type TEXT NOT NULL,
   current_balance REAL NOT NULL,
-  budget_id INTEGER,
-  account_id INTEGER NOT NULL,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (account_id) REFERENCES accounts(id),
-  FOREIGN KEY (budget_id) REFERENCES budgets(id)
+  budget_name TEXT NOT NULL,
+  account_name TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
   `)

@@ -1,5 +1,7 @@
 import { BalanceType } from "@/types/BalanceType"
 import { getDBConnection } from "."
+import { AccountType } from "@/types/AccountType"
+import { BudgetType } from "@/types/BudgetType"
 
 export const getTotal = async (): Promise<{total: number} | undefined | null> => {
   const db = await getDBConnection()
@@ -17,8 +19,7 @@ export const getBalance = async () => {
   try {
 
     const query = `
-    SELECT balances.*, accounts.name as account_name FROM balances
-    JOIN accounts ON balances.account_id = accounts.id
+    SELECT * FROM balances
     ORDER BY created_at ASC, id;
     `
 
@@ -34,8 +35,7 @@ export const getBalanceByDate = async (date: string) => {
   try {
 
     const query = `
-    SELECT balances.*, accounts.name as account_name FROM balances
-    JOIN accounts ON balances.account_id = accounts.id
+    SELECT * FROM balances
     WHERE DATE(balances.created_at) = DATE(?)
     ORDER BY balances.id DESC;
     `
@@ -46,29 +46,30 @@ export const getBalanceByDate = async (date: string) => {
   }
 }
 
-export const insertToBalance = async (balance: BalanceType) => {
+export const insertToBalance = async (balance: BalanceType, account: AccountType, budget?: BudgetType) => {
   const database = await getDBConnection()
 
   const dateParsed = balance.created_at.toISOString().split('T')[0]
+  const timeParsed = balance.created_at.toISOString().split('T')[1]
 
     database.withTransactionAsync(async () => {
       // Insert into history / balance table
-      database.runAsync("INSERT INTO balances (amount, description, current_balance, type, account_id, budget_id, created_at) VALUES (?,?,?,?,?,?,?);",
-        [balance.amount, balance.description, balance.current_balance, balance.type, balance.account_id, balance.budget_id, dateParsed]);
+      database.runAsync("INSERT INTO balances (amount, description, current_balance, type, account_name, budget_name, created_at) VALUES (?,?,?,?,?,?,?);",
+        [balance.amount, balance.description, balance.current_balance, balance.type, balance.account_name, balance.budget_name, `${dateParsed} ${timeParsed}`]);
 
       // update account
-      database.getFirstAsync("SELECT amount FROM accounts WHERE id = ?;", [balance.account_id])
+      database.getFirstAsync("SELECT amount FROM accounts WHERE id = ?;", [account.id])
       .then((result) => {
         let amount = parseFloat(result.amount)
 
-        if (balance.type === 'expense' && balance.budget_id) {
+        if (balance.type === 'expense' && budget?.id) {
           amount = amount - balance.amount
           database.runAsync(`INSERT INTO expenses (amount, description, account_id, created_at, budget_id) VALUES (?,?,?,?,?);`, [
             balance.amount,
             balance.description,
-            balance.account_id,
-            dateParsed,
-            balance.budget_id
+            account.id,
+            `${dateParsed} ${timeParsed}`,
+            budget.id
           ])
         }
 
@@ -76,7 +77,7 @@ export const insertToBalance = async (balance: BalanceType) => {
           amount = amount + balance.amount
         }
 
-        database.runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [amount, balance.account_id])
+        database.runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [amount, account.id])
       })
     })
 }

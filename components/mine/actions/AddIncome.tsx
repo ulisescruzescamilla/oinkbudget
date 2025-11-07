@@ -23,11 +23,11 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
   const [amount, setAmount] = useState<string>('')
   const [description, setDescription] = useState<string>('')
   const [date, setDate] = useState<Date>(new Date)
-  const [accountSelected, setAccountSelected] = useState<string>('')
+  const [accountId, setAccountId] = useState<string | undefined>()
 
   // form data
+  const [accounts, setAccounts] = useState<AccountType[]>()
   const [accountOptions, setAccountOptions] = useState<Item[]>([])
-
   // erors
   const [amountError, setAmountError] = useState<boolean>(false)
   const [descriptionError, setDescriptionError] = useState<boolean>(false)
@@ -36,6 +36,7 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
   useEffect(() => {
     getAllAccounts()
       .then(accounts => {
+        setAccounts(accounts)
         setAccountOptions(accounts.map(r => ({ value: r.id?.toString(), label: r.name })) as Item[])
       })
   }, [open])
@@ -44,7 +45,7 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
     setAmount('')
     setDescription('')
     setDate(new Date)
-    setAccountSelected('')
+    setAccountId(undefined)
   }
 
   const submit = () => {
@@ -58,33 +59,38 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
       return
     }
 
-    if (accountSelected.length === 0) {
+    if (!accountId) {
       setAccountError(true)
       return
     }
 
-    const account_id = parseInt(accountSelected)
+    const selectedAccount = accounts?.find(acc => acc.id === parseInt(accountId))
 
     let total = 0
     getTotal().then(row => { total = row?.total ?? 0 })
 
-    const payload: BalanceType = {
-      amount: parseFloat(amount),
-      type: 'income',
-      description,
-      created_at: date,
-      account_id,
-      budget_id: null,
-      current_balance: total + parseFloat(amount)
-    }
+    if (selectedAccount) {
+      const payload: BalanceType = {
+        id: null,
+        amount: parseFloat(amount),
+        type: 'income',
+        description,
+        created_at: date,
+        account_name: selectedAccount.name,
+        budget_name: '',
+        current_balance: total + parseFloat(amount)
+      }
 
-    insertToBalance(payload)
-      .then(() => {
-        handleClose(false)
-        // reset values
-        reset()
-        ToastAndroid.show('Se ha agregado el ingreso correctamente', ToastAndroid.BOTTOM);
-      })
+      insertToBalance(payload, selectedAccount)
+        .then(() => {
+          handleClose(false)
+          // reset values
+          reset()
+          ToastAndroid.show('Se ha agregado el ingreso correctamente', ToastAndroid.BOTTOM);
+        })
+    } else {
+      ToastAndroid.show('Error al agregar el ingreso', ToastAndroid.BOTTOM);
+    }
 
   }
 
@@ -116,7 +122,7 @@ const AddIncome = ({ open, handleClose }: AddIncomeProps) => {
           label="Cuenta"
           errorLabel="Seleccione una cuenta"
           isInvalid={accountError}
-          onValueChange={setAccountSelected}
+          onValueChange={setAccountId}
         />
         {/* Date */}
         <InputCalendar label="Fecha" date={date} setDate={setDate} />

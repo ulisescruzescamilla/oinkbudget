@@ -1,7 +1,7 @@
 import { AccountType } from "./AccountType";
 
 export interface ExpenseType {
-  id?: number;
+  id: number | null;
   amount: number;
   description: string;
   date: Date;
