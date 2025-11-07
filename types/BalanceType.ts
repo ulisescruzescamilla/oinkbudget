@@ -1,14 +1,12 @@
-import { AccountType } from "./AccountType";
-
 export type TypeBalance = 'expense' | 'income'
 
 export interface BalanceType {
+  id: number | null;
   amount: number;
   current_balance: number;
   description: string;
-  account_id: number;
-  account?: AccountType;
-  budget_id: number | null;
+  account_name: string;
+  budget_name: string;
   type: TypeBalance;
   created_at: Date;
 }

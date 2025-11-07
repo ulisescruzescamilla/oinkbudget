@@ -1,12 +1,10 @@
 import { AccountType } from "./AccountType";
 
-export interface ExpenseType {
+export interface IncomeType {
   id: number | null;
   amount: number;
   description: string;
-  created_at: Date;
-  budget_id: number;
   account: AccountType;
   account_id: number;
-  // TODO file attached
+  created_at: Date;
 }

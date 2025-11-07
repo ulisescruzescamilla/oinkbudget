@@ -15,6 +15,7 @@ import { getAllBudgets } from "@/database/budgetRepository";
 import { AccountType } from "@/types/AccountType";
 import { getTotal, insertToBalance } from "@/database/balanceRepository";
 import { BalanceType } from "@/types/BalanceType";
+import { BudgetType } from "@/types/BudgetType";
 
 interface AddExpenseProps {
   isOpen: boolean;
@@ -27,11 +28,12 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
   const [amountExpense, setAmountExpense] = useState<string>('')
   const [description, setDescription] = useState<string>('')
   const [date, setDate] = useState(new Date())
-  const [budget, setBudget] = useState<string>()
-  const [account, setAccount] = useState<string>()
+  const [budgetId, setBudgetId] = useState<string | undefined>()
+  const [accountId, setAccountId] = useState<string | undefined>()
   // form data
   const [accounts, setAccounts] = useState<AccountType[]>()
   const [accountOptions, setAccountOptions] = useState<Item[]>()
+  const [budgets, setBudgets] = useState<BudgetType[]>()
   const [budgetOptions, setBudgetOptions] = useState<Item[]>()
   // errors
   const [accountIsInvalid, setAccountIsInvalid] = useState<boolean>(false);
@@ -47,8 +49,8 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
     setAmountExpense('')
     setDescription('')
     setDate(new Date)
-    setBudget('')
-    setAccount('')
+    setBudgetId(undefined)
+    setAccountId(undefined)
   }
 
 
@@ -65,37 +67,45 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
       return
     }
 
-    if (!budget) {
+    if (!budgetId) {
       setBudgetIsInvalid(true)
       return
     }
 
-    if (!account) {
+    if (!accountId) {
       setAccountIsInvalid(true)
       return
     }
 
-    const account_id = parseInt(account)
+    // find budget and account objects
+    const selectedBudget = budgets?.find(budget => budget.id?.toString() === budgetId)
+    const selectedAccount = accounts?.find(account => account.id?.toString() === accountId)
+
     const expenseAmount = parseFloat(amountExpense)
     let total = 0
     getTotal().then(row => { total = row?.total ?? 0 })
 
-    const payload: BalanceType = {
-      amount: expenseAmount,
-      type: 'expense',
-      description,
-      created_at: date,
-      account_id,
-      budget_id: parseInt(budget!),
-      current_balance: total - expenseAmount
-    }
+    if (selectedAccount && selectedBudget) {
+      const payload: BalanceType = {
+        id: null,
+        amount: expenseAmount,
+        type: 'expense',
+        description,
+        created_at: date,
+        account_name: selectedAccount?.name,
+        budget_name: selectedBudget?.name,
+        current_balance: total - expenseAmount
+      }
 
-    insertToBalance(payload)
-      .then(() => {
-        handleClose(false)
-        reset()
-        ToastAndroid.show("Gasto agregado con éxito", ToastAndroid.BOTTOM)
-      })
+      insertToBalance(payload, selectedAccount, selectedBudget)
+        .then(() => {
+          handleClose(false)
+          reset()
+          ToastAndroid.show("Gasto agregado con éxito", ToastAndroid.BOTTOM)
+        })
+    } else {
+      ToastAndroid.show("Error al agregar el gasto", ToastAndroid.BOTTOM)
+    }
   }
 
 
@@ -107,6 +117,7 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
     })
     // budget options
     getAllBudgets().then(budgets => {
+      setBudgets(budgets)
       setBudgetOptions(budgets.map(r => ({ value: r.id?.toString(), label: r.name })) as Item[])
     })
   }, [isOpen])
@@ -143,7 +154,7 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
           defaultValue=""
           label="Presupuesto"
           options={budgetOptions ?? []}
-          onValueChange={setBudget}
+          onValueChange={setBudgetId}
           errorLabel="El presupuesto es obligatorio"
         />
         {/* Account */}
@@ -151,7 +162,7 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
           label="Cuenta"
           defaultValue=""
           isInvalid={accountIsInvalid}
-          onValueChange={setAccount}
+          onValueChange={setAccountId}
           options={accountOptions ?? []}
           errorLabel="Seleccione una cuenta"
         />

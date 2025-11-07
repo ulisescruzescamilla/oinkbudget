@@ -19,7 +19,6 @@ const Tab = () => {
 
   // View data
   const [budgets, setBudgets] = useState<BudgetType[]>([])
-  console.debug("Budgets:", budgets)
   const [budgetSelected, setBudgetSelected] = useState<BudgetType | null>(null)
 
   const handleCloseModal = () => {
