@@ -67,20 +67,3 @@ export const initDatabase = async () => {
 
   `)
 }
-
-export const testDB = async() => {
-  const db = await getDBConnection()
-
-  try {
-  
-    const result = await db.getAllSync(
-      `SELECT * 
-      FROM budgets;`
-    );
-
-  console.debug(result)
-  } catch (error) {
-    console.error(error)
-  }
-
-}
