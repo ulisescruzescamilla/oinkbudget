@@ -75,6 +75,12 @@ export const insertToBalance = async (balance: BalanceType, account: AccountType
 
         if (balance.type === 'income') {
           amount = amount + balance.amount
+          database.runAsync(`INSERT INTO incomes (amount, description, account_id, created_at) VALUES (?,?,?,?);`, [
+            balance.amount,
+            balance.description,
+            account.id,
+            `${dateParsed} ${timeParsed}`,
+          ])
         }
 
         database.runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [amount, account.id])
