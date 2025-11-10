@@ -31,7 +31,8 @@ export const initDatabase = async () => {
   id INTEGER PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
   amount REAL NOT NULL,
-  type TEXT NOT NULL
+  type TEXT NOT NULL,
+  hidden INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS expenses (
@@ -66,21 +67,4 @@ export const initDatabase = async () => {
   );
 
   `)
-}
-
-export const testDB = async() => {
-  const db = await getDBConnection()
-
-  try {
-  
-    const result = await db.getAllSync(
-      `SELECT * 
-      FROM budgets;`
-    );
-
-  console.debug(result)
-  } catch (error) {
-    console.error(error)
-  }
-
 }

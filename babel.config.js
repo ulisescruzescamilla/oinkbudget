@@ -40,7 +40,9 @@ module.exports = function (api) {
             "mdi:chevron-down",
             "mdi:chevron-up",
             "raphael:arrowup",
-            "raphael:arrowdown"
+            "raphael:arrowdown",
+            "tabler:eye",
+            "tabler:eye-closed"
           ]
         }
       ]

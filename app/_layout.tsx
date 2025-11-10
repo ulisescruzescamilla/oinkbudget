@@ -15,7 +15,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
-import { initDatabase, testDB } from '@/database';
+import { initDatabase } from '@/database';
 import * as SQLite from 'expo-sqlite'
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 

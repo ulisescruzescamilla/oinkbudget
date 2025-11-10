@@ -2,18 +2,16 @@ import { PrimaryButton, BudgetAccordion, GradientView } from "@/components/mine"
 import { StyleSheet, View, Text } from "react-native"
 import { Card } from "@/components/ui/card"
 import { Heading } from "@/components/ui/heading"
-import { LinearGradient } from "@/components/ui/linear-gradient"
 import { SafeAreaView } from "react-native-safe-area-context"
 import React, { useCallback, useEffect, useState } from "react"
 import { AddBudget } from "@/components/mine/actions/AddBudget"
 import { BudgetType } from "@/types/BudgetType"
 import { deleteBudget, getAllBudgets, getBudgetById } from "@/database/budgetRepository"
 import { DeleteValidationModal } from "@/components/mine/actions/DeleteValidationModal"
-import { cashFormat } from "@/utils/formatting"
 import { useFocusEffect } from "expo-router"
 
 const Tab = () => {
-  const [toogle, setToggle] = useState<boolean>(false)
+  const [toggle, setToggle] = useState<boolean>(false)
   const [deleteToggle, setDeleteToggle] = useState<boolean>(false)
   const [isEdit, setIsEdit] = useState<boolean>(false)
 
@@ -27,29 +25,40 @@ const Tab = () => {
     setBudgetSelected(null)
   }
 
-  const onDeleteBudget = () => {
+  const onDeleteBudget = async () => {
     if (budgetSelected) {
-      deleteBudget(budgetSelected)
+      await deleteBudget(budgetSelected)
       setDeleteToggle(false)
       setBudgetSelected(null)
+      // Refresh budgets list after deletion
+      const data = await getAllBudgets()
+      setBudgets(data)
     }
   }
 
+  const refreshBudgets = useCallback(async () => {
+    const data = await getAllBudgets()
+    setBudgets(data)
+  }, [])
+
   useFocusEffect(
     useCallback(() => {
-      getAllBudgets().then((data) => setBudgets(data))
-    }, [])
-  );
+      refreshBudgets()
+    }, [refreshBudgets])
+  )
 
+  // Refresh budgets when modal closes (after add/edit operations)
   useEffect(() => {
-    getAllBudgets().then((data) => setBudgets(data))
-  }, [setToggle, onDeleteBudget])
+    if (!toggle) {
+      refreshBudgets()
+    }
+  }, [toggle, refreshBudgets])
 
   return (
     <SafeAreaView style={styles.content}>
       {/* Add / Edit Budget Accordion */}
       <AddBudget
-        open={toogle}
+        open={toggle}
         handleClose={handleCloseModal}
         budget={budgetSelected}
         isEdit={isEdit}

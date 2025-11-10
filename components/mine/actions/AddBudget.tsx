@@ -21,7 +21,6 @@ export const AddBudget = ({ open, handleClose, budget = null, isEdit = false }: 
   const [name, setName] = useState<string>("")
   const [percentage, setPercentage] = useState<number>(30)
   const [maxLimit, setMaxLimit] = useState<number>(0)
-  console.debug("Max limit:", maxLimit)
   // errors
   const [nameError, setNameError] = useState<boolean>(false)
   const [percentageError, setPercentageError] = useState<boolean>(false)
@@ -42,7 +41,7 @@ export const AddBudget = ({ open, handleClose, budget = null, isEdit = false }: 
       setNameError(false)
       setPercentageError(false)
     }
-  }, [open, isEdit, budget])
+  }, [open])
 
   useEffect(() => {
     getMaxPercentage()
@@ -50,7 +49,7 @@ export const AddBudget = ({ open, handleClose, budget = null, isEdit = false }: 
         const currentPercentage = isEdit && budget ? budget.percentage_value : 0
         setMaxLimit(100 - ((row?.sum_percentage ?? 0) - currentPercentage))
       })
-  }, [open, isEdit, budget])
+  }, [open])
 
   const submit = () => {
     if (name.length === 0 || name.length > 255) {

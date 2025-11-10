@@ -79,7 +79,6 @@ npm run ios        # iOS simulator
 **Database Debugging**:
 - Drizzle Studio integration via `useDrizzleStudio(db)` in `_layout.tsx`
 - Access at development URL when running
-- Test queries in `database/index.ts` `testDB()` function
 
 **Code Organization**:
 - Barrel exports in `components/mine/index.ts` for clean imports
