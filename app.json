@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "oinkbudget",
+    "name": "Oink Budget",
     "slug": "oinkbudget",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -41,19 +41,25 @@
           "enableFTS": true,
           "useSQLCipher": true,
           "android": {
-            // Override the shared configuration for Android
             "enableFTS": false,
             "useSQLCipher": false
           },
           "ios": {
-            // You can also override the shared configurations for iOS
-            "customBuildFlags": ["-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"]
+            "customBuildFlags": [
+              "-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"
+            ]
           }
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3a376e48-5cbb-4cf2-80a8-8f9d66bd79f7"
+      }
     }
   }
 }
