@@ -4,5 +4,6 @@ export interface AccountType {
   id: number | null;
   name: string;
   amount: number;
-  type: KindOfAccountType
+  type: KindOfAccountType;
+  hidden: boolean;
 }

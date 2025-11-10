@@ -7,9 +7,9 @@ import { ActionCard } from "./ActionCard";
 import { InputText } from "../forms/InputText";
 import { InputOptions } from "../forms/InputOptions";
 import { Text, View } from 'react-native'
+import { InputCheck } from "../forms/InputCheck";
+import { createAccount, updateAccount } from "@/database/accountRepository";
 
-
-// TODO refactor Action card with open/handler props
 
 interface AddAccountProps {
   open: boolean,
@@ -34,40 +34,10 @@ const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProp
   const [name, setName] = useState<string>(editAccount ? editAccount.name : '')
   const [amount, setAmount] = useState<string>(editAccount ? editAccount.amount.toString() : '')
   const [type, setType] = useState<KindOfAccountType>(editAccount ? editAccount.type : 'debit_card')
+  const [isHidden, setIsHidden] = useState<boolean>(editAccount ? editAccount.hidden : false)
   // refs
   const amountRef = useRef(null)
   const typeRef = useRef(null)
-  // DB
-  const database = SQLite.useSQLiteContext()
-
-  const insertAccount = async (account: AccountType) => {
-    try {
-      database.runAsync("INSERT INTO accounts (name, type, amount) VALUES (?,?,?);", [
-        account.name,
-        account.type,
-        account.amount
-      ])
-
-    } catch (error) {
-      console.error(error)
-      // todo make a notification component
-    }
-  }
-
-  const updateAccount = async (account: AccountType) => {
-    try {
-      database.runAsync("UPDATE accounts SET name = ?, amount = ?, type = ? WHERE id = ?;", [
-        account.name,
-        account.amount,
-        account.type,
-        account.id
-      ])
-
-    } catch (error) {
-      console.error(error)
-      // todo make a notification component
-    }
-  }
 
   useEffect(() => {
     if (editable && editAccount) {
@@ -92,23 +62,24 @@ const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProp
 
     handleClose(false)
 
-    const account = {
+    const account: AccountType = {
       name: name.trim(),
       amount: parseFloat(amount),
-      type
+      type,
+      hidden: isHidden
     } as AccountType
 
     if (editable) {
       updateAccount({ id: editAccount?.id, ...account } as AccountType)
     } else {
-      insertAccount(account)
+      createAccount(account)
     }
 
   }
 
   return (
     <ActionCard open={open} handleClose={handleClose}>
-      <VStack className="w-full" space='sm'>
+      <VStack className="w-full" space='md'>
         {/* Name */}
         <InputText
           isInvalid={nameError}
@@ -142,6 +113,14 @@ const AddAccount = ({ open, handleClose, editAccount, editable }: AddAccountProp
           ref={typeRef}
           label="Tipo de cuenta"
           errorLabel="El tipo de cuenta es requerido"
+        />
+        {/* Is Hidden */}
+        <InputCheck
+          isDisabled={false}
+          isInvalid={false}
+          value={isHidden ? 'true' : 'false'}
+          onChange={setIsHidden}
+          label="Ocultar cuenta del total general"
         />
         <View className="mt-4">
           <PrimaryButton onPress={onSubmit}>

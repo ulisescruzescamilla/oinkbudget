@@ -7,7 +7,7 @@ export const getTotal = async (): Promise<{total: number} | undefined | null> =>
   const db = await getDBConnection()
 
   try {
-    return db.getFirstAsync("SELECT SUM(amount) as total FROM accounts;")
+    return db.getFirstAsync("SELECT SUM(amount) as total FROM accounts WHERE hidden = 0;")
   } catch (error) {
     console.error(error)
   }

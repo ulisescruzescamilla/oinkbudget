@@ -17,6 +17,9 @@ import { TransferAccount } from "@/components/mine/actions/TransferAccount"
 import { DeleteValidationModal } from "@/components/mine/actions/DeleteValidationModal"
 import { getTotal } from "@/database/balanceRepository"
 import { useFocusEffect } from "expo-router"
+import { HStack } from "@/components/ui/hstack"
+import { Grid, GridItem } from "@/components/ui/grid"
+import { Divider } from "@/components/ui/divider"
 
 
 interface BalanceType {
@@ -41,8 +44,6 @@ const Tab = () => {
       getTotal().then(r => setBalance({ ...balance, total: r.total }))
 
       return () => {
-        // This code will run when the screen blurs (e.g., navigating away)
-        console.log('Screen blurred!');
       };
     }, [])
   );
@@ -114,13 +115,25 @@ const Tab = () => {
                   </TouchableOpacity>
                 </View>
               }>
-                <View key={index} className="w-full p-3">
-                  <View className="flex flex-row items-center gap-4 ">
-                    <View className="w-1/4"><Heading>{account.name}</Heading></View>
-                    <View className="w-1/4"><Text>{cashFormat(account.amount)}</Text></View>
-                    <View className="w-1/4"><Text>{account.type}</Text></View>
-                    <Iconify icon='tabler:grip-vertical' size={20} />
-                  </View>
+                <View key={index} className="w-full p-2">
+                  <Grid className="gap-4" _extra={{ className: 'grid-cols-10' }}>
+                    <GridItem _extra={{ className: 'col-span-3' }}>
+                      <View className=""><Heading>{account.name}</Heading></View>
+                    </GridItem>
+                    <GridItem _extra={{ className: 'col-span-3' }}>
+                      <View className=""><Text>{cashFormat(account.amount)}</Text></View>
+                    </GridItem>
+                    <GridItem _extra={{ className: 'col-span-2' }}>
+                      <View className=""><Text>{account.type}</Text></View>
+                    </GridItem>
+                    <GridItem _extra={{ className: 'col-span-1' }}>
+                      <View className="">{account.hidden ? <Iconify icon="tabler:eye-closed" /> : <Iconify icon="tabler:eye" />}</View>
+                    </GridItem>
+                    <GridItem _extra={{ className: 'col-span-1' }}>
+                      <View className=""><Iconify icon='tabler:grip-vertical' size={20} /></View>
+                    </GridItem>
+                    <Divider className="w-full" />
+                  </Grid>
                 </View>
               </SwipeableRow>
             ))}

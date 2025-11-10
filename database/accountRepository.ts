@@ -5,10 +5,11 @@ export const createAccount = async (account: AccountType) => {
   const db = await getDBConnection()
 
   try {
-      db.runAsync("INSERT INTO accounts (name, type, amount) VALUES (?,?,?);", [
+      db.runAsync("INSERT INTO accounts (name, type, amount, hidden) VALUES (?, ?, ?, ?);", [
         account.name,
         account.type,
-        account.amount
+        account.amount,
+        account.hidden
       ])
 
     } catch (error) {
@@ -40,14 +41,15 @@ export const deleteAccount = async(account: AccountType) => {
 }
 
 export const updateAccount = async(newData: AccountType) => {
-  const db = getDBConnection()
+  const db = await getDBConnection()
 
   try {
     if (newData?.id) {
-      return (await db).runAsync("UPDATE accounts SET name = ?, amount = ?, type = ? WHERE id = ?;", [
+      db.runAsync("UPDATE accounts SET name = ?, amount = ?, type = ?, hidden = ? WHERE id = ?;", [
           newData.name,
           newData.amount,
           newData.type,
+          newData.hidden,
           newData.id
         ])
     }
