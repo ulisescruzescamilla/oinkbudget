@@ -9,6 +9,7 @@ import { BudgetType } from "@/types/BudgetType"
 import { deleteBudget, getAllBudgets, getBudgetById } from "@/database/budgetRepository"
 import { DeleteValidationModal } from "@/components/mine/actions/DeleteValidationModal"
 import { useFocusEffect } from "expo-router"
+import { ScrollView } from "react-native-gesture-handler"
 
 const Tab = () => {
   const [toggle, setToggle] = useState<boolean>(false)
@@ -72,26 +73,28 @@ const Tab = () => {
         <Heading className="text-2xl color-white">Presupuestos</Heading>
       </GradientView>
       <Card size="md" variant="elevated" className="p-2 m-4" style={{ flex: 1 }}>
-        {budgets.length === 0 && (
-          <View className="flex flex-row justify-center">
-            <Heading>Ya puedes agregar tus presupuestos</Heading>
-          </View>
-        )}
-        {budgets.length > 0 && budgets.map((budget) => (
-          <BudgetAccordion
-            key={budget.id}
-            budget={budget}
-            onDelete={() => {
-              setBudgetSelected(budget)
-              setDeleteToggle(true)
-            }}
-            onEdit={() => {
-              setBudgetSelected(budget)
-              setIsEdit(true)
-              setToggle(true)
-            }}
-          />
-        ))}
+        <ScrollView>
+          {budgets.length === 0 && (
+            <View className="flex flex-row justify-center">
+              <Heading>Ya puedes agregar tus presupuestos</Heading>
+            </View>
+          )}
+          {budgets.length > 0 && budgets.map((budget) => (
+            <BudgetAccordion
+              key={budget.id}
+              budget={budget}
+              onDelete={() => {
+                setBudgetSelected(budget)
+                setDeleteToggle(true)
+              }}
+              onEdit={() => {
+                setBudgetSelected(budget)
+                setIsEdit(true)
+                setToggle(true)
+              }}
+            />
+          ))}
+        </ScrollView>;
       </Card>
       <View style={styles.bottomButtonContainer}>
         <PrimaryButton onPress={() => {
