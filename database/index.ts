@@ -42,8 +42,8 @@ export const initDatabase = async () => {
   account_id INTEGER NOT NULL,
   budget_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (account_id) REFERENCES accounts(id),
-  FOREIGN KEY (budget_id) REFERENCES budgets(id)
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+  FOREIGN KEY (budget_id) REFERENCES budgets(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS incomes (
@@ -52,7 +52,7 @@ export const initDatabase = async () => {
   description TEXT NOT NULL,
   account_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (account_id) REFERENCES accounts(id)
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS balances (

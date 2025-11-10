@@ -5,7 +5,7 @@ import { getDBConnection } from "."
 export const getAllBudgets = async (): Promise<BudgetType[]> => {
   const db = await getDBConnection()
   try {
-    return await db.getAllAsync<BudgetType>("SELECT * FROM budgets ORDER BY budgets.name DESC;")
+    return db.getAllAsync<BudgetType>("SELECT * FROM budgets ORDER BY budgets.name DESC;")
   } catch (error) {
     console.error(error)
     return []
@@ -31,7 +31,7 @@ export const deleteBudget = async (budget: BudgetType) => {
   const db = await getDBConnection()
 
   try {
-    return await db.runAsync("DELETE FROM budgets WHERE id = ?;", [
+    return db.runAsync("DELETE FROM budgets WHERE id = ?;", [
         budget.id
       ])
   } catch (error) {

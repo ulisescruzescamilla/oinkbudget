@@ -28,18 +28,21 @@ const Tab = () => {
 
   const onDeleteBudget = async () => {
     if (budgetSelected) {
-      await deleteBudget(budgetSelected)
-      setDeleteToggle(false)
-      setBudgetSelected(null)
-      // Refresh budgets list after deletion
-      const data = await getAllBudgets()
-      setBudgets(data)
+      deleteBudget(budgetSelected).then(() => {
+        setDeleteToggle(false)
+        setBudgetSelected(null)
+        // Refresh budgets list after deletion
+        getAllBudgets().then((data) => {
+          setBudgets(data)
+        })
+      })
     }
   }
 
   const refreshBudgets = useCallback(async () => {
-    const data = await getAllBudgets()
-    setBudgets(data)
+    getAllBudgets().then((data) => {
+      setBudgets(data)
+    })
   }, [])
 
   useFocusEffect(

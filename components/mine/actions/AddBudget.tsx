@@ -17,6 +17,21 @@ interface AddBudgetProps {
   isEdit?: boolean,
 }
 
+const colors: string[] = [
+  'bg-emerald-400',
+  'bg-amber-400',
+  'bg-lime-400',
+  'bg-cyan-400',
+  'bg-violet-400',
+  'bg-fuchsia-400',
+  'bg-rose-400',
+]
+
+const randomColor = (): string => {
+  const randomIndex = Math.floor(Math.random() * colors.length)
+  return colors[randomIndex]
+}
+
 export const AddBudget = ({ open, handleClose, budget = null, isEdit = false }: AddBudgetProps) => {
   const [name, setName] = useState<string>("")
   const [percentage, setPercentage] = useState<number>(30)
@@ -67,13 +82,15 @@ export const AddBudget = ({ open, handleClose, budget = null, isEdit = false }: 
       total = r?.total ?? 0
       const amountPercentage = (total * percentage) / 100
 
+      const defaultColor = randomColor()
+
       const budgetData: BudgetType = {
         id: isEdit && budget ? budget.id : null,
         name: name.trim(),
         max_limit: amountPercentage,
         expense_amount: isEdit && budget ? budget.expense_amount : 0,
         percentage_value: percentage,
-        color: isEdit && budget ? budget.color : '#8637CF', // TODO add a color picker
+        color: isEdit && budget ? budget.color : defaultColor,
       }
 
       if (isEdit && budget) {
