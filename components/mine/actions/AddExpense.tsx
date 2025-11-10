@@ -3,8 +3,6 @@ import { VStack } from "@/components/ui/vstack";
 import { useEffect, useRef, useState } from "react";
 import { ToastAndroid, View } from "react-native";
 import type { Item } from "../select";
-import type { ExpenseType } from '@/types/ExpenseType';
-import { createExpense } from "@/database/expenseRepository";
 import { ActionCard } from "./ActionCard";
 import { InputText } from "../forms/InputText";
 import { InputOptions } from "../forms/InputOptions";
@@ -16,6 +14,7 @@ import { AccountType } from "@/types/AccountType";
 import { getTotal, insertToBalance } from "@/database/balanceRepository";
 import { BalanceType } from "@/types/BalanceType";
 import { BudgetType } from "@/types/BudgetType";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 interface AddExpenseProps {
   isOpen: boolean;
@@ -44,6 +43,8 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
   const descriptionRef = useRef(null)
   const budgedRef = useRef(null)
   const accountRef = useRef(null)
+  // toggle
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false)
 
   const reset = () => {
     setAmountExpense('')
@@ -53,33 +54,7 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
     setAccountId(undefined)
   }
 
-
-  const onsubmit = () => {
-
-    // validations
-    if (!amountExpense || parseFloat(amountExpense) === 0) {
-      setAmountIsInvalid(true)
-      return
-    }
-
-    if (!description || description.length <= 1 || description.length >= 255) {
-      setDescriptionIsInvalid(true)
-      return
-    }
-
-    if (!budgetId) {
-      setBudgetIsInvalid(true)
-      return
-    }
-
-    if (!accountId) {
-      setAccountIsInvalid(true)
-      return
-    }
-
-    // find budget and account objects
-    const selectedBudget = budgets?.find(budget => budget.id?.toString() === budgetId)
-    const selectedAccount = accounts?.find(account => account.id?.toString() === accountId)
+  const saveExpense = (selectedAccount: AccountType, selectedBudget: BudgetType) => {
 
     const expenseAmount = parseFloat(amountExpense)
     let total = 0
@@ -108,6 +83,47 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
     }
   }
 
+  const onsubmit = () => {
+
+    // validations
+    if (!amountExpense || parseFloat(amountExpense) === 0) {
+      setAmountIsInvalid(true)
+      return
+    }
+
+    if (!description || description.length <= 1 || description.length >= 255) {
+      setDescriptionIsInvalid(true)
+      return
+    }
+
+    if (!budgetId) {
+      setBudgetIsInvalid(true)
+      return
+    }
+
+    if (!accountId) {
+      setAccountIsInvalid(true)
+      return
+    }
+
+    // find budget and account objects
+    const selectedBudget = budgets?.find(budget => budget.id?.toString() === budgetId)
+    const selectedAccount = accounts?.find(account => account.id?.toString() === accountId)
+
+    // make an latest validation if expese amount reaches the maximum budget amount
+    if (selectedBudget) {
+      const restBudged = selectedBudget.max_limit - selectedBudget.expense_amount
+      if (selectedBudget && (parseFloat(amountExpense) > restBudged)) {
+        setShowConfirmModal(true)
+        return
+      }
+    }
+
+    if (selectedAccount && selectedBudget) {
+      saveExpense(selectedAccount, selectedBudget)
+    }
+  }
+
 
   useEffect(() => {
     // account options
@@ -125,6 +141,21 @@ const AddExpense = ({ isOpen, handleClose }: AddExpenseProps) => {
 
   return (
     <ActionCard open={isOpen} handleClose={() => handleClose(!isOpen)}>
+      <ConfirmationModal
+        toggle={showConfirmModal}
+        setToggle={setShowConfirmModal}
+        title="Confirmar gasto"
+        message="El monto del gasto excede el límite del presupuesto. ¿Desea continuar?"
+        onConfirm={() => {
+          setShowConfirmModal(false);
+          const selectedBudget = budgets?.find(budget => budget.id?.toString() === budgetId)
+          const selectedAccount = accounts?.find(account => account.id?.toString() === accountId)
+
+          if (selectedAccount && selectedBudget) {
+            saveExpense(selectedAccount, selectedBudget)
+          }
+        }}
+      />
       <VStack className="w-full" space='sm'>
         {/* Amount */}
         <InputText

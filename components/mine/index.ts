@@ -13,6 +13,7 @@ import { GradientView } from './view/GradientView'
 import { SecondaryButton } from './buttons/SecondaryButton'
 import { CancelButton } from './buttons/CancelButton'
 import { ThemedAccordion } from './accordion/ThemedAccordion'
+import { ConfirmationModal } from './actions/ConfirmationModal'
 
 export {
   ProgressBar,
@@ -32,5 +33,7 @@ export {
   GradientView,
   SecondaryButton,
   CancelButton,
-  ThemedAccordion
+  ThemedAccordion,
+  // actions
+  ConfirmationModal
 }
