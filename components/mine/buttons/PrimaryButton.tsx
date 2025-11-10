@@ -6,10 +6,27 @@ interface PrimaryButtonProps {
   onPress: () => void,
   children: React.ReactNode | string,
   className?: string,
+  size?: 'sm' | 'md' | 'lg'
 }
 
-export const PrimaryButton = ({ onPress, children, className = '' }: PrimaryButtonProps) => {
+export const PrimaryButton = ({ onPress, children, className = '', size = 'md' }: PrimaryButtonProps) => {
   const isChildrenString = typeof children === 'string'
+
+  switch (size) {
+    case 'sm':
+      className += isChildrenString ? ' px-3 py-2 text-sm' : ' p-2'
+      break;
+    case 'lg':
+      className += isChildrenString ? ' px-6 py-4 text-lg' : ' p-4'
+      break;
+    case 'md':
+      className += isChildrenString ? ' px-4 py-3 text-base' : ' p-3'
+      break;
+
+    default:
+      className += isChildrenString ? ' px-4 py-3 text-base' : ' p-3'
+      break;
+  }
 
   return (
     <TouchableOpacity onPress={onPress}>

@@ -52,38 +52,50 @@ export const insertToBalance = async (balance: BalanceType, account: AccountType
   const dateParsed = balance.created_at.toISOString().split('T')[0]
   const timeParsed = balance.created_at.toISOString().split('T')[1]
 
-    database.withTransactionAsync(async () => {
-      // Insert into history / balance table
-      database.runAsync("INSERT INTO balances (amount, description, current_balance, type, account_name, budget_name, created_at) VALUES (?,?,?,?,?,?,?);",
-        [balance.amount, balance.description, balance.current_balance, balance.type, balance.account_name, balance.budget_name, `${dateParsed} ${timeParsed}`]);
-
-      // update account
-      database.getFirstAsync("SELECT amount FROM accounts WHERE id = ?;", [account.id])
-      .then((result) => {
-        let amount = parseFloat(result.amount)
-
-        if (balance.type === 'expense' && budget?.id) {
-          amount = amount - balance.amount
-          database.runAsync(`INSERT INTO expenses (amount, description, account_id, created_at, budget_id) VALUES (?,?,?,?,?);`, [
-            balance.amount,
-            balance.description,
-            account.id,
-            `${dateParsed} ${timeParsed}`,
+    try {
+      database.withTransactionAsync(async () => {
+        // Insert into history / balance table
+        database.runAsync("INSERT INTO balances (amount, description, current_balance, type, account_name, budget_name, created_at) VALUES (?,?,?,?,?,?,?);",
+          [balance.amount, balance.description, balance.current_balance, balance.type, balance.account_name, balance.budget_name, `${dateParsed} ${timeParsed}`]);
+    
+        // update account
+        database.getFirstAsync("SELECT amount FROM accounts WHERE id = ?;", [account.id])
+        .then((result) => {
+          let amount = parseFloat(result.amount)
+    
+          if (balance.type === 'expense' && budget?.id) {
+            amount = amount - balance.amount
+            database.runAsync(`INSERT INTO expenses (amount, description, account_id, created_at, budget_id) VALUES (?,?,?,?,?);`, [
+              balance.amount,
+              balance.description,
+              account.id,
+              `${dateParsed} ${timeParsed}`,
+              budget.id
+            ])
+          }
+    
+          if (balance.type === 'income') {
+            amount = amount + balance.amount
+            database.runAsync(`INSERT INTO incomes (amount, description, account_id, created_at) VALUES (?,?,?,?);`, [
+              balance.amount,
+              balance.description,
+              account.id,
+              `${dateParsed} ${timeParsed}`,
+            ])
+          }
+    
+          database.runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [amount, account.id])
+        })
+    
+        // update budget if expense
+        if (budget?.id && balance.type === 'expense') {
+          database.runAsync("UPDATE budgets SET expense_amount = ?  WHERE id = ?;", [
+            budget.expense_amount + balance.amount,
             budget.id
           ])
         }
-
-        if (balance.type === 'income') {
-          amount = amount + balance.amount
-          database.runAsync(`INSERT INTO incomes (amount, description, account_id, created_at) VALUES (?,?,?,?);`, [
-            balance.amount,
-            balance.description,
-            account.id,
-            `${dateParsed} ${timeParsed}`,
-          ])
-        }
-
-        database.runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [amount, account.id])
       })
-    })
-}
+    } catch (error) {
+      console.error(error)
+    }
+  }
