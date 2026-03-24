@@ -97,7 +97,7 @@ const Tab = () => {
               }}
             />
           ))}
-        </ScrollView>;
+        </ScrollView>
       </Card>
       <View style={styles.bottomButtonContainer}>
         <PrimaryButton onPress={() => {

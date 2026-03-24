@@ -46,6 +46,31 @@ export const getBalanceByDate = async (date: string) => {
   }
 }
 
+export const getLatestExpenses = async (limit = 5) => {
+  const db = await getDBConnection()
+  try {
+    return db.getAllAsync<BalanceType>(
+      `SELECT * FROM balances WHERE type = 'expense' ORDER BY id DESC LIMIT ?;`,
+      [limit]
+    )
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const getTodayExpensesTotal = async (): Promise<{ total: number } | null | undefined> => {
+  const db = await getDBConnection()
+  const today = new Date().toISOString().split('T')[0]
+  try {
+    return db.getFirstAsync(
+      `SELECT SUM(amount) as total FROM balances WHERE type = 'expense' AND DATE(created_at) = DATE(?);`,
+      [today]
+    )
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 export const insertToBalance = async (balance: BalanceType, account: AccountType, budget?: BudgetType) => {
   const database = await getDBConnection()
 
@@ -59,9 +84,9 @@ export const insertToBalance = async (balance: BalanceType, account: AccountType
           [balance.amount, balance.description, balance.current_balance, balance.type, balance.account_name, balance.budget_name, `${dateParsed} ${timeParsed}`]);
     
         // update account
-        database.getFirstAsync("SELECT amount FROM accounts WHERE id = ?;", [account.id])
+        database.getFirstAsync<{ amount: number }>("SELECT amount FROM accounts WHERE id = ?;", [account.id])
         .then((result) => {
-          let amount = parseFloat(result.amount)
+          let amount = parseFloat(String(result?.amount ?? 0))
     
           if (balance.type === 'expense' && budget?.id) {
             amount = amount - balance.amount

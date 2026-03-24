@@ -117,14 +117,11 @@ const Tab = () => {
               }>
                 <View key={index} className="w-full p-2">
                   <Grid className="gap-4" _extra={{ className: 'grid-cols-10' }}>
-                    <GridItem _extra={{ className: 'col-span-3' }}>
+                    <GridItem _extra={{ className: 'col-span-4' }}>
                       <View className=""><Heading>{account.name}</Heading></View>
                     </GridItem>
-                    <GridItem _extra={{ className: 'col-span-3' }}>
+                    <GridItem _extra={{ className: 'col-span-4' }}>
                       <View className=""><Text>{cashFormat(account.amount)}</Text></View>
-                    </GridItem>
-                    <GridItem _extra={{ className: 'col-span-2' }}>
-                      <View className=""><Text>{account.type}</Text></View>
                     </GridItem>
                     <GridItem _extra={{ className: 'col-span-1' }}>
                       <View className="">{account.hidden ? <Iconify icon="tabler:eye-closed" /> : <Iconify icon="tabler:eye" />}</View>
