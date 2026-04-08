@@ -9,105 +9,66 @@ import { AccountType } from "@/types/AccountType";
 import { useEffect, useState } from "react";
 import SelectOptions from "../select";
 import type { Item } from "../select";
-import * as SQLite from 'expo-sqlite';
 
 interface TransferAccountProps {
   showModal: boolean;
-  setShowModal: (toggle: boolean) => void,
-  originAccount: AccountType | undefined
+  setShowModal: (toggle: boolean) => void;
+  originAccount: AccountType | undefined;
+  accounts: AccountType[];
+  onTransfer: (to: AccountType, amount: number) => void;
 }
 
-export const TransferAccount = ({ showModal, setShowModal, originAccount }: TransferAccountProps) => {
+export const TransferAccount = ({ showModal, setShowModal, originAccount, accounts, onTransfer }: TransferAccountProps) => {
 
-  const [destinationAccount, setDestinationAccount] = useState<string>('')
+  const [destinationId, setDestinationId] = useState<string>('')
   const [amount, setAmount] = useState<string>('0')
   const [submit, setSubmit] = useState<boolean>(false)
-  const [accounts, setAccounts] = useState<AccountType[]>([])
-  const [accountItems, setAccountItems] = useState<Item[] | []>([])
 
   // errors
   const [amountError, setAmountError] = useState<boolean>(false)
   const [destinationError, setDestinationError] = useState<boolean>(false)
 
-  // DB
-  const database = SQLite.useSQLiteContext()
-
-  const transferBtwAccount = async (origin: AccountType, destination: AccountType, amount: number) => {
-    try {
-      await database.withTransactionAsync(async () => {
-
-        await database.runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [
-          origin.amount - amount,
-          origin.id
-        ])
-
-        await database.runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [
-          destination.amount + amount,
-          destination.id
-        ])
-      })
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  const getAccounts = async () => {
-    try {
-      return await database.getAllAsync<AccountType>("SELECT * FROM accounts;").then(
-        accounts => {
-          setAccounts(accounts)
-          return accounts.map(account => ({
-            value: account.id,
-            label: account.name
-          }))
-        }
-      )
-    } catch (error) {
-      console.error(error)
-      // todo make a notification component
-    }
-  }
+  const accountItems: Item[] = accounts
+    .filter((a) => a.id !== originAccount?.id)
+    .map((a) => ({ value: String(a.id), label: a.name }))
 
   const onSubmit = () => {
-    if (parseInt(amount) <= 0 || parseInt(amount) > originAccount?.amount) {
+    const parsedAmount = parseFloat(amount)
+    if (parsedAmount <= 0 || parsedAmount > (originAccount?.amount ?? 0)) {
       setAmountError(true)
       return
     }
-
-    if (!destinationAccount) {
+    if (!destinationId) {
       setDestinationError(true)
       return
     }
-    setShowModal(false)
 
-    transferBtwAccount(originAccount as AccountType, accounts.find(a => a.id === destinationAccount) as AccountType, parseFloat(amount))
+    const destination = accounts.find((a) => String(a.id) === destinationId)
+    if (!destination) return
+
+    onTransfer(destination, parsedAmount)
+    setShowModal(false)
   }
 
   useEffect(() => {
-    // fill select input
-    getAccounts().then(a => setAccountItems(a))
-
-    // reset values
-    return () => {
+    // reset values when modal closes
+    if (!showModal) {
       setAmount('0')
-      setDestinationAccount('')
+      setDestinationId('')
       setSubmit(false)
+      setAmountError(false)
+      setDestinationError(false)
     }
   }, [showModal])
 
   useEffect(() => {
-    if (destinationAccount && parseInt(amount) >= 0) {
-      setSubmit(true)
-    }
-  }, [amount, destinationAccount])
-
+    setSubmit(!!destinationId && parseFloat(amount) > 0)
+  }, [amount, destinationId])
 
   return (
     <Modal
       isOpen={showModal}
-      onClose={() => {
-        setShowModal(false);
-      }}
+      onClose={() => setShowModal(false)}
       size="md"
     >
       <ModalBackdrop />
@@ -129,7 +90,7 @@ export const TransferAccount = ({ showModal, setShowModal, originAccount }: Tran
             <FormControlLabel>
               <FormControlLabelText>Cuenta Destino</FormControlLabelText>
             </FormControlLabel>
-            <SelectOptions options={accountItems} onValueChange={setDestinationAccount} variant="underlined" size='lg' />
+            <SelectOptions options={accountItems} onValueChange={setDestinationId} variant="underlined" size='lg' />
             <FormControlError>
               <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
               <FormControlErrorText className="text-red-500">
@@ -152,7 +113,7 @@ export const TransferAccount = ({ showModal, setShowModal, originAccount }: Tran
               <InputField
                 autoComplete='off'
                 type='text'
-                keyboardType="numeric" // or "number-pad"
+                keyboardType="numeric"
                 placeholder="$"
                 variant={'outline'}
                 value={amount}
@@ -162,7 +123,7 @@ export const TransferAccount = ({ showModal, setShowModal, originAccount }: Tran
             <FormControlError>
               <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
               <FormControlErrorText className="text-red-500">
-                El monto es requerido y debe ser mayor a 0 y menor o igual a {originAccount?.amount}
+                El monto es requerido, mayor a 0 y menor o igual a {originAccount?.amount}
               </FormControlErrorText>
             </FormControlError>
           </FormControl>
@@ -172,9 +133,7 @@ export const TransferAccount = ({ showModal, setShowModal, originAccount }: Tran
             variant="outline"
             action="secondary"
             className="mr-3"
-            onPress={() => {
-              setShowModal(false);
-            }}
+            onPress={() => setShowModal(false)}
           >
             <ButtonText>Cancelar</ButtonText>
           </Button>

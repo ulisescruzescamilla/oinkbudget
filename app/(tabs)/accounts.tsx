@@ -6,66 +6,86 @@ import { Heading } from "@/components/ui/heading"
 import { LinearGradient } from "@/components/ui/linear-gradient"
 import { Text } from "react-native"
 import { VStack } from "@/components/ui/vstack"
-import { deleteAccount, getAllAccounts } from "@/database/accountRepository"
 import { AccountType } from "@/types/AccountType"
 import { cashFormat } from "@/utils/formatting"
-import { useCallback, useEffect, useState } from "react"
-import { ScrollView, StyleSheet, TouchableOpacity } from "react-native"
+import { useCallback, useMemo, useState } from "react"
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity } from "react-native"
 import Iconify from "react-native-iconify"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { TransferAccount } from "@/components/mine/actions/TransferAccount"
 import { DeleteValidationModal } from "@/components/mine/actions/DeleteValidationModal"
-import { getTotal } from "@/database/balanceRepository"
 import { useFocusEffect } from "expo-router"
 import { HStack } from "@/components/ui/hstack"
 import { Grid, GridItem } from "@/components/ui/grid"
 import { Divider } from "@/components/ui/divider"
-
-
-interface BalanceType {
-  total: number;
-}
+import { useAccounts } from "@/hooks/useAccounts"
+import { Spinner } from "@/components/ui/spinner"
 
 const Tab = () => {
+
+  const { accounts, loading, fieldErrors, refresh, clearFieldErrors, createAccount, updateAccount, removeAccount, transferAccounts } = useAccounts()
 
   const [isActionOpen, setActionOpen] = useState(false)
   const [isTransferOpen, setTransferOpen] = useState(false)
   const [isDeleteOpen, setDeleteOpen] = useState(false)
-
-  const [accounts, setAccounts] = useState<AccountType[]>([])
-
   const [accountSelected, setAccountSelected] = useState<AccountType | undefined>()
-  const [balance, setBalance] = useState<BalanceType>()
   const [isEditable, setIsEditable] = useState<boolean>(false)
 
-  useFocusEffect(
-    useCallback(() => {
-      getAllAccounts().then(fetchedAccounts => setAccounts(fetchedAccounts))
-      getTotal().then(r => setBalance({ ...balance, total: r.total }))
+  // Fetch on screen focus
+  useFocusEffect(useCallback(() => { refresh() }, [refresh]))
 
-      return () => {
-      };
-    }, [])
-  );
+  const totalBalance = useMemo(
+    () => accounts.filter((a) => !a.hidden).reduce((sum, a) => parseFloat(sum) + parseFloat(a.amount), 0),
+    [accounts]
+  )
 
-  useEffect(() => {
-    getAllAccounts().then(fetchedAccounts => setAccounts(fetchedAccounts))
-    getTotal().then(r => setBalance({ ...balance, total: r.total }))
-  }, [isActionOpen, isTransferOpen, isDeleteOpen])
+  const handleSave = async (account: AccountType) => {
+    if (isEditable) {
+      await updateAccount(account)
+    } else {
+      await createAccount(account)
+    }
+    setIsEditable(false)
+    setAccountSelected(undefined)
+
+    // hide action card
+    setActionOpen(false)
+  }
+
+  const handleDelete = async () => {
+    if (accountSelected) {
+      await removeAccount(accountSelected)
+      setDeleteOpen(false)
+      setAccountSelected(undefined)
+    }
+  }
+
+  const handleTransfer = async (to: AccountType, amount: number) => {
+    if (accountSelected) {
+      await transferAccounts(accountSelected, to, amount)
+      setAccountSelected(undefined)
+    }
+  }
 
   return (
     <SafeAreaView style={styles.content}>
       {/* Modals */}
-      <TransferAccount showModal={isTransferOpen} setShowModal={setTransferOpen} originAccount={accountSelected} />
-      <DeleteValidationModal showModal={isDeleteOpen} setShowModal={setDeleteOpen} deleteAction={() => {
-        if (accountSelected) {
-          deleteAccount(accountSelected)
-          setDeleteOpen(false)
-        }
-      }}>
+      <TransferAccount
+        showModal={isTransferOpen}
+        setShowModal={setTransferOpen}
+        originAccount={accountSelected}
+        accounts={accounts}
+        onTransfer={handleTransfer}
+      />
+      <DeleteValidationModal
+        showModal={isDeleteOpen}
+        setShowModal={setDeleteOpen}
+        deleteAction={handleDelete}
+      >
         <Heading>¿Estás seguro de eliminar esta cuenta y sus registros?</Heading>
       </DeleteValidationModal>
-      {/* Content */}
+
+      {/* Header */}
       <LinearGradient
         className="w-full p-2"
         colors={['#8637CF', '#0F55A1']}
@@ -73,63 +93,72 @@ const Tab = () => {
         end={[1, 0]}
       >
         <Heading className="text-2xl color-white">Cuentas</Heading>
+        {loading && <Spinner size="small" className="mt-1" color="white" />}
       </LinearGradient>
+
       {/* General balance */}
       <Card size="md" variant="elevated" className="p-3 m-3">
         <VStack>
           <Heading>Total de tus cuentas</Heading>
-          <Text className="text-lg">{cashFormat(balance?.total)}</Text>
+          <Text className="text-lg">{cashFormat(totalBalance)}</Text>
         </VStack>
       </Card>
 
       {/* Account list */}
       <Card size="md" variant="elevated" className="p-2 m-4">
-        <ScrollView>
-          {!accounts.length && (
+        <ScrollView
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={refresh} />
+          }
+        >
+          {!accounts.length && !loading && (
             <View className="flex flex-row items-center justify-center p-4 text-center">
               <Heading size={'xl'}>Ya puedes crear tu nueva cuenta</Heading>
             </View>
           )}
-          <VStack space={'lg'} className="">
+          <VStack space={'lg'}>
             {accounts.map((account, index) => (
-              <SwipeableRow key={index} options={
-                <View className="flex flex-row gap-2 bg-transparent">
-                  <TouchableOpacity onPress={() => {
-                    setIsEditable(true)
-                    setAccountSelected(account)
-                    setActionOpen(true)
-                  }}>
-                    <Iconify icon='fe:pencil' width={32} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => {
-                    setAccountSelected(account)
-                    setDeleteOpen(true)
-                  }}>
-                    <Iconify icon='tabler:trash' width={32} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => {
-                    setTransferOpen(true)
-                    setAccountSelected(account)
-                  }}>
-                    <Iconify icon='tabler:transfer' width={32} />
-                  </TouchableOpacity>
-                </View>
-              }>
-                <View key={index} className="w-full p-2">
+              <SwipeableRow
+                key={account.id ?? index}
+                options={
+                  <View className="flex flex-row gap-2 bg-transparent">
+                    <TouchableOpacity onPress={() => {
+                      setIsEditable(true)
+                      setAccountSelected(account)
+                      setActionOpen(true)
+                    }}>
+                      <Iconify icon='fe:pencil' width={32} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => {
+                      setAccountSelected(account)
+                      setDeleteOpen(true)
+                    }}>
+                      <Iconify icon='tabler:trash' width={32} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => {
+                      setAccountSelected(account)
+                      setTransferOpen(true)
+                    }}>
+                      <Iconify icon='tabler:transfer' width={32} />
+                    </TouchableOpacity>
+                  </View>
+                }
+              >
+                <View className="w-full p-2">
                   <Grid className="gap-4" _extra={{ className: 'grid-cols-10' }}>
                     <GridItem _extra={{ className: 'col-span-4' }}>
-                      <View className=""><Heading>{account.name}</Heading></View>
+                      <View><Heading>{account.name}</Heading></View>
                     </GridItem>
                     <GridItem _extra={{ className: 'col-span-4' }}>
-                      <View className=""><Text>{cashFormat(account.amount)}</Text></View>
+                      <View><Text>{cashFormat(account.amount)}</Text></View>
                     </GridItem>
                     <GridItem _extra={{ className: 'col-span-1' }}>
-                      <View className="">{account.hidden ? <Iconify icon="tabler:eye-closed" /> : <Iconify icon="tabler:eye" />}</View>
+                      <View>{account.hidden ? <Iconify icon="tabler:eye-closed" /> : <Iconify icon="tabler:eye" />}</View>
                     </GridItem>
                     <GridItem _extra={{ className: 'col-span-1' }}>
-                      <View className=""><Iconify icon='tabler:grip-vertical' size={20} /></View>
+                      <View><Iconify icon='tabler:grip-vertical' size={20} /></View>
                     </GridItem>
-                    <Divider className="w-full" />
+                    {(accounts.length > 0 && (index + 1) != accounts.length) && <Divider className="w-full" />}
                   </Grid>
                 </View>
               </SwipeableRow>
@@ -137,9 +166,25 @@ const Tab = () => {
           </VStack>
         </ScrollView>
       </Card>
-      <AddAccount open={isActionOpen} handleClose={setActionOpen} editAccount={accountSelected} editable={isEditable} />
+
+      <AddAccount
+        loading={loading}
+        open={isActionOpen}
+        handleClose={(open) => {
+          setActionOpen(open)
+          if (!open) {
+            setIsEditable(false)
+            setAccountSelected(undefined)
+            clearFieldErrors()
+          }
+        }}
+        editAccount={accountSelected}
+        editable={isEditable}
+        onSave={handleSave}
+        fieldErrors={fieldErrors}
+      />
       <View style={styles.buttonlayout}>
-        <PrimaryButton onPress={() => setActionOpen(true)}>
+        <PrimaryButton onPress={() => setActionOpen(true)} loading={loading}>
           <Text className="text-2xl text-white">Crear cuenta</Text>
         </PrimaryButton>
       </View>
