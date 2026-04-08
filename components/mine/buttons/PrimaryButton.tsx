@@ -1,4 +1,5 @@
 import { LinearGradient } from "@/components/ui/linear-gradient"
+import { Spinner } from "@/components/ui/spinner"
 import { Text } from "@/components/ui/text"
 import { TouchableOpacity } from "react-native"
 
@@ -6,10 +7,11 @@ interface PrimaryButtonProps {
   onPress: () => void,
   children: React.ReactNode | string,
   className?: string,
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg',
+  loading: boolean;
 }
 
-export const PrimaryButton = ({ onPress, children, className = '', size = 'md' }: PrimaryButtonProps) => {
+export const PrimaryButton = ({ onPress, children, className = '', size = 'md', loading = false }: PrimaryButtonProps) => {
   const isChildrenString = typeof children === 'string'
 
   switch (size) {
@@ -28,8 +30,21 @@ export const PrimaryButton = ({ onPress, children, className = '', size = 'md' }
       break;
   }
 
+  if (loading) {
+    return (
+      <LinearGradient
+        className={`items-center w-full p-3 rounded-full ${className}`}
+        colors={['#e9e9e9', '#707070']}
+        start={[0, 1]}
+        end={[1, 0]}
+      >
+        <Spinner color='white' />
+      </LinearGradient>
+    )
+  }
+
   return (
-    <TouchableOpacity onPress={onPress}>
+    <TouchableOpacity onPress={onPress} disabled={loading}>
       <LinearGradient
         className={`items-center w-full p-3 rounded-full ${className}`}
         colors={['#8637CF', '#0F55A1']}
