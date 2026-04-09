@@ -1,4 +1,4 @@
-# CLAUDE.md
+1# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -61,7 +61,7 @@ Raw SQL queries via `expo-sqlite` — no ORM. The `database/` directory contains
 - `database/accountRepository.ts`, `budgetRepository.ts`, `expenseRepository.ts`, `balanceRepository.ts`
 
 **Schema:**
-- `budgets` — name, max_limit, expense_amount, percentage_value, color
+- `budgets` — name, max_limit, expense_amount, percentage_value, color, start_date, end_date
 - `accounts` — name, amount, type (`cash | debit_card | credit_card`), hidden
 - `expenses` — amount, description, account_id, budget_id, created_at
 - `incomes` — amount, description, account_id, created_at
@@ -83,6 +83,16 @@ Component organization:
 ### Styling
 Tailwind via NativeWind. Custom theme defined in `tailwind.config.js` with semantic color tokens (primary, secondary, error, success), custom font families (Jakarta, Roboto, Space Mono, Inter), and custom shadows.
 
+### Types
+All shared entity interfaces live in `types/` and are the single source of truth across the entire app:
+- `types/AccountType.ts` — `AccountType`, `KindOfAccountType`
+- `types/BudgetType.ts` — `BudgetType`
+- `types/ExpenseType.ts` — `ExpenseType`
+- `types/IncomeType.ts` — `IncomeType`
+- `types/BalanceType.ts` — `BalanceType`
+
+**Rule:** never define duplicate entity interfaces in `services/`, `hooks/`, or components. Services map API responses to these types; hooks work with them directly. If a new entity is needed, add it to `types/` first.
+
 ### Path Aliases
 `@/*` maps to the project root (configured in `tsconfig.json` and `babel.config.js`).
 
@@ -91,6 +101,7 @@ Tailwind via NativeWind. Custom theme defined in `tailwind.config.js` with seman
 - The app is in Spanish — keep UI strings in Spanish.
 - All functions should be documented with TypeDoc comments.
 - Currency is formatted as MXN (Mexican Peso) — see `utils/formatting.ts`.
+- Date formatting helpers live in `utils/formatting.ts`: use `formatApiDate(date)` to serialize `Date` → `Y-m-d` string before sending in API payloads. Never define date formatters inline in services.
 - `components/ui/` contains GluestackUI wrappers — prefer editing `components/mine/` for app-specific logic.
 - SQLite is initialized in the root layout; the Drizzle Studio plugin is available for DB inspection during development.
 - New React Native Architecture is enabled (`app.json`).

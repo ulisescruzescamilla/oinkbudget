@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Text, View } from "react-native";
 import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTitleText, AccordionTrigger } from "@/components/ui/accordion";
 import { Heading } from "@/components/ui/heading";
@@ -10,11 +11,14 @@ import { GradientView } from "../view/GradientView";
 import { Button } from "@/components/ui/button";
 import { SecondaryButton } from "../buttons/SecondaryButton";
 import { CancelButton } from "../buttons/CancelButton";
+import { InputDateRange } from "@/components/mine/forms/InputDateRange";
 
 interface BudgetAccordionProps {
   budget: BudgetType,
   onDelete: () => void,
   onEdit: () => void,
+  onStartDateChange?: (date: Date) => void,
+  onEndDateChange?: (date: Date) => void,
 }
 
 const BudgetAccordionHeader = ({ isExpanded, budget }: { isExpanded: boolean, budget: BudgetType }) => {
@@ -38,7 +42,21 @@ const BudgetAccordionHeader = ({ isExpanded, budget }: { isExpanded: boolean, bu
   );
 }
 
-export const BudgetAccordion = ({ budget, onDelete, onEdit }: BudgetAccordionProps) => {
+export const BudgetAccordion = ({ budget, onDelete, onEdit, onStartDateChange, onEndDateChange }: BudgetAccordionProps) => {
+
+  const now = new Date();
+  const [startDate, setStartDate] = useState<Date>(budget.start_date ?? new Date(now.getFullYear(), now.getMonth(), 1));
+  const [endDate, setEndDate] = useState<Date>(budget.end_date ?? new Date(now.getFullYear(), now.getMonth() + 1, 0));
+
+  const handleStartDateChange = (date: Date) => {
+    setStartDate(date);
+    onStartDateChange?.(date);
+  };
+
+  const handleEndDateChange = (date: Date) => {
+    setEndDate(date);
+    onEndDateChange?.(date);
+  };
 
   if (!budget) {
     return (
@@ -75,6 +93,13 @@ export const BudgetAccordion = ({ budget, onDelete, onEdit }: BudgetAccordionPro
               <View><Text>{cashFormat(budget.max_limit)}</Text></View>
               <View><Heading>Monto restante</Heading></View>
               <View><Text>{cashFormat(budget.max_limit - budget.expense_amount)}</Text></View>
+              <InputDateRange
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={handleStartDateChange}
+                onEndDateChange={handleEndDateChange}
+                label="Periodo"
+              />
               <View className="mt-2">
                 <SecondaryButton onPress={() => { }} >
                   <Text className="text-lg color-white">Ver detalle</Text>
