@@ -2,87 +2,103 @@ import { PrimaryButton, BudgetAccordion, GradientView } from "@/components/mine"
 import { StyleSheet, View, Text } from "react-native"
 import { Card } from "@/components/ui/card"
 import { Heading } from "@/components/ui/heading"
+import { Spinner } from "@/components/ui/spinner"
 import { SafeAreaView } from "react-native-safe-area-context"
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback } from "react"
 import { AddBudget } from "@/components/mine/actions/AddBudget"
 import { BudgetType } from "@/types/BudgetType"
-import { deleteBudget, getAllBudgets, getBudgetById } from "@/database/budgetRepository"
 import { DeleteValidationModal } from "@/components/mine/actions/DeleteValidationModal"
 import { useFocusEffect } from "expo-router"
-import { ScrollView } from "react-native-gesture-handler"
+import { ScrollView, RefreshControl } from "react-native"
+import { useBudgets } from "@/hooks/useBudgets"
+import { useState } from "react"
 
 const Tab = () => {
+  const {
+    budgets,
+    loading,
+    fieldErrors,
+    allocatedPercentage,
+    refresh,
+    clearFieldErrors,
+    createBudget,
+    updateBudget,
+    removeBudget,
+  } = useBudgets()
+
   const [toggle, setToggle] = useState<boolean>(false)
   const [deleteToggle, setDeleteToggle] = useState<boolean>(false)
   const [isEdit, setIsEdit] = useState<boolean>(false)
-
-  // View data
-  const [budgets, setBudgets] = useState<BudgetType[]>([])
   const [budgetSelected, setBudgetSelected] = useState<BudgetType | null>(null)
+
+  // Fetch on screen focus
+  useFocusEffect(useCallback(() => { refresh() }, [refresh]))
 
   const handleCloseModal = () => {
     setToggle(false)
     setIsEdit(false)
     setBudgetSelected(null)
+    clearFieldErrors()
   }
 
-  const onDeleteBudget = async () => {
+  const handleSave = async (budget: BudgetType) => {
+    const result = isEdit
+      ? await updateBudget(budget)
+      : await createBudget(budget)
+    // Mutations return undefined on error (fieldErrors is populated); close only on success
+    if (result) {
+      handleCloseModal()
+    }
+  }
+
+  const handleDelete = async () => {
     if (budgetSelected) {
-      deleteBudget(budgetSelected).then(() => {
-        setDeleteToggle(false)
-        setBudgetSelected(null)
-        // Refresh budgets list after deletion
-        getAllBudgets().then((data) => {
-          setBudgets(data)
-        })
-      })
+      await removeBudget(budgetSelected)
+      setDeleteToggle(false)
+      setBudgetSelected(null)
     }
   }
-
-  const refreshBudgets = useCallback(async () => {
-    getAllBudgets().then((data) => {
-      setBudgets(data)
-    })
-  }, [])
-
-  useFocusEffect(
-    useCallback(() => {
-      refreshBudgets()
-    }, [refreshBudgets])
-  )
-
-  // Refresh budgets when modal closes (after add/edit operations)
-  useEffect(() => {
-    if (!toggle) {
-      refreshBudgets()
-    }
-  }, [toggle, refreshBudgets])
 
   return (
     <SafeAreaView style={styles.content}>
-      {/* Add / Edit Budget Accordion */}
+      {/* Add / Edit Budget modal */}
       <AddBudget
         open={toggle}
         handleClose={handleCloseModal}
         budget={budgetSelected}
         isEdit={isEdit}
+        onSave={handleSave}
+        allocatedPercentage={allocatedPercentage}
+        fieldErrors={fieldErrors}
       />
-      {/* Modal delete confirmation */}
-      <DeleteValidationModal showModal={deleteToggle} setShowModal={setDeleteToggle} deleteAction={onDeleteBudget}>
+      {/* Delete confirmation modal */}
+      <DeleteValidationModal
+        showModal={deleteToggle}
+        setShowModal={setDeleteToggle}
+        deleteAction={handleDelete}
+      >
         <Heading>¿Estás seguro de eliminar este presupuesto y sus registros?</Heading>
       </DeleteValidationModal>
-      {/* Content */}
+
+      {/* Header */}
       <GradientView>
         <Heading className="text-2xl color-white">Presupuestos</Heading>
+        {loading && <Spinner size="small" className="mt-1" color="white" />}
       </GradientView>
+
+      {/* Budget list */}
       <Card size="md" variant="elevated" className="p-2 m-4" style={{ flex: 1 }}>
-        <ScrollView>
-          {budgets.length === 0 && (
+        <ScrollView
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={refresh} />
+          }
+        >
+          {!budgets.length && !loading && (
             <View className="flex flex-row justify-center">
               <Heading>Ya puedes agregar tus presupuestos</Heading>
             </View>
           )}
-          {budgets.length > 0 && budgets.map((budget) => (
+          {budgets.map((budget) => (
             <BudgetAccordion
               key={budget.id}
               budget={budget}
@@ -99,8 +115,9 @@ const Tab = () => {
           ))}
         </ScrollView>
       </Card>
+
       <View style={styles.bottomButtonContainer}>
-        <PrimaryButton onPress={() => {
+        <PrimaryButton loading={loading} onPress={() => {
           setIsEdit(false)
           setBudgetSelected(null)
           setToggle(true)
@@ -108,7 +125,7 @@ const Tab = () => {
           <Text className="text-2xl text-white">Agregar Presupuesto</Text>
         </PrimaryButton>
       </View>
-    </SafeAreaView >
+    </SafeAreaView>
   )
 }
 

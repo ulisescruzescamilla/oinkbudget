@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { accountService } from '@/services/accountService';
+import { accountService, AccountPayload } from '@/services/accountService';
 import { AccountType } from '@/types/AccountType';
 import { AppError, FieldErrors } from '@/utils/errorHandler';
 
@@ -23,7 +23,7 @@ export function useAccounts() {
     fieldErrors: null,
   });
 
-  /** Clears field errors. Call before opening the form again. */
+  /** Clears field errors. Call when closing the form to reset stale errors. */
   const clearFieldErrors = useCallback(() => {
     setState((s) => ({ ...s, fieldErrors: null }));
   }, []);
@@ -32,14 +32,7 @@ export function useAccounts() {
   const fetchAccounts = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
     try {
-      const data = await accountService.getAll();
-      const accounts: AccountType[] = data.map((a) => ({
-        id: Number(a.id),
-        name: a.name,
-        amount: a.amount,
-        type: a.type,
-        hidden: a.hidden,
-      }));
+      const accounts = await accountService.getAll();
       setState({ accounts, loading: false, error: null, fieldErrors: null });
     } catch (err) {
       console.error(err);
@@ -55,15 +48,15 @@ export function useAccounts() {
   async function createAccount(account: AccountType): Promise<AccountType | undefined> {
     setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
     try {
-      const created = await accountService.create({
+      const payload: AccountPayload = {
         name: account.name,
         amount: account.amount,
         type: account.type,
         hidden: account.hidden,
-      });
-      const newAccount: AccountType = { ...account, id: Number(created.id) };
-      setState((s) => ({ ...s, loading: false, accounts: [...s.accounts, newAccount] }));
-      return newAccount;
+      };
+      const created = await accountService.create(payload);
+      setState((s) => ({ ...s, loading: false, accounts: [...s.accounts, created] }));
+      return created;
     } catch (err) {
       const appErr = err as AppError;
       console.error(err);
@@ -84,19 +77,19 @@ export function useAccounts() {
   async function updateAccount(account: AccountType): Promise<AccountType | undefined> {
     setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
     try {
-      const updated = await accountService.update(String(account.id), {
+      const payload: AccountPayload = {
         name: account.name,
         amount: account.amount,
         type: account.type,
         hidden: account.hidden,
-      });
-      const updatedAccount: AccountType = { ...account, id: Number(updated.id) };
+      };
+      const updated = await accountService.update(String(account.id), payload);
       setState((s) => ({
         ...s,
         loading: false,
-        accounts: s.accounts.map((a) => (a.id === account.id ? updatedAccount : a)),
+        accounts: s.accounts.map((a) => (a.id === account.id ? updated : a)),
       }));
-      return updatedAccount;
+      return updated;
     } catch (err) {
       const appErr = err as AppError;
       console.error(err);
