@@ -71,17 +71,18 @@ Raw SQL queries via `expo-sqlite` — no ORM. The `database/` directory contains
 No global state library. Each screen fetches its own data via `useFocusEffect` (to refresh on navigation) or the hook's `refresh()` function. Pull-to-refresh is implemented with `RefreshControl` bound to `loading` + `refresh`. Mutations flow through hooks, which update local state optimistically after API success.
 
 ### UI Stack
-- **GluestackUI** — component library (`components/ui/`)
-- **NativeWind** — Tailwind CSS for React Native styling
-- Custom app components live in `components/mine/`
+- **NativeWind** — Tailwind CSS for React Native styling (no component library; GluestackUI was removed).
+- Custom "Aurora" design system ported from the `design/` prototype.
+- Icons are a custom line set rendered with `react-native-svg` (no `react-native-iconify`).
 
-Component organization:
-- `components/mine/actions/` — modals for adding income/expense/account/budget and transfers
-- `components/mine/forms/` — reusable form inputs (text, select, slider, calendar, checkbox)
-- `components/mine/accordion/`, `swipeable/`, `progress/`, etc. — UI building blocks
+Component organization (all at the repo root — there is no `src/`):
+- `components/ui/` — dumb primitives: `Icon`/`OinkMark`, `Button`, `Card`/`CardHeader`, `IconButton`, `IconTile`, `Pill`, `ProgressBar`, `Ring`, `TrendBars`, `Chip`, `Segmented`, `Sheet`, `Field`/`Input`, `Text`/`Heading`. Barrel: `components/ui/index.ts`.
+- `components/features/` — business components: `TransactionRow`, `AccountCard`, `BudgetAccordionCard`, `AllocationBar`, `QuickAddSheet`, `NewBudgetForm`, `NewAccountForm`, `ManageTxSheet`, `EmptyState`.
+- `screens/` — one component per tab (`DashboardScreen`, `HistoryScreen`, `AccountsScreen`, `BudgetsScreen`); the `app/(tabs)/*.tsx` route files are thin wrappers that render them.
+- `navigation/` — `AppBar`, `CustomTabBar` (bottom nav + center FAB), `ScreenLayout`, `QuickAddProvider` (quick-add context), and React Navigation `theme`.
 
 ### Styling
-Tailwind via NativeWind. Custom theme defined in `tailwind.config.js` with semantic color tokens (primary, secondary, error, success), custom font families (Jakarta, Roboto, Space Mono, Inter), and custom shadows.
+Tailwind via NativeWind. Theme defined in `tailwind.config.js` with semantic Aurora tokens (`primary`, `income`, `expense`, `surface`, `card`, `text`, `muted`, `border`, …) backed by CSS variables in `global.css` for light/dark. Raw token values + radii/shadows live in `styles/theme.ts`; the category palette in `styles/categories.ts`; account-type visuals in `styles/accounts.ts`. Use `useTheme()`/`useIsDark()` from `styles/useTheme.ts` for raw colors (SVG, gradients). The display font is Plus Jakarta Sans (`font-display`/`font-bold`/`font-semibold`/`font-sans`). Dark mode toggles via NativeWind `useColorScheme()` (the AppBar has a toggle).
 
 ### Types
 All shared entity interfaces live in `types/` and are the single source of truth across the entire app:
@@ -102,6 +103,6 @@ All shared entity interfaces live in `types/` and are the single source of truth
 - All functions should be documented with TypeDoc comments.
 - Currency is formatted as MXN (Mexican Peso) — see `utils/formatting.ts`.
 - Date formatting helpers live in `utils/formatting.ts`: use `formatApiDate(date)` to serialize `Date` → `Y-m-d` string before sending in API payloads. Never define date formatters inline in services.
-- `components/ui/` contains GluestackUI wrappers — prefer editing `components/mine/` for app-specific logic.
+- UI components live in `components/ui/` (primitives) and `components/features/` (business components); screens in `screens/`, nav config in `navigation/`. Keep the flat root layout — do not introduce a `src/` folder.
 - SQLite is initialized in the root layout; the Drizzle Studio plugin is available for DB inspection during development.
 - New React Native Architecture is enabled (`app.json`).

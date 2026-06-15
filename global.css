@@ -1,3 +1,56 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ===========================================================
+   OinkBudget — Aurora design tokens
+   Values are space-separated sRGB channels so Tailwind can apply
+   `<alpha-value>` via rgb(var(--token) / <alpha-value>).
+   Ported from design/styles.css (OKLCH -> sRGB).
+   =========================================================== */
+@layer base {
+  :root {
+    --color-primary: 123 75 224;
+    --color-primary-press: 101 51 192;
+    --color-primary-soft: 240 234 255;
+    --color-primary-line: 218 208 252;
+    --color-on-primary: 255 255 255;
+    --color-accent: 241 114 100;
+    --color-income: 22 159 101;
+    --color-income-soft: 212 249 226;
+    --color-expense: 230 66 76;
+    --color-expense-soft: 255 226 223;
+    --color-page: 244 243 247;
+    --color-surface: 247 246 250;
+    --color-card: 255 255 255;
+    --color-card-2: 249 248 252;
+    --color-text: 32 29 42;
+    --color-muted: 105 103 116;
+    --color-faint: 147 144 156;
+    --color-border: 229 227 233;
+    --color-border-2: 216 214 221;
+  }
+
+  .dark:root,
+  .dark {
+    --color-primary: 164 134 253;
+    --color-primary-press: 141 107 231;
+    --color-primary-soft: 48 38 77;
+    --color-primary-line: 74 63 111;
+    --color-on-primary: 13 12 21;
+    --color-accent: 246 134 117;
+    --color-income: 71 197 140;
+    --color-income-soft: 16 60 40;
+    --color-expense: 246 108 109;
+    --color-expense-soft: 81 34 34;
+    --color-page: 11 10 16;
+    --color-surface: 12 11 18;
+    --color-card: 23 22 31;
+    --color-card-2: 30 29 39;
+    --color-text: 246 244 250;
+    --color-muted: 171 169 182;
+    --color-faint: 123 120 133;
+    --color-border: 45 44 54;
+    --color-border-2: 61 59 71;
+  }
+}

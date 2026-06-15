@@ -1,24 +1,26 @@
-// @@iconify-code-gen
-import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
-import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
-import { SQLiteProvider } from 'expo-sqlite';
-import { Stack } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StatusBar } from 'react-native';
-import { initDatabase } from '@/database';
-import * as SQLite from 'expo-sqlite'
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import {
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import { ThemeProvider } from '@react-navigation/native';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import * as SQLite from 'expo-sqlite';
+import { SQLiteProvider } from 'expo-sqlite';
+import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
+import { useEffect } from 'react';
+import { StatusBar } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
+import { initDatabase } from '@/database';
+import { getNavTheme } from '@/navigation/theme';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -27,47 +29,52 @@ export {
 
 SplashScreen.preventAutoHideAsync();
 
+const db = SQLite.openDatabaseSync('database.db');
+
+/**
+ * Root layout: loads fonts, initializes SQLite, and wires the global providers
+ * (gesture handler, bottom sheets, safe area, navigation theme).
+ */
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
   });
 
-  const [styleLoaded, setStyleLoaded] = useState(false);
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
+    if (loaded) SplashScreen.hideAsync();
   }, [loaded]);
+
+  if (!loaded) return null;
+
   return <RootLayoutNav />;
 }
 
-const db = SQLite.openDatabaseSync("database.db");
-
 function RootLayoutNav() {
-
-  useDrizzleStudio(db)
+  const { colorScheme } = useColorScheme();
+  useDrizzleStudio(db);
 
   return (
-    <SQLiteProvider databaseName='database.db' onInit={initDatabase}>
+    <SQLiteProvider databaseName="database.db" onInit={initDatabase}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <GluestackUIProvider mode={'light'}>
-          <ThemeProvider value={DefaultTheme}>
-            <SafeAreaProvider>
-              <StatusBar barStyle={'light-content'} />
+        <SafeAreaProvider>
+          <ThemeProvider value={getNavTheme(colorScheme)}>
+            <BottomSheetModalProvider>
+              <StatusBar
+                barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+              />
               <Stack screenOptions={{ headerShown: false }}>
-                {/* <SafeAreaView style={{ flex: 1 }}> */}
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                {/* </SafeAreaView> */}
               </Stack>
-            </SafeAreaProvider>
+            </BottomSheetModalProvider>
           </ThemeProvider>
-        </GluestackUIProvider>
+        </SafeAreaProvider>
       </GestureHandlerRootView>
     </SQLiteProvider>
   );

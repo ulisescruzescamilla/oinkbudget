@@ -24,3 +24,14 @@ export const cashFormat = (amount: number | undefined): string => {
 
   return formatted || ''
 }
+
+/**
+ * Formats an amount as MXN currency with an explicit +/− sign.
+ * Useful for transaction rows where direction matters.
+ *
+ * @param amount - Signed amount (negative = expense, positive = income)
+ */
+export const signedCash = (amount: number): string => {
+  const sign = amount < 0 ? '−' : '+'
+  return `${sign}${cashFormat(Math.abs(amount))}`
+}
