@@ -8,7 +8,6 @@ import {
   useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { ThemeProvider } from '@react-navigation/native';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SQLite from 'expo-sqlite';
@@ -65,14 +64,12 @@ function RootLayoutNav() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <ThemeProvider value={getNavTheme(colorScheme)}>
-            <BottomSheetModalProvider>
-              <StatusBar
-                barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
-              />
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              </Stack>
-            </BottomSheetModalProvider>
+            <StatusBar
+              barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+            />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
           </ThemeProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>

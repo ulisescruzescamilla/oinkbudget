@@ -36,7 +36,7 @@ const label = tv({
   base: 'font-strong',
   variants: {
     variant: {
-      primary: 'text-on-primary',
+      primary: 'text-white',
       ghost: 'text-text',
       soft: 'text-primary',
       'danger-soft': 'text-expense',
@@ -102,7 +102,7 @@ export function Button({
         <ActivityIndicator color={color} />
       ) : (
         <View className="flex-row items-center gap-2">
-          {icon ? <Icon name={icon} size={20} strokeWidth={2.4} color={color} /> : null}
+          {icon ? <Icon name={icon} size={20} strokeWidth={2.4} color={'white'} /> : null}
           {typeof children === 'string' ? (
             <Text className={label({ variant, size })}>{children}</Text>
           ) : (

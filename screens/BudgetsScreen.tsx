@@ -40,7 +40,7 @@ export function BudgetsScreen() {
       refreshing={loading}
       onRefresh={refresh}
       footer={
-        <Button icon="plus" block size="lg" onPress={openCreate}>
+        <Button icon="plus" block size="lg" variant='primary' onPress={openCreate}>
           Agregar presupuesto
         </Button>
       }

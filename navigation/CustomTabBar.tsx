@@ -52,7 +52,7 @@ export function CustomTabBar({ state, navigation }: CustomTabBarProps) {
           strokeWidth={focused ? 2.3 : 2}
           color={focused ? t.primary : t.faint}
         />
-        <Text className="text-[11px] font-strong" style={{ color: focused ? t.primary : t.faint }}>
+        <Text className="text-[8px] font-strong" style={{ color: focused ? t.primary : t.faint }}>
           {meta.label}
         </Text>
       </Pressable>
@@ -65,14 +65,14 @@ export function CustomTabBar({ state, navigation }: CustomTabBarProps) {
       style={{ paddingBottom: insets.bottom + 10 }}
     >
       {LEFT.map(renderTab)}
-      <Pressable onPress={() => open('expense')} className="active:scale-90" style={{ marginTop: -26 }}>
+      <Pressable onPress={() => open('expense')} className="active:scale-90" style={{ marginTop: -36 }}>
         <LinearGradient
           colors={t.hero}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={{ width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: 68, height: 68, borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Icon name="plus" size={26} strokeWidth={2.6} color="#fff" />
+          <Icon name="plus" size={48} strokeWidth={2.6} color="#fff" />
         </LinearGradient>
       </Pressable>
       {RIGHT.map(renderTab)}

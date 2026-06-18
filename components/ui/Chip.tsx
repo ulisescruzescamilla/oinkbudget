@@ -30,9 +30,9 @@ export function Chip({ label, active, icon, onPress, className }: ChipProps) {
       )}
     >
       {icon ? (
-        <Icon name={icon} size={15} strokeWidth={2.2} color={active ? t.onPrimary : t.muted} />
+        <Icon name={icon} size={15} strokeWidth={2.2} color={'white'} />
       ) : null}
-      <Text className={cn('text-[13.5px] font-strong', active ? 'text-on-primary' : 'text-muted')}>
+      <Text className={cn('text-[13.5px] font-strong', active ? 'text-white' : 'text-muted')}>
         {label}
       </Text>
     </Pressable>

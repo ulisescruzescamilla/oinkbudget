@@ -84,16 +84,8 @@ export function QuickAddSheet({ open, mode = 'expense', onClose, accounts, budge
   return (
     <Sheet open={open} onClose={onClose}>
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Segmented
-          className="mb-2 self-start"
-          value={type}
-          onChange={(v) => setType(v as TypeBalance)}
-          options={[
-            { value: 'expense', label: 'Gasto' },
-            { value: 'income', label: 'Ingreso' },
-          ]}
-        />
 
+        {/* View amount $ */}
         <View className="items-center py-4">
           <Text className="font-display text-[52px]" style={{ color: isIncome ? t.income : t.expense }}>
             <Text className="text-[30px] text-muted">$ </Text>
@@ -101,6 +93,7 @@ export function QuickAddSheet({ open, mode = 'expense', onClose, accounts, budge
           </Text>
         </View>
 
+        {/* Select budget */}
         {!isIncome && budgets.length > 0 && (
           <View className="mb-3.5 gap-[7px]">
             <Text className="text-[12.5px] font-strong text-muted">Presupuesto</Text>
@@ -118,6 +111,7 @@ export function QuickAddSheet({ open, mode = 'expense', onClose, accounts, budge
           </View>
         )}
 
+        {/* Select account */}
         <View className="mb-3.5 gap-[7px]">
           <Text className="text-[12.5px] font-strong text-muted">Cuenta</Text>
           <View className="flex-row flex-wrap gap-2">
@@ -127,6 +121,7 @@ export function QuickAddSheet({ open, mode = 'expense', onClose, accounts, budge
           </View>
         </View>
 
+        {/* Description */}
         <View className="mb-3.5">
           <Field
             label="Descripción"
@@ -136,6 +131,7 @@ export function QuickAddSheet({ open, mode = 'expense', onClose, accounts, budge
           />
         </View>
 
+        {/* KeyPad */}
         <View className="mb-3.5 flex-row flex-wrap justify-between">
           {KEYS.map((k) => (
             <Pressable
@@ -153,6 +149,7 @@ export function QuickAddSheet({ open, mode = 'expense', onClose, accounts, budge
           ))}
         </View>
 
+        {/* Save button */}
         <Button
           icon="check"
           block

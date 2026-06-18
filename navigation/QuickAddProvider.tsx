@@ -20,7 +20,7 @@ interface QuickAddContextValue {
   version: number;
 }
 
-const QuickAddContext = createContext<QuickAddContextValue>({ open: () => {}, version: 0 });
+const QuickAddContext = createContext<QuickAddContextValue>({ open: () => { }, version: 0 });
 
 /** Hook to access the quick-add controls. */
 export const useQuickAdd = () => useContext(QuickAddContext);
