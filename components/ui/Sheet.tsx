@@ -49,6 +49,8 @@ export function Sheet({ open, onClose, title, right, children }: SheetProps) {
     <BottomSheetModal
       ref={ref}
       onDismiss={onClose}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
       enableDynamicSizing
       enablePanDownToClose
       backdropComponent={renderBackdrop}
