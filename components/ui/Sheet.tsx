@@ -36,7 +36,6 @@ export function Sheet({ open, onClose, title, right, children }: SheetProps) {
 
   useEffect(() => {
     if (open) ref.current?.present();
-    else ref.current?.dismiss();
   }, [open]);
 
   const renderBackdrop = useCallback(
