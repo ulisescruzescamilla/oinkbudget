@@ -16,6 +16,7 @@ import { BudgetType } from '@/types/BudgetType';
 import { BalanceType } from '@/types/BalanceType';
 import { cashFormat } from '@/utils/formatting';
 import { useTheme } from '@/styles/useTheme';
+import { useDashboard } from '@/hooks/useDashboard';
 
 const WEEKDAY = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
@@ -27,26 +28,18 @@ export function DashboardScreen() {
 
   const [budgets, setBudgets] = useState<BudgetType[]>([]);
   const [balances, setBalances] = useState<BalanceType[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { dashboard, loading: loadingDashboard, fieldErrors, refresh, clearFieldErrors } =
+    useDashboard();
 
   const load = useCallback(async () => {
-    setLoading(true);
-    const [b, bal] = await Promise.all([getAllBudgets(), getBalance()]);
-    setBudgets(b ?? []);
-    setBalances(bal ?? []);
-    setLoading(false);
-  }, []);
+    refresh()
+  }, [refresh]);
 
   useFocusEffect(useCallback(() => { load(); }, [load, version]));
 
   const today = new Date().toISOString().slice(0, 10);
-  const todaySpent = balances
-    .filter((x) => x.type === 'expense' && String(x.created_at).slice(0, 10) === today)
-    .reduce((s, x) => s + Math.abs(x.amount), 0);
 
-  const totalMax = budgets.reduce((s, b) => s + b.max_limit, 0);
-  const dailyLimit = totalMax > 0 ? totalMax / 30 : 0;
-  const pct = dailyLimit > 0 ? Math.round((todaySpent / dailyLimit) * 100) : 0;
+  const pct = 0;
 
   // 7-day expense trend (oldest -> today).
   const trend = Array.from({ length: 7 }).map((_, i) => {
@@ -68,7 +61,7 @@ export function DashboardScreen() {
   const recent = [...balances].reverse().slice(0, 4);
 
   return (
-    <ScreenLayout eyebrow="Tu resumen" title="Inicio" refreshing={loading} onRefresh={load}>
+    <ScreenLayout eyebrow="Tu resumen" title="Inicio" refreshing={loadingDashboard} onRefresh={load}>
       {/* Gastos de hoy */}
       <Card>
         <CardHeader title="Gastos de hoy" right={<Pill tone="primary">Hoy</Pill>} />
@@ -80,11 +73,11 @@ export function DashboardScreen() {
           <View className="flex-1 gap-3.5">
             <View>
               <Text className="text-[13px] font-strong text-muted">Total gastado hoy</Text>
-              <Text className="font-display text-[34px]">{cashFormat(todaySpent)}</Text>
+              <Text className="font-display text-[34px]">{cashFormat(dashboard?.total_expense_today)}</Text>
             </View>
             <View>
               <Text className="text-[13px] font-strong text-muted">Límite diario</Text>
-              <Text className="font-display text-[19px]">{cashFormat(dailyLimit)}</Text>
+              <Text className="font-display text-[19px]">{cashFormat(dashboard?.daily_limit)}</Text>
             </View>
           </View>
         </View>
