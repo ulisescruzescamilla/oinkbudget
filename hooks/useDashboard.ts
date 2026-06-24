@@ -15,6 +15,8 @@ interface DashboardState {
 export function useDashboard() {
   const [state, setState] = useState<DashboardState>({
     dashboard: {
+      "trend": [],
+      "percentage_expense_today": 0,
       "total_expense_today": 0,
       "last_moves": [],
       "daily_limit": 0

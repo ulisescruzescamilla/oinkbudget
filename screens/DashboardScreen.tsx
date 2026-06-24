@@ -10,15 +10,12 @@ import { Card, CardHeader, Icon, IconTile, Pill, ProgressBar, Ring, Text, TrendB
 import { EmptyState, TransactionRow, balanceSignedAmount } from '@/components/features';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
 import { useQuickAdd } from '@/navigation/QuickAddProvider';
-import { getAllBudgets } from '@/database/budgetRepository';
 import { getBalance } from '@/database/balanceRepository';
-import { BudgetType } from '@/types/BudgetType';
 import { BalanceType } from '@/types/BalanceType';
 import { cashFormat } from '@/utils/formatting';
 import { useTheme } from '@/styles/useTheme';
 import { useDashboard } from '@/hooks/useDashboard';
-
-const WEEKDAY = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+import { useBudgets } from '@/hooks/useBudgets';
 
 /** Inicio tab. */
 export function DashboardScreen() {
@@ -26,10 +23,14 @@ export function DashboardScreen() {
   const router = useRouter();
   const { open, version } = useQuickAdd();
 
-  const [budgets, setBudgets] = useState<BudgetType[]>([]);
+  // TODO create balance model from backend and fetch history from balance
   const [balances, setBalances] = useState<BalanceType[]>([]);
+  // Graph dashboard info
   const { dashboard, loading: loadingDashboard, fieldErrors, refresh, clearFieldErrors } =
     useDashboard();
+  // Budget section data
+  const { budgets, loading: loadingBudgets } =
+    useBudgets();
 
   const load = useCallback(async () => {
     refresh()
@@ -37,28 +38,11 @@ export function DashboardScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load, version]));
 
-  const today = new Date().toISOString().slice(0, 10);
-
-  const pct = 0;
-
-  // 7-day expense trend (oldest -> today).
-  const trend = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const key = d.toISOString().slice(0, 10);
-    const v = balances
-      .filter((x) => x.type === 'expense' && String(x.created_at).slice(0, 10) === key)
-      .reduce((s, x) => s + Math.abs(x.amount), 0);
-    return { d: WEEKDAY[d.getDay()], v };
-  });
-
   const withAvail = budgets.map((b) => ({ b, avail: b.max_limit - (b.expense_amount ?? 0) }));
   const totalAvail = withAvail.reduce((s, x) => s + x.avail, 0);
   const top = [...withAvail]
     .sort((a, b) => (b.b.expense_amount ?? 0) / (b.b.max_limit || 1) - (a.b.expense_amount ?? 0) / (a.b.max_limit || 1))
     .slice(0, 3);
-
-  const recent = [...balances].reverse().slice(0, 4);
 
   return (
     <ScreenLayout eyebrow="Tu resumen" title="Inicio" refreshing={loadingDashboard} onRefresh={load}>
@@ -66,8 +50,8 @@ export function DashboardScreen() {
       <Card>
         <CardHeader title="Gastos de hoy" right={<Pill tone="primary">Hoy</Pill>} />
         <View className="flex-row items-center gap-3.5">
-          <Ring pct={pct} size={128} stroke={13}>
-            <Text className="font-display text-[26px]">{pct}%</Text>
+          <Ring pct={dashboard?.percentage_expense_today || 0} size={128} stroke={13}>
+            <Text className="font-display text-[26px]">{dashboard?.percentage_expense_today || 0}%</Text>
             <Text className="text-[11px] font-semi text-muted">del límite</Text>
           </Ring>
           <View className="flex-1 gap-3.5">
@@ -83,7 +67,7 @@ export function DashboardScreen() {
         </View>
         <View className="my-3.5 h-px bg-border" />
         <CardHeader title="Últimos 7 días" />
-        <TrendBars data={trend} />
+        <TrendBars data={dashboard?.trend ?? []} />
       </Card>
 
       {/* Captura rápida */}
@@ -149,14 +133,14 @@ export function DashboardScreen() {
         <View className="px-[18px] pb-1.5 pt-[18px]">
           <CardHeader title="Últimos movimientos" linkLabel="Ver todo" onLinkPress={() => router.push('/history')} className="mb-0" />
         </View>
-        {recent.length === 0 ? (
+        {dashboard?.last_moves.length === 0 ? (
           <EmptyState icon="swap" message="Aún no hay movimientos. Agrega tu primer gasto o ingreso." />
         ) : (
-          recent.map((tx, i) => (
+          dashboard?.last_moves.map((tx, i) => (
             <TransactionRow
               key={`${i}-${tx.id ?? ''}`}
               item={tx}
-              subtitle={`${tx.budget_name || (balanceSignedAmount(tx) > 0 ? 'Ingreso' : 'Otro')} · ${tx.account_name}`}
+              subtitle={`${tx.description} · ${tx.amount}`}
               onPress={() => router.push('/history')}
             />
           ))
