@@ -5,14 +5,22 @@
  */
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Button, Chip, Field, Icon, Text } from '@/components/ui';
-import { BudgetType } from '@/types/BudgetType';
+import { Button, Chip, Field, Icon, ModalField, Switch, Text } from '@/components/ui';
+import { BudgetPeriodType, BudgetType } from '@/types/BudgetType';
 import { FieldErrors, getFieldError } from '@/utils/errorHandler';
 import { CATEGORIES, getCategoryStyle } from '@/styles/categories';
 import { useTheme } from '@/styles/useTheme';
 
 /** Selectable budget categories (all defined category names). */
 const BUDGET_CATEGORIES = Object.keys(CATEGORIES).filter((c) => c !== 'Ingreso');
+
+/** Selectable recurrence cadences for a recurrent budget. */
+const BUDGET_PERIOD_OPTIONS: { value: BudgetPeriodType; label: string }[] = [
+  { value: 'weekly', label: 'Semanal' },
+  { value: 'biweekly', label: 'Quincenal' },
+  { value: 'monthly', label: 'Mensual' },
+  { value: 'yearly', label: 'Anual' },
+];
 
 export interface NewBudgetFormProps {
   budget?: BudgetType | null;
@@ -36,26 +44,27 @@ export function NewBudgetForm({ budget, onSubmit, onDone, fieldErrors, loading }
   const t = useTheme();
   const [name, setName] = useState(budget?.name ?? '');
   const [max, setMax] = useState(budget ? String(budget.max_limit) : '');
-  const [category, setCategory] = useState(budget?.name && CATEGORIES[budget.name] ? budget.name : 'Mercado');
+  const [isRecurrent, setIsRecurrent] = useState(budget?.is_recurrent ?? false);
+  const [period, setPeriod] = useState<BudgetPeriodType>(budget?.period ?? 'monthly');
 
   useEffect(() => {
     setName(budget?.name ?? '');
     setMax(budget ? String(budget.max_limit) : '');
-    setCategory(budget?.name && CATEGORIES[budget.name] ? budget.name : 'Mercado');
+    setIsRecurrent(budget?.is_recurrent ?? false);
+    setPeriod(budget?.period ?? 'monthly');
   }, [budget]);
 
   const submit = async () => {
-    const color = getCategoryStyle(category).solid;
     const { start, end } = currentMonthRange();
     const result = await onSubmit({
       id: budget?.id ?? null,
-      name: name.trim() || category,
+      name: name.trim(),
       max_limit: parseFloat(max) || 0,
       percentage_value: budget?.percentage_value ?? 0,
-      color,
-      graph_color: color,
       start_date: budget?.start_date ?? start,
       end_date: budget?.end_date ?? end,
+      is_recurrent: isRecurrent,
+      period,
     });
     if (result) onDone();
   };
@@ -63,7 +72,7 @@ export function NewBudgetForm({ budget, onSubmit, onDone, fieldErrors, loading }
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
       <View className="gap-4">
-        <Field
+        <ModalField
           label="Nombre"
           placeholder="Ej. Mercado"
           value={name}
@@ -71,7 +80,7 @@ export function NewBudgetForm({ budget, onSubmit, onDone, fieldErrors, loading }
           error={getFieldError(fieldErrors ?? undefined, 'name')}
         />
 
-        <Field
+        <ModalField
           label="Monto máximo"
           placeholder="$0.00"
           keyboardType="decimal-pad"
@@ -80,27 +89,38 @@ export function NewBudgetForm({ budget, onSubmit, onDone, fieldErrors, loading }
           error={getFieldError(fieldErrors ?? undefined, 'max_limit')}
         />
 
-        <View className="gap-[7px]">
-          <Text className="text-[12.5px] font-strong text-muted">Categoría</Text>
-          <View className="flex-row flex-wrap gap-2">
-            {BUDGET_CATEGORIES.map((c) => (
-              <Chip
-                key={c}
-                label={c}
-                icon={getCategoryStyle(c).icon}
-                active={category === c}
-                onPress={() => setCategory(c)}
-              />
-            ))}
+        <View className="flex-row items-center justify-between rounded-inner border border-border-2 bg-card px-3.5 py-3">
+          <View className="flex-1 gap-0.5 pr-3">
+            <Text className="text-[13.5px] font-strong text-text">Presupuesto recurrente</Text>
+            <Text className="text-[12px] font-semi text-muted">
+              Se vuelve a crear automáticamente cada periodo
+            </Text>
           </View>
+          <Switch value={isRecurrent} onValueChange={setIsRecurrent} />
         </View>
 
-        <View className="flex-row items-center gap-2">
-          <Icon name="cal" size={16} strokeWidth={2} color={t.muted} />
-          <Text className="text-[13px] font-semi text-muted">
-            Periodo: <Text className="font-strong text-text">Mensual</Text>
-          </Text>
-        </View>
+        {isRecurrent ? (
+          <View className="gap-[7px]">
+            <Text className="text-[12.5px] font-strong text-muted">Periodo</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {BUDGET_PERIOD_OPTIONS.map((opt) => (
+                <Chip
+                  key={opt.value}
+                  label={opt.label}
+                  active={period === opt.value}
+                  onPress={() => setPeriod(opt.value)}
+                />
+              ))}
+            </View>
+          </View>
+        ) : (
+          <View className="flex-row items-center gap-2">
+            <Icon name="cal" size={16} strokeWidth={2} color={t.muted} />
+            <Text className="text-[13px] font-semi text-muted">
+              Periodo: <Text className="font-strong text-text">Mensual</Text>
+            </Text>
+          </View>
+        )}
 
         <Button icon="check" block size="lg" loading={loading} onPress={submit}>
           {budget ? 'Guardar cambios' : 'Crear presupuesto'}

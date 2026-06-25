@@ -16,6 +16,8 @@ export function BudgetsScreen() {
   const { budgets, loading, fieldErrors, refresh, clearFieldErrors, createBudget, updateBudget, removeBudget } =
     useBudgets();
 
+  console.debug('budgets: ', budgets);
+
   const [openId, setOpenId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<BudgetType | null>(null);

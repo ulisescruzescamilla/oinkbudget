@@ -12,5 +12,7 @@ export { ProgressBar, type ProgressBarProps } from './ProgressBar';
 export { Ring, type RingProps } from './Ring';
 export { Segmented, type SegmentedProps, type SegmentOption } from './Segmented';
 export { Sheet, type SheetProps } from './Sheet';
+export { Switch, type SwitchProps } from './Switch';
 export { TrendBars, type TrendBarsProps, type TrendDatum } from './TrendBars';
 export { Heading, Muted, Text, type HeadingProps, type TextProps } from './Text';
+export { ModalField } from './ModalField'

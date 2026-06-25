@@ -63,14 +63,6 @@ export function Sheet({ open, onClose, title, right, children }: SheetProps) {
             <Heading size="md" className="text-[19px]">
               {title}
             </Heading>
-            {right ?? (
-              <Pressable
-                onPress={onClose}
-                className="h-10 w-10 items-center justify-center rounded-[14px] border border-border bg-card"
-              >
-                <Icon name="close" size={20} color={t.text} />
-              </Pressable>
-            )}
           </View>
         )}
         {children}

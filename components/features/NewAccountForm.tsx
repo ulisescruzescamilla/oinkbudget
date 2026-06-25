@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Button, Chip, Field, Text } from '@/components/ui';
+import { Button, Chip, Field, ModalField, Text } from '@/components/ui';
 import { AccountType, KindOfAccountType } from '@/types/AccountType';
 import { FieldErrors, getFieldError } from '@/utils/errorHandler';
 import { ACCOUNT_TYPE_OPTIONS } from '@/styles/accounts';
@@ -47,12 +47,12 @@ export function NewAccountForm({ account, onSubmit, onDone, fieldErrors, loading
   return (
     <ScrollView keyboardShouldPersistTaps="handled" className="gap-4">
       <View className="gap-4">
-        <Text className="text-[12.5px] font-strong text-muted">{'Nombre'}</Text>
-        <BottomSheetTextInput
-          className={'w-full rounded-inner border border-border-2 bg-card px-3.5 py-3 font-semi text-[15px] text-text'}
+        <ModalField
+          label="Nombre"
           placeholder="Ej. BBVA"
           value={name}
           onChangeText={setName}
+          error={getFieldError(fieldErrors ?? undefined, 'name')}
         />
 
         <View className="gap-[7px]">
@@ -70,13 +70,13 @@ export function NewAccountForm({ account, onSubmit, onDone, fieldErrors, loading
           </View>
         </View>
 
-        <Text className="text-[12.5px] font-strong text-muted">{'Saldo inicial'}</Text>
-        <BottomSheetTextInput
+        <ModalField
+          label="Saldo inicial"
           placeholder="$0.00"
-          className={'w-full rounded-inner border border-border-2 bg-card px-3.5 py-3 font-semi text-[15px] text-text'}
           keyboardType="decimal-pad"
           value={amount}
           onChangeText={setAmount}
+          error={getFieldError(fieldErrors ?? undefined, 'amount')}
         />
 
         <Button icon="check" block size="lg" loading={loading} onPress={submit}>

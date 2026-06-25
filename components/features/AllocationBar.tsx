@@ -13,9 +13,9 @@ export interface AllocationBarProps {
   budgets: BudgetType[];
 }
 
-/** Resolves a budget's swatch color (its stored graph color or category color). */
+/** Resolves a budget's swatch color from its category. */
 function budgetColor(b: BudgetType): string {
-  return b.graph_color || b.color || getCategoryStyle(b.name).solid;
+  return getCategoryStyle(b.name).solid;
 }
 
 /** Stacked allocation bar + legend. */
