@@ -61,9 +61,10 @@ export function useBudgets() {
     try {
       const payload: BudgetPayload = {
         name: budget.name,
-        graph_color: budget.graph_color,
         start_date: budget.start_date,
         end_date: budget.end_date,
+        is_recurrent: budget.is_recurrent,
+        period: budget.period,
         ...(budget.max_limit > 0
           ? { max_limit: budget.max_limit }
           : { percentage_value: budget.percentage_value }),
@@ -93,9 +94,10 @@ export function useBudgets() {
     try {
       const payload: BudgetPayload = {
         name: budget.name,
-        graph_color: budget.graph_color,
         start_date: budget.start_date,
         end_date: budget.end_date,
+        is_recurrent: budget.is_recurrent,
+        period: budget.period,
         ...(budget.max_limit > 0
           ? { max_limit: budget.max_limit }
           : { percentage_value: budget.percentage_value }),

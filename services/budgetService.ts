@@ -10,12 +10,11 @@ type ApiBudget = Omit<BudgetType, 'id' | 'start_date' | 'end_date'> & {
 };
 
 /** Fields required to create or update a budget. Send either max_limit or percentage_value, not both. */
-export type BudgetPayload = Pick<BudgetType, 'name' > & {
+export type BudgetPayload = Pick<BudgetType, 'name' | 'is_recurrent' | 'period'> & {
   max_limit?: number;
   percentage_value?: number;
   start_date?: Date;
   end_date?: Date;
-  graph_color: string;
 };
 
 /**

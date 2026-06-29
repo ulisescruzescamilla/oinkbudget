@@ -2,7 +2,10 @@ module.exports = function (api) {
   api.cache(true);
 
   return {
-    presets: [['babel-preset-expo'], 'nativewind/babel'],
+    presets: [
+      ['babel-preset-expo', { jsxImportSource: 'nativewind' }],
+      'nativewind/babel',
+    ],
 
     plugins: [
       [
@@ -17,35 +20,6 @@ module.exports = function (api) {
         },
       ],
       'react-native-worklets/plugin',
-      [
-        "react-native-iconify/babel", {
-          "icons": [
-            "line-md:home",
-            "ri:home-2-fill",
-            "tabler:wallet",
-            "tabler:credit-card",
-            "fa-brands:cc-mastercard",
-            "fa-brands:cc-visa",
-            "tabler:transfer",
-            "tabler:building-bank",
-            "mdi:graph-bar",
-            "tabler:dots-vertical",
-            "tabler:trash",
-            "tabler:minus-vertical",
-            "tabler:grip-vertical",
-            "fe:pencil",
-            "tabler:plus",
-            "tabler:trending-up",
-            "tabler:trending-down",
-            "mdi:chevron-down",
-            "mdi:chevron-up",
-            "raphael:arrowup",
-            "raphael:arrowdown",
-            "tabler:eye",
-            "tabler:eye-closed"
-          ]
-        }
-      ]
     ],
   };
 };

@@ -1,4 +1,4 @@
-export type KindOfAccountType = 'cash' | 'debit_card' | 'credit_card'
+export type KindOfAccountType = 'bank' | 'cash' | 'investment' | 'debit_card' | 'credit_card'
 
 export interface AccountType {
   id: number | null;

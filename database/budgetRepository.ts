@@ -20,7 +20,7 @@ export const insertBudget = async (budget: BudgetType) => {
         budget.max_limit,
         budget.expense_amount,
         budget.percentage_value,
-        budget.graph_color,
+        budget.color ?? '',
       ])
     } catch (error) {
       console.error(error)

@@ -1,18 +1,18 @@
-import React from 'react';
 import { Link, Stack } from 'expo-router';
-import { Text } from '@/components/ui/text';
-import { Center } from '@/components/ui/center';
+import { View } from 'react-native';
+import { Heading, Text } from '@/components/ui';
 
+/** Fallback screen for unmatched routes. */
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <Center className="flex-1">
-        <Text className="text-secondary-200">This screen doesn't exist.</Text>
-        <Link href="/" style={{ marginTop: 10 }}>
-          <Text className="text-primary-500">Go to home screen!</Text>
+      <Stack.Screen options={{ title: '¡Ups!' }} />
+      <View className="flex-1 items-center justify-center gap-2 bg-surface px-6">
+        <Heading size="md">Esta pantalla no existe.</Heading>
+        <Link href="/">
+          <Text className="font-bold text-primary">Volver al inicio</Text>
         </Link>
-      </Center>
+      </View>
     </>
   );
 }
