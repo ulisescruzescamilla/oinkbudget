@@ -178,6 +178,7 @@ function NewAccountForm({ onClose }) {
   const [name, setName] = useState("");
   const [bal, setBal] = useState("");
   const [type, setType] = useState("Banco");
+  const [excludeTotal, setExcludeTotal] = useState(false);
   const types = [["Banco","building"],["Cartera","wallet"],["Tarjeta","card"],["Inversión","piggy"]];
   return (
     <div className="stack" style={{ gap: 16 }}>
@@ -190,6 +191,16 @@ function NewAccountForm({ onClose }) {
         </div></div>
       <div className="field"><label>Saldo inicial</label>
         <input className="input money" placeholder="$0.00" inputMode="decimal" value={bal} onChange={e=>setBal(e.target.value)} /></div>
+      {/* switch-row */}
+      <div className="switch-row">
+        <div className="sw-ic"><Icon name="eyeoff" size={19} sw={2.2} /></div>
+        <div className="sw-txt">
+          <div className="l1">Excluir del total</div>
+          <div className="l2">El saldo no se sumará al total de tus cuentas</div>
+        </div>
+        <button type="button" className="switch" role="switch" aria-checked={excludeTotal}
+          data-on={excludeTotal ? "1" : "0"} onClick={()=>setExcludeTotal(v=>!v)}><i /></button>
+      </div>
       <button className="btn btn-primary btn-block btn-lg" onClick={onClose}><Icon name="check" size={20} sw={2.4}/> Crear cuenta</button>
     </div>
   );

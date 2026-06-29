@@ -25,7 +25,8 @@ export function AccountsScreen() {
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
-  const total = useMemo(() => accounts.reduce((s, a) => s + (a?.amount * 1 || 0), 0), [accounts]);
+  // just make a sum of not hidden accounts
+  const total = useMemo(() => accounts.reduce((s, a) => (s + ((!a.hidden) ? a.amount * 1 : 0)), 0), [accounts]);
   const isMasked = (id: number | null) => hideAll || (id != null && masked[id]);
 
   const openCreate = () => { setEditing(null); clearFieldErrors(); setFormOpen(true); };
