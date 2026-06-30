@@ -16,6 +16,7 @@ import { cashFormat } from '@/utils/formatting';
 import { useTheme } from '@/styles/useTheme';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useBudgets } from '@/hooks/useBudgets';
+import { useBalance } from '@/hooks/useBalance';
 
 /** Inicio tab. */
 export function DashboardScreen() {
@@ -23,11 +24,12 @@ export function DashboardScreen() {
   const router = useRouter();
   const { open, version } = useQuickAdd();
 
-  // TODO create balance model from backend and fetch history from balance
-  const [balances, setBalances] = useState<BalanceType[]>([]);
   // Graph dashboard info
   const { dashboard, loading: loadingDashboard, fieldErrors, refresh, clearFieldErrors } =
     useDashboard();
+  // Balance section
+  const { balances, loading: balanceLoading, refresh: refreshBalance } = useBalance();
+  console.debug('balances: ', balances);
   // Budget section data
   const { budgets, loading: loadingBudgets } =
     useBudgets();
@@ -137,14 +139,14 @@ export function DashboardScreen() {
         <View className="px-[18px] pb-1.5 pt-[18px]">
           <CardHeader title="Últimos movimientos" linkLabel="Ver todo" onLinkPress={() => router.push('/history')} className="mb-0" />
         </View>
-        {dashboard?.last_moves.length === 0 ? (
+        {balances?.length === 0 ? (
           <EmptyState icon="swap" message="Aún no hay movimientos. Agrega tu primer gasto o ingreso." />
         ) : (
-          dashboard?.last_moves.map((tx, i) => (
+          balances?.map((tx: BalanceType, i) => (
             <TransactionRow
               key={`${i}-${tx.id ?? ''}`}
               item={tx}
-              subtitle={`${tx.description} · ${tx.amount}`}
+              subtitle={tx.account_name}
               onPress={() => router.push('/history')}
             />
           ))

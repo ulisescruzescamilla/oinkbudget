@@ -25,14 +25,14 @@ export function TransactionRow({ item, subtitle, onPress }: TransactionRowProps)
   const t = useTheme();
   const signed = balanceSignedAmount(item);
   const income = signed > 0;
-  const category = item.budget_name || (income ? 'Ingreso' : 'Otro');
+  const category = item.type || (income ? 'Ingreso' : 'Otro');
 
   return (
     <Pressable onPress={onPress} className="flex-row items-center gap-3 px-[18px] py-3 active:bg-card-2">
-      <IconTile />
+      <IconTile icon={item.type === 'expense' ? 'minus' : 'plus'} color={item.type === 'expense' ? 'red' : 'green'} />
       <View className="min-w-0 flex-1">
         <Text className="font-strong text-[14.5px]" numberOfLines={1}>
-          {item.description || category}
+          {item.description}
         </Text>
         <Text className="mt-0.5 text-[12.5px] font-semi text-muted" numberOfLines={1}>
           {subtitle ?? item.account_name}
