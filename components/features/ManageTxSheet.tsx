@@ -40,7 +40,7 @@ export function ManageTxSheet({ tx, onClose, onDelete }: ManageTxSheetProps) {
         <View>
           <View className="items-center pb-4 pt-1">
             <View className="mb-3">
-              <IconTile category={category} size={60} />
+              <IconTile size={60} />
             </View>
             <Text className="font-display text-[36px]" style={{ color: income ? t.income : t.text }}>
               {signedCash(signed)}

@@ -10,8 +10,8 @@ import { AccountType } from '@/types/AccountType';
 import { BudgetType } from '@/types/BudgetType';
 import { TypeBalance } from '@/types/BalanceType';
 import { cashFormat } from '@/utils/formatting';
-import { getCategoryStyle } from '@/styles/categories';
 import { useTheme } from '@/styles/useTheme';
+import type { IconName } from '@/components/ui';
 
 /** A captured quick-add entry. */
 export interface QuickAddEntry {
@@ -102,7 +102,7 @@ export function QuickAddSheet({ open, mode = 'expense', onClose, accounts, budge
                 <Chip
                   key={b.id}
                   label={b.name}
-                  icon={getCategoryStyle(b.name).icon}
+                  icon={b.category?.icon_code as IconName | undefined}
                   active={budgetId === b.id}
                   onPress={() => setBudgetId(b.id)}
                 />

@@ -6,7 +6,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Card, CardHeader, Icon, IconTile, Pill, ProgressBar, Ring, Text, TrendBars } from '@/components/ui';
+import { Card, CardHeader, Icon, IconTile, Pill, ProgressBar, Ring, Text, TrendBars, type IconName } from '@/components/ui';
 import { EmptyState, TransactionRow, balanceSignedAmount } from '@/components/features';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
 import { useQuickAdd } from '@/navigation/QuickAddProvider';
@@ -105,7 +105,11 @@ export function DashboardScreen() {
                 <View key={b.id} className="gap-2">
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2">
-                      <IconTile category={b.name} size={26} />
+                      <IconTile
+                        icon={b.category?.icon_code as IconName | undefined}
+                        bg={b.category?.color}
+                        size={26}
+                      />
                       <Text className="font-display text-[14px]">{b.name}</Text>
                     </View>
                     <Text className="font-display text-[14px]" style={{ color: over ? t.expense : t.income }}>

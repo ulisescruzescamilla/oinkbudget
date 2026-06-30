@@ -1,3 +1,5 @@
+import { CategoryType } from '@/types/CategoryType';
+
 export type BudgetPeriodType = 'biweekly' | 'weekly' | 'monthly' | 'yearly';
 
 export interface BudgetType {
@@ -10,4 +12,6 @@ export interface BudgetType {
   end_date?: Date;
   is_recurrent: boolean; // whether the budget renews automatically each period
   period: BudgetPeriodType; // renewal cadence, only meaningful when is_recurrent is true
+  category_id?: number | null;
+  category?: CategoryType; // embedded from API GET response
 }

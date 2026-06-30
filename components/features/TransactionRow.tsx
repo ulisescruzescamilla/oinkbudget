@@ -29,7 +29,7 @@ export function TransactionRow({ item, subtitle, onPress }: TransactionRowProps)
 
   return (
     <Pressable onPress={onPress} className="flex-row items-center gap-3 px-[18px] py-3 active:bg-card-2">
-      <IconTile category={category} />
+      <IconTile />
       <View className="min-w-0 flex-1">
         <Text className="font-strong text-[14.5px]" numberOfLines={1}>
           {item.description || category}

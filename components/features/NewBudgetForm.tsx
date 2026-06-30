@@ -1,18 +1,16 @@
 /**
  * NewBudgetForm — create/edit a budget. Ported from `NewBudgetForm` in
- * `design/src/app.jsx`. Category drives the budget's graph color; the period
+ * `design/src/app.jsx`. Category is fetched from the API; the period
  * defaults to the current calendar month.
  */
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Button, Chip, Field, Icon, ModalField, Switch, Text } from '@/components/ui';
+import { Button, Chip, Icon, ModalField, Switch, Text } from '@/components/ui';
 import { BudgetPeriodType, BudgetType } from '@/types/BudgetType';
 import { FieldErrors, getFieldError } from '@/utils/errorHandler';
-import { CATEGORIES, getCategoryStyle } from '@/styles/categories';
+import { useCategories } from '@/hooks/useCategories';
 import { useTheme } from '@/styles/useTheme';
-
-/** Selectable budget categories (all defined category names). */
-const BUDGET_CATEGORIES = Object.keys(CATEGORIES).filter((c) => c !== 'Ingreso');
+import type { IconName } from '@/components/ui';
 
 /** Selectable recurrence cadences for a recurrent budget. */
 const BUDGET_PERIOD_OPTIONS: { value: BudgetPeriodType; label: string }[] = [
@@ -42,16 +40,19 @@ function currentMonthRange(): { start: Date; end: Date } {
 /** Form for creating or editing a budget. */
 export function NewBudgetForm({ budget, onSubmit, onDone, fieldErrors, loading }: NewBudgetFormProps) {
   const t = useTheme();
+  const { categories } = useCategories();
   const [name, setName] = useState(budget?.name ?? '');
   const [max, setMax] = useState(budget ? String(budget.max_limit) : '');
   const [isRecurrent, setIsRecurrent] = useState(budget?.is_recurrent ?? false);
   const [period, setPeriod] = useState<BudgetPeriodType>(budget?.period ?? 'monthly');
+  const [categoryId, setCategoryId] = useState<number | null>(budget?.category_id ?? null);
 
   useEffect(() => {
     setName(budget?.name ?? '');
     setMax(budget ? String(budget.max_limit) : '');
     setIsRecurrent(budget?.is_recurrent ?? false);
     setPeriod(budget?.period ?? 'monthly');
+    setCategoryId(budget?.category_id ?? null);
   }, [budget]);
 
   const submit = async () => {
@@ -65,6 +66,7 @@ export function NewBudgetForm({ budget, onSubmit, onDone, fieldErrors, loading }
       end_date: budget?.end_date ?? end,
       is_recurrent: isRecurrent,
       period,
+      category_id: categoryId,
     });
     if (result) onDone();
   };
@@ -88,6 +90,23 @@ export function NewBudgetForm({ budget, onSubmit, onDone, fieldErrors, loading }
           onChangeText={setMax}
           error={getFieldError(fieldErrors ?? undefined, 'max_limit')}
         />
+
+        {categories.length > 0 && (
+          <View className="gap-[7px]">
+            <Text className="text-[12.5px] font-strong text-muted">Categoría</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {categories.map((c) => (
+                <Chip
+                  key={c.id}
+                  label={c.name}
+                  icon={c.icon_code as IconName}
+                  active={categoryId === c.id}
+                  onPress={() => setCategoryId(c.id)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
 
         <View className="flex-row items-center justify-between rounded-inner border border-border-2 bg-card px-3.5 py-3">
           <View className="flex-1 gap-0.5 pr-3">

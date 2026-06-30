@@ -1,12 +1,17 @@
 import apiClient from '@/api/client';
 import { BudgetType } from '@/types/BudgetType';
+import { CategoryType } from '@/types/CategoryType';
 import { formatApiDate } from '@/utils/formatting';
 
+/** Raw embedded category shape from the API (id as string). */
+type ApiCategory = Omit<CategoryType, 'id'> & { id: string };
+
 /** Raw shape returned by the API (id is a string, dates are Y-m-d strings). */
-type ApiBudget = Omit<BudgetType, 'id' | 'start_date' | 'end_date'> & {
+type ApiBudget = Omit<BudgetType, 'id' | 'start_date' | 'end_date' | 'category'> & {
   id: string;
   start_date?: string;
   end_date?: string;
+  category?: ApiCategory;
 };
 
 /** Fields required to create or update a budget. Send either max_limit or percentage_value, not both. */
@@ -15,6 +20,7 @@ export type BudgetPayload = Pick<BudgetType, 'name' | 'is_recurrent' | 'period'>
   percentage_value?: number;
   start_date?: Date;
   end_date?: Date;
+  category_id?: number | null;
 };
 
 /**
@@ -32,6 +38,7 @@ const toBudgetType = (b: ApiBudget): BudgetType => ({
   id: Number(b.id),
   start_date: parseApiDate(b.start_date),
   end_date: parseApiDate(b.end_date),
+  category: b.category ? { ...b.category, id: Number(b.category.id) } : undefined,
 });
 
 export const budgetService = {

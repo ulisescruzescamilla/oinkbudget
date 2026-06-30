@@ -156,7 +156,10 @@ function NewBudgetForm({ onClose }) {
   const [name, setName] = useState("");
   const [max, setMax] = useState("");
   const [cat, setCat] = useState("Mercado");
+  const [recurrent, setRecurrent] = useState(false);
+  const [period, setPeriod] = useState("monthly");
   const cats = ["Mercado","Restaurantes","Transporte","Ocio","Salud","Servicios","Ahorro","Otro"];
+  const periods = [["weekly","Semanal"],["biweekly","Quincenal"],["monthly","Mensual"],["yearly","Anual"]];
   return (
     <div className="stack" style={{ gap: 16 }}>
       <div className="field"><label>Nombre</label>
@@ -168,7 +171,23 @@ function NewBudgetForm({ onClose }) {
           {cats.map(c => <button key={c} className={"chip"+(cat===c?" on":"")} onClick={()=>setCat(c)}>
             <Icon name={catIcon(c)} size={15} sw={2.2} /> {c}</button>)}
         </div></div>
-      <div className="rowflex gap8 fs13 t-muted fw7"><Icon name="cal" size={16} sw={2}/> Periodo: <b style={{color:"var(--text)"}}>Mensual</b></div>
+      <div className="switch-row">
+        <div className="sw-ic"><Icon name="repeat" size={19} sw={2.2} /></div>
+        <div className="sw-txt">
+          <div className="l1">Presupuesto recurrente</div>
+          <div className="l2">Se vuelve a crear automáticamente cada periodo</div>
+        </div>
+        <button type="button" className="switch" role="switch" aria-checked={recurrent}
+          data-on={recurrent ? "1" : "0"} onClick={()=>setRecurrent(v=>!v)}><i /></button>
+      </div>
+      {recurrent ? (
+        <div className="field"><label>Periodo</label>
+          <div className="chips" style={{ flexWrap: "wrap" }}>
+            {periods.map(([v,l]) => <button key={v} className={"chip"+(period===v?" on":"")} onClick={()=>setPeriod(v)}>{l}</button>)}
+          </div></div>
+      ) : (
+        <div className="rowflex gap8 fs13 t-muted fw7"><Icon name="cal" size={16} sw={2}/> Periodo: <b style={{color:"var(--text)"}}>Mensual</b></div>
+      )}
       <button className="btn btn-primary btn-block btn-lg" onClick={onClose}><Icon name="check" size={20} sw={2.4}/> Crear presupuesto</button>
     </div>
   );
@@ -191,7 +210,6 @@ function NewAccountForm({ onClose }) {
         </div></div>
       <div className="field"><label>Saldo inicial</label>
         <input className="input money" placeholder="$0.00" inputMode="decimal" value={bal} onChange={e=>setBal(e.target.value)} /></div>
-      {/* switch-row */}
       <div className="switch-row">
         <div className="sw-ic"><Icon name="eyeoff" size={19} sw={2.2} /></div>
         <div className="sw-txt">

@@ -3,7 +3,7 @@
  * Ported from `design/src/budgets.jsx`.
  */
 import { Pressable, View } from 'react-native';
-import { Button, Card, Icon, IconTile, ProgressBar, Text } from '@/components/ui';
+import { Button, Card, Icon, IconTile, ProgressBar, Text, type IconName } from '@/components/ui';
 import { BudgetType } from '@/types/BudgetType';
 import { cashFormat } from '@/utils/formatting';
 import { useTheme } from '@/styles/useTheme';
@@ -39,7 +39,11 @@ export function BudgetAccordionCard({ budget, open, onToggle, onEdit, onDelete }
   return (
     <Card flush>
       <Pressable className="flex-row items-center gap-3 px-4 py-4" onPress={onToggle}>
-        <IconTile category={budget.name} />
+        <IconTile
+          color='white'
+          icon={budget.category?.icon_code as IconName | undefined}
+          bg={budget.category?.color}
+        />
         <View className="min-w-0 flex-1">
           <Text className="font-strong text-[14.5px]" numberOfLines={1}>
             {budget.name}
