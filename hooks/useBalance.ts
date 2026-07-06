@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppError, FieldErrors } from '@/utils/errorHandler';
 import { BalanceType } from '@/types/BalanceType';
+import type { RangeType, TypeBalance } from '@/types/BalanceType';
 import { balanceService } from '@/services/balanceService';
 
 interface BalanceState {
@@ -12,7 +13,7 @@ interface BalanceState {
 }
 
 
-export function useBalance() {
+export function useBalance(range?: RangeType, type?: TypeBalance) {
   const [state, setState] = useState<BalanceState>({
     balances: [],
     loading: false,
@@ -31,14 +32,14 @@ export function useBalance() {
     setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
     // fetch data
     try {
-      const balances = await balanceService.getAll();
+      const balances = await balanceService.getAll(range, type);
       setState({ balances, loading: false, error: null, fieldErrors: null });
     } catch (err) {
       // handle error
       console.error(err);
       setState((s) => ({ ...s, loading: false, error: err as AppError }));
     }
-  }, []);
+  }, [range, type]);
 
   useEffect(() => {
     fetchBalance();

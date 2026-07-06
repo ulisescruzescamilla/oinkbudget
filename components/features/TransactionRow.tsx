@@ -35,7 +35,14 @@ export function TransactionRow({ item, subtitle, onPress }: TransactionRowProps)
           {item.description}
         </Text>
         <Text className="mt-0.5 text-[12.5px] font-semi text-muted" numberOfLines={1}>
-          {subtitle ?? item.account_name}
+          {subtitle ?? (
+            <View className='flex flex-row items-center gap-2'>
+              <Text>{item.account_name}</Text>
+              <View className="h-[5px] w-[5px] rounded-full bg-faint" />
+              {/* Time get formatted from backend */}
+              <Text>{item.created_at.split(' ')[1] ?? item.created_at}</Text>
+            </View>
+          )}
         </Text>
       </View>
       <Text
@@ -44,7 +51,7 @@ export function TransactionRow({ item, subtitle, onPress }: TransactionRowProps)
       >
         {signedCash(signed)}
       </Text>
-    </Pressable>
+    </Pressable >
   );
 }
 

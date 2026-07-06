@@ -29,7 +29,6 @@ export function DashboardScreen() {
     useDashboard();
   // Balance section
   const { balances, loading: balanceLoading, refresh: refreshBalance } = useBalance();
-  console.debug('balances: ', balances);
   // Budget section data
   const { budgets, loading: loadingBudgets } =
     useBudgets();

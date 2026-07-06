@@ -1,6 +1,8 @@
 import { AccountType } from "./AccountType";
 
-export type TypeBalance = 'expense' | 'income'
+export type TypeBalance = 'expense' | 'income';
+
+export type RangeType = 'today' | 'week' | 'month' | 'all';
 
 export interface BalanceType {
   id: number | null;
