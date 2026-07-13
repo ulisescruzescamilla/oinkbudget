@@ -51,11 +51,12 @@ export function HistoryScreen() {
     const map = new Map<string, BalanceType[]>();
     (balances ?? []).forEach((t) => {
       const k = dayKey(t);
-      console.debug('k: ', k);
       map.set(k, [...(map.get(k) ?? []), t]);
     });
     return [...map.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
   }, [balances]);
+
+  // console.debug('Groups: ', JSON.stringify(groups));
 
   const activeFilters = (type !== 'all' ? 1 : 0);
 

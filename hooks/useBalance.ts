@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppError, FieldErrors } from '@/utils/errorHandler';
-import { BalanceType } from '@/types/BalanceType';
 import type { RangeType, TypeBalance } from '@/types/BalanceType';
 import { balanceService } from '@/services/balanceService';
+import { FilterBalanceType } from '@/types/filters.ts/FilterBalanceType';
 
 interface BalanceState {
-  balances: BalanceType[] | null;
+  balances: FilterBalanceType[] | null;
   loading: boolean;
   error: AppError | null;
   /** Per-field validation errors from the last failed mutation (422 response). */
