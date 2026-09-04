@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getToken, clearToken } from '@/utils/tokenStorage';
 import { normalizeError } from '@/utils/errorHandler';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost/api';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://app.home.lab:8081/api';
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
