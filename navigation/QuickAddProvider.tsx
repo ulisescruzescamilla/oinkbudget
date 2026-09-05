@@ -31,12 +31,21 @@ export const useQuickAdd = () => useContext(QuickAddContext);
 export function QuickAddProvider({ children }: { children: React.ReactNode }) {
   const { accounts, refresh: refreshAccounts } = useAccounts();
   const { budgets, refresh: refreshBudgets } = useBudgets();
-  const { createExpense } = useExpenses();
-  const { createIncome } = useIncomes();
+  const {
+    createExpense,
+    fieldErrors: expenseFieldErrors,
+    clearFieldErrors: clearExpenseFieldErrors,
+  } = useExpenses();
+  const {
+    createIncome,
+    fieldErrors: incomeFieldErrors,
+    clearFieldErrors: clearIncomeFieldErrors,
+  } = useIncomes();
 
   const [isOpen, setOpen] = useState(false);
   const [mode, setMode] = useState<TypeBalance>('expense');
   const [version, setVersion] = useState(0);
+  const [lastType, setLastType] = useState<TypeBalance>('expense');
 
   useEffect(() => {
     refreshAccounts();
@@ -47,8 +56,14 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
     setOpen(true);
   }, []);
 
+  const clearServerFieldErrors = useCallback(() => {
+    clearExpenseFieldErrors();
+    clearIncomeFieldErrors();
+  }, [clearExpenseFieldErrors, clearIncomeFieldErrors]);
+
   const handleSubmit = useCallback(
-    async (entry: QuickAddEntry) => {
+    async (entry: QuickAddEntry): Promise<boolean> => {
+      setLastType(entry.type);
       if (entry.type === 'expense') {
         const expense: ExpenseType = {
           id: null,
@@ -59,7 +74,8 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
           account: entry.account,
           account_id: entry.account.id!,
         };
-        await createExpense(expense);
+        const created = await createExpense(expense);
+        if (!created) return false;
       } else {
         const income: IncomeType = {
           id: null,
@@ -69,15 +85,18 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
           account_id: entry.account.id!,
           created_at: new Date(),
         };
-        await createIncome(income);
+        const created = await createIncome(income);
+        if (!created) return false;
       }
       setVersion((v) => v + 1);
       await Promise.all([refreshAccounts(), refreshBudgets()]);
+      return true;
     },
     [refreshAccounts, refreshBudgets, createExpense, createIncome]
   );
 
   const value = useMemo(() => ({ open, version }), [open, version]);
+  const serverFieldErrors = lastType === 'income' ? incomeFieldErrors : expenseFieldErrors;
 
   return (
     <QuickAddContext.Provider value={value}>
@@ -89,6 +108,8 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
         accounts={accounts}
         budgets={budgets}
         onSubmit={handleSubmit}
+        serverFieldErrors={serverFieldErrors}
+        onClearServerFieldErrors={clearServerFieldErrors}
       />
     </QuickAddContext.Provider>
   );
