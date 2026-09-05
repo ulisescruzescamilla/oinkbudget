@@ -3,7 +3,7 @@
  * Ported from the `.tabbar` / `.fab` block in `design/src/app.jsx`.
  * Passed to expo-router `<Tabs tabBar={...} />`.
  */
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

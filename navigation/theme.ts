@@ -2,7 +2,7 @@
  * React Navigation themes derived from the Aurora design tokens.
  * Keeps the navigation container background/borders in sync with the app palette.
  */
-import { DarkTheme, DefaultTheme, type Theme } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, type Theme } from 'expo-router';
 import { darkTheme, lightTheme } from '@/styles/theme';
 
 /** Navigation theme for the light color scheme. */
