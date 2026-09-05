@@ -26,7 +26,7 @@ export function AccountCard({ account, total, masked, onToggleMask, onManage }: 
   return (
     <Card className="p-[15px]">
       <View className="flex-row items-center gap-3">
-        <IconTile icon={style.icon} solid bg={style.color} size={46} />
+        <IconTile icon={style.icon} bg={style.color} color="#FFFFFF" size={46} />
         <View className="min-w-0 flex-1">
           <Text className="font-strong text-[14.5px]" numberOfLines={1}>
             {account.name}

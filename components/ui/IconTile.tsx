@@ -1,38 +1,25 @@
 /**
- * IconTile — rounded category/account icon tile.
- * Ported from the `IconTile` primitive in `design/src/ui.jsx`. Colors come from the
- * category palette (`styles/categories.ts`); pass an explicit `color`/`bg` to override.
+ * IconTile — rounded icon tile. Pass explicit `icon`, `bg`, and `color`; all
+ * three are optional and fall back to theme defaults (card2 / muted).
  */
 import { View } from 'react-native';
 import { Icon, type IconName } from './Icon';
-import { getCategoryStyle } from '@/styles/categories';
-import { useIsDark } from '@/styles/useTheme';
+import { useTheme } from '@/styles/useTheme';
 
 export interface IconTileProps {
-  /** Icon glyph (defaults to the category's icon when `category` is given). */
+  /** Icon glyph name. */
   icon?: IconName;
-  /** Category name used to derive icon + colors. */
-  category?: string;
   /** Tile size in px. */
   size?: number;
-  /** Solid (saturated) fill instead of the soft tint. */
-  solid?: boolean;
-  /** Explicit background override. */
+  /** Tile background color (hex). */
   bg?: string;
-  /** Explicit foreground (icon) override. */
+  /** Icon foreground color (hex). */
   color?: string;
 }
 
 /** Square rounded tile holding a single icon. */
-export function IconTile({ icon, category, size = 42, solid = false, bg, color }: IconTileProps) {
-  const dark = useIsDark();
-  const style = getCategoryStyle(category);
-  const glyph = icon ?? style.icon;
-
-  const background =
-    bg ?? (solid ? style.solid : dark ? style.softDark : style.soft);
-  const foreground =
-    color ?? (solid ? '#ffffff' : dark ? style.fgDark : style.fg);
+export function IconTile({ icon = 'chart', size = 42, bg, color }: IconTileProps) {
+  const t = useTheme();
 
   return (
     <View
@@ -40,12 +27,12 @@ export function IconTile({ icon, category, size = 42, solid = false, bg, color }
         width: size,
         height: size,
         borderRadius: size >= 42 ? 13 : 10,
-        backgroundColor: background,
+        backgroundColor: bg ?? t.card2,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Icon name={glyph} size={size * 0.5} strokeWidth={2} color={foreground} />
+      <Icon name={icon} size={size * 0.5} strokeWidth={2} color={color ?? t.muted} />
     </View>
   );
 }

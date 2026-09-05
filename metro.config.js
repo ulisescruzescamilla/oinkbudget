@@ -3,4 +3,8 @@ const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
 
+// expo-sqlite's web worker imports its wa-sqlite binary directly; Metro
+// doesn't treat `.wasm` as an asset by default.
+config.resolver.assetExts.push('wasm');
+
 module.exports = withNativeWind(config, { input: './global.css' });

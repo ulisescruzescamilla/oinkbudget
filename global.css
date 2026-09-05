@@ -20,6 +20,8 @@
     --color-income-soft: 212 249 226;
     --color-expense: 230 66 76;
     --color-expense-soft: 255 226 223;
+    --color-danger: 220 38 38;
+    --color-danger-soft: 254 226 226;
     --color-page: 244 243 247;
     --color-surface: 247 246 250;
     --color-card: 255 255 255;
@@ -43,6 +45,8 @@
     --color-income-soft: 16 60 40;
     --color-expense: 246 108 109;
     --color-expense-soft: 81 34 34;
+    --color-danger: 248 113 113;
+    --color-danger-soft: 69 26 26;
     --color-page: 11 10 16;
     --color-surface: 12 11 18;
     --color-card: 23 22 31;

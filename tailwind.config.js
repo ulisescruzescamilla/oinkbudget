@@ -28,6 +28,10 @@ module.exports = {
           DEFAULT: 'rgb(var(--color-expense) / <alpha-value>)',
           soft: 'rgb(var(--color-expense-soft) / <alpha-value>)',
         },
+        danger: {
+          DEFAULT: 'rgb(var(--color-danger) / <alpha-value>)',
+          soft: 'rgb(var(--color-danger-soft) / <alpha-value>)',
+        },
         page: 'rgb(var(--color-page) / <alpha-value>)',
         surface: 'rgb(var(--color-surface) / <alpha-value>)',
         card: {

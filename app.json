@@ -7,12 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "starterkitexpo",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.orbedeveloper7.oinkbudget"
@@ -23,7 +17,6 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.orbedeveloper7.oinkbudget"
     },
     "web": {
@@ -35,7 +28,14 @@
       "expo-router",
       "expo-web-browser",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
       [
         "expo-sqlite",
         {
@@ -53,7 +53,8 @@
         }
       ],
       "expo-secure-store",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

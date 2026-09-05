@@ -6,16 +6,15 @@
 import { View } from 'react-native';
 import { Text } from '@/components/ui';
 import { BudgetType } from '@/types/BudgetType';
-import { getCategoryStyle } from '@/styles/categories';
 import { useTheme } from '@/styles/useTheme';
 
 export interface AllocationBarProps {
   budgets: BudgetType[];
 }
 
-/** Resolves a budget's swatch color from its category. */
+/** Resolves a budget's swatch color from its API category, with a neutral fallback. */
 function budgetColor(b: BudgetType): string {
-  return getCategoryStyle(b.name).solid;
+  return b.category?.color ?? '#8C8C9E';
 }
 
 /** Stacked allocation bar + legend. */

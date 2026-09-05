@@ -20,6 +20,8 @@ export interface ThemePalette {
   incomeSoft: string;
   expense: string;
   expenseSoft: string;
+  danger: string;
+  dangerSoft: string;
   page: string;
   surface: string;
   card: string;
@@ -49,6 +51,8 @@ export const lightTheme: ThemePalette = {
   incomeSoft: '#D4F9E2',
   expense: '#E6424C',
   expenseSoft: '#FFE2DF',
+  danger: '#DC2626',
+  dangerSoft: '#FEE2E2',
   page: '#F4F3F7',
   surface: '#F7F6FA',
   card: '#FFFFFF',
@@ -76,6 +80,8 @@ export const darkTheme: ThemePalette = {
   incomeSoft: '#103C28',
   expense: '#F66C6D',
   expenseSoft: '#512222',
+  danger: '#F87171',
+  dangerSoft: '#451A1A',
   page: '#0B0A10',
   surface: '#0C0B12',
   card: '#17161F',

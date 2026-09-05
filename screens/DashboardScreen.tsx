@@ -6,7 +6,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Card, CardHeader, Icon, IconTile, Pill, ProgressBar, Ring, Text, TrendBars } from '@/components/ui';
+import { Card, CardHeader, Icon, IconTile, Pill, ProgressBar, Ring, Text, TrendBars, type IconName } from '@/components/ui';
 import { EmptyState, TransactionRow, balanceSignedAmount } from '@/components/features';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
 import { useQuickAdd } from '@/navigation/QuickAddProvider';
@@ -16,6 +16,7 @@ import { cashFormat } from '@/utils/formatting';
 import { useTheme } from '@/styles/useTheme';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useBudgets } from '@/hooks/useBudgets';
+import { useBalance } from '@/hooks/useBalance';
 
 /** Inicio tab. */
 export function DashboardScreen() {
@@ -23,11 +24,11 @@ export function DashboardScreen() {
   const router = useRouter();
   const { open, version } = useQuickAdd();
 
-  // TODO create balance model from backend and fetch history from balance
-  const [balances, setBalances] = useState<BalanceType[]>([]);
   // Graph dashboard info
   const { dashboard, loading: loadingDashboard, fieldErrors, refresh, clearFieldErrors } =
     useDashboard();
+  // Balance section
+  const { balances, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   // Budget section data
   const { budgets, loading: loadingBudgets } =
     useBudgets();
@@ -105,7 +106,11 @@ export function DashboardScreen() {
                 <View key={b.id} className="gap-2">
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2">
-                      <IconTile category={b.name} size={26} />
+                      <IconTile
+                        icon={b.category?.icon_code as IconName | undefined}
+                        bg={b.category?.color}
+                        size={26}
+                      />
                       <Text className="font-display text-[14px]">{b.name}</Text>
                     </View>
                     <Text className="font-display text-[14px]" style={{ color: over ? t.expense : t.income }}>
@@ -133,14 +138,14 @@ export function DashboardScreen() {
         <View className="px-[18px] pb-1.5 pt-[18px]">
           <CardHeader title="Últimos movimientos" linkLabel="Ver todo" onLinkPress={() => router.push('/history')} className="mb-0" />
         </View>
-        {dashboard?.last_moves.length === 0 ? (
+        {balances?.length === 0 ? (
           <EmptyState icon="swap" message="Aún no hay movimientos. Agrega tu primer gasto o ingreso." />
         ) : (
-          dashboard?.last_moves.map((tx, i) => (
+          balances?.map((tx: BalanceType, i) => (
             <TransactionRow
               key={`${i}-${tx.id ?? ''}`}
               item={tx}
-              subtitle={`${tx.description} · ${tx.amount}`}
+              subtitle={tx.account_name}
               onPress={() => router.push('/history')}
             />
           ))
