@@ -1,126 +1,147 @@
-import { BalanceType } from "@/types/BalanceType"
-import { getDBConnection } from "."
-import { AccountType } from "@/types/AccountType"
-import { BudgetType } from "@/types/BudgetType"
+import type * as SQLite from 'expo-sqlite';
+import { BalanceType, TypeBalance } from '@/types/BalanceType';
+import { getDBConnection } from '.';
+import { generateClientId } from './clientId';
 
-export const getTotal = async (): Promise<{total: number} | undefined | null> => {
-  const db = await getDBConnection()
-
-  try {
-    return db.getFirstAsync("SELECT SUM(amount) as total FROM accounts WHERE hidden = 0;")
-  } catch (error) {
-    console.error(error)
-  }
+interface BalanceRow {
+  client_id: string;
+  id: number | null;
+  amount: number;
+  description: string;
+  type: TypeBalance;
+  account_name: string;
+  account_id: number | null;
+  source_client_id: string | null;
+  created_at: string;
 }
 
-export const getBalance = async () => {
-  const db = await getDBConnection()
+const toBalanceType = (row: BalanceRow): BalanceType => ({
+  id: row.id,
+  client_id: row.client_id,
+  amount: row.amount,
+  description: row.description,
+  account_name: row.account_name,
+  type: row.type,
+  account: null,
+  created_at: new Date(row.created_at),
+});
 
-  try {
+/** Local mirror of `balanceService.getAll` — same `(range?, type?)` filter contract, used as the offline read fallback. */
+export async function getAll(range?: string, type?: string): Promise<BalanceType[]> {
+  const db = await getDBConnection();
+  const clauses: string[] = ['deleted = 0'];
+  const params: (string | number)[] = [];
 
-    const query = `
-    SELECT * FROM balances
-    ORDER BY created_at ASC, id;
-    `
-
-    return db.getAllAsync<BalanceType>(query)
-  } catch (error) {
-    console.error(error)
+  if (range && range !== 'all') {
+    const days = range === 'today' ? 0 : range === 'week' ? 7 : 30;
+    clauses.push("DATE(created_at) >= DATE('now', ?)");
+    params.push(`-${days} days`);
   }
+  if (type && type !== 'all') {
+    clauses.push('type = ?');
+    params.push(type);
+  }
+
+  const rows = await db.getAllAsync<BalanceRow>(
+    `SELECT * FROM balances WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC;`,
+    params
+  );
+  return rows.map(toBalanceType);
 }
 
-export const getBalanceByDate = async (date: string) => {
-  const db = await getDBConnection()
-
-  try {
-
-    const query = `
-    SELECT * FROM balances
-    WHERE DATE(balances.created_at) = DATE(?)
-    ORDER BY balances.id DESC;
-    `
-
-    return db.getAllAsync<BalanceType>(query, [date])
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-export const getLatestExpenses = async (limit = 5) => {
-  const db = await getDBConnection()
-  try {
-    return db.getAllAsync<BalanceType>(
-      `SELECT * FROM balances WHERE type = 'expense' ORDER BY id DESC LIMIT ?;`,
-      [limit]
-    )
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-export const getTodayExpensesTotal = async (): Promise<{ total: number } | null | undefined> => {
-  const db = await getDBConnection()
-  const today = new Date().toISOString().split('T')[0]
-  try {
-    return db.getFirstAsync(
-      `SELECT SUM(amount) as total FROM balances WHERE type = 'expense' AND DATE(created_at) = DATE(?);`,
-      [today]
-    )
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-export const insertToBalance = async (balance: BalanceType, account: AccountType, budget?: BudgetType) => {
-  const database = await getDBConnection()
-
-  const dateParsed = balance.created_at.toISOString().split('T')[0]
-  const timeParsed = balance.created_at.toISOString().split('T')[1]
-
-    try {
-      database.withTransactionAsync(async () => {
-        // Insert into history / balance table
-        database.runAsync("INSERT INTO balances (amount, description, current_balance, type, account_name, budget_name, created_at) VALUES (?,?,?,?,?,?,?);",
-          [balance.amount, balance.description, balance.current_balance, balance.type, balance.account_name, balance.budget_name, `${dateParsed} ${timeParsed}`]);
-    
-        // update account
-        database.getFirstAsync<{ amount: number }>("SELECT amount FROM accounts WHERE id = ?;", [account.id])
-        .then((result) => {
-          let amount = parseFloat(String(result?.amount ?? 0))
-    
-          if (balance.type === 'expense' && budget?.id) {
-            amount = amount - balance.amount
-            database.runAsync(`INSERT INTO expenses (amount, description, account_id, created_at, budget_id) VALUES (?,?,?,?,?);`, [
-              balance.amount,
-              balance.description,
-              account.id,
-              `${dateParsed} ${timeParsed}`,
-              budget.id
-            ])
-          }
-    
-          if (balance.type === 'income') {
-            amount = amount + balance.amount
-            database.runAsync(`INSERT INTO incomes (amount, description, account_id, created_at) VALUES (?,?,?,?);`, [
-              balance.amount,
-              balance.description,
-              account.id,
-              `${dateParsed} ${timeParsed}`,
-            ])
-          }
-    
-          database.runAsync("UPDATE accounts SET amount = ? WHERE id = ?;", [amount, account.id])
-        })
-    
-        // update budget if expense
-        if (budget?.id && balance.type === 'expense') {
-          database.runAsync("UPDATE budgets SET expense_amount = ?  WHERE id = ?;", [
-            budget.expense_amount + balance.amount,
-            budget.id
-          ])
-        }
-      })
-    } catch (error) {
-      console.error(error)
+export async function replaceAllFromServer(balances: BalanceType[]): Promise<void> {
+  const db = await getDBConnection();
+  for (const balance of balances) {
+    const existing =
+      balance.id != null
+        ? await db.getFirstAsync<{ client_id: string }>('SELECT client_id FROM balances WHERE id = ?;', [balance.id])
+        : null;
+    if (existing) {
+      await db.runAsync(
+        "UPDATE balances SET amount = ?, description = ?, type = ?, account_name = ?, created_at = ?, sync_status = 'synced', deleted = 0 WHERE client_id = ?;",
+        [balance.amount, balance.description, balance.type, balance.account_name, balance.created_at.toISOString(), existing.client_id]
+      );
+    } else {
+      await db.runAsync(
+        "INSERT INTO balances (client_id, id, amount, description, type, account_name, account_id, created_at, sync_status) VALUES (?,?,?,?,?,?,?,?,'synced');",
+        [
+          generateClientId(),
+          balance.id,
+          balance.amount,
+          balance.description,
+          balance.type,
+          balance.account_name,
+          balance.account?.id ?? null,
+          balance.created_at?.toISOString() ?? 'Sin fecha',
+        ]
+      );
     }
   }
+}
+
+/**
+ * Appends a mirrored transaction-log row. Takes a `db`/transaction handle
+ * (not `getDBConnection()`) so it can run inside the same
+ * `withExclusiveTransactionAsync` block as the expense/income insert that
+ * calls it, keeping the balance update atomic. `sourceClientId` (the
+ * expense/income's own `client_id`) is what lets `removeBySourceClientId`
+ * find this row again once that expense/income syncs or is cancelled —
+ * without it, a server refresh can't tell this is the same transaction (it
+ * only matches by `id`, which this row doesn't have yet) and inserts a
+ * duplicate instead of replacing it.
+ */
+export async function appendMirrorRow(
+  db: SQLite.SQLiteDatabase,
+  entry: {
+    amount: number;
+    description: string;
+    type: TypeBalance;
+    accountName: string;
+    accountId: number | null;
+    accountClientId: string;
+    sourceClientId: string;
+    createdAt: Date;
+  }
+): Promise<void> {
+  await db.runAsync(
+    "INSERT INTO balances (client_id, id, amount, description, type, account_name, account_id, account_client_id, source_client_id, created_at, sync_status) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 'pending');",
+    [
+      generateClientId(),
+      entry.amount,
+      entry.description,
+      entry.type,
+      entry.accountName,
+      entry.accountId,
+      entry.accountClientId,
+      entry.sourceClientId,
+      entry.createdAt.toISOString(),
+    ]
+  );
+}
+
+/**
+ * Removes the local mirror row tied to a given expense/income `client_id` —
+ * called once that expense/income is confirmed synced (the next server
+ * refresh brings the authoritative balance row back in) or cancelled before
+ * it ever synced (nothing server-side to mirror).
+ */
+export async function removeBySourceClientId(sourceClientId: string): Promise<void> {
+  const db = await getDBConnection();
+  await db.runAsync('DELETE FROM balances WHERE source_client_id = ?;', [sourceClientId]);
+}
+
+export async function getTodayExpensesTotal(): Promise<{ total: number } | null> {
+  const db = await getDBConnection();
+  return db.getFirstAsync<{ total: number }>(
+    "SELECT SUM(amount) as total FROM balances WHERE type = 'expense' AND deleted = 0 AND DATE(created_at) = DATE('now');"
+  );
+}
+
+export async function getLatestExpenses(limit = 5): Promise<BalanceType[]> {
+  const db = await getDBConnection();
+  const rows = await db.getAllAsync<BalanceRow>(
+    "SELECT * FROM balances WHERE type = 'expense' AND deleted = 0 ORDER BY id DESC LIMIT ?;",
+    [limit]
+  );
+  return rows.map(toBalanceType);
+}

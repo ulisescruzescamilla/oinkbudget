@@ -4,6 +4,8 @@ export type BudgetPeriodType = 'biweekly' | 'weekly' | 'monthly' | 'yearly';
 
 export interface BudgetType {
   id: number | null;
+  /** Client-generated UUID, set when the record originated (or was edited) offline. Used as the local sync key until `id` is assigned by the server. */
+  client_id?: string;
   name: string;
   max_limit: number; // maximum limit $ for the budget
   expense_amount?: number; // total spent amount, dynamic calculated

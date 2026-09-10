@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heading, IconButton, Muted, OinkMark } from '@/components/ui';
+import { SyncStatusIndicator } from '@/components/features';
 import { useTheme } from '@/styles/useTheme';
 
 export interface AppBarProps {
@@ -39,7 +40,10 @@ export function AppBar({ eyebrow, title }: AppBarProps) {
           </Heading>
         </View>
       </View>
-      <IconButton icon={dark ? 'sun' : 'moon'} onPress={toggleColorScheme} />
+      <View className="flex-row items-center gap-2">
+        <SyncStatusIndicator />
+        <IconButton icon={dark ? 'sun' : 'moon'} onPress={toggleColorScheme} />
+      </View>
     </View>
   );
 }

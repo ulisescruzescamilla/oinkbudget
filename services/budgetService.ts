@@ -1,7 +1,11 @@
 import apiClient from '@/api/client';
 import { BudgetType } from '@/types/BudgetType';
 import { CategoryType } from '@/types/CategoryType';
-import { formatApiDate } from '@/utils/formatting';
+import { AppError, isNetworkError } from '@/utils/errorHandler';
+import { formatApiDate, parseApiDate } from '@/utils/formatting';
+import * as budgetRepository from '@/database/budgetRepository';
+import type { ApiEntitySource } from './offline/DataSource';
+import { SyncingDataSource } from './offline/SyncingDataSource';
 
 /** Raw embedded category shape from the API (id as string). */
 type ApiCategory = Omit<CategoryType, 'id'> & { id: string };
@@ -23,16 +27,6 @@ export type BudgetPayload = Pick<BudgetType, 'name' | 'is_recurrent' | 'period'>
   category_id?: number | null;
 };
 
-/**
- * Parses a Y-m-d date string from the API into a local Date object.
- * Appends T00:00:00 to avoid timezone shifts when parsing date-only strings.
- * Returns undefined if the value is absent.
- *
- * @param value - Date string in Y-m-d format (e.g. "2024-01-15")
- */
-const parseApiDate = (value?: string): Date | undefined =>
-  value ? new Date(`${value}T00:00:00`) : undefined;
-
 const toBudgetType = (b: ApiBudget): BudgetType => ({
   ...b,
   id: Number(b.id),
@@ -41,31 +35,12 @@ const toBudgetType = (b: ApiBudget): BudgetType => ({
   category: b.category ? { ...b.category, id: Number(b.category.id) } : undefined,
 });
 
-export const budgetService = {
-  /**
-   * Returns all budgets for the authenticated user.
-   */
-  async getAll(): Promise<BudgetType[]> {
+const apiSource: ApiEntitySource<BudgetType, BudgetPayload> = {
+  async getAll() {
     const { data } = await apiClient.get<ApiBudget[]>('/budgets');
     return data.map(toBudgetType);
   },
-
-  /**
-   * Returns a single budget by id.
-   *
-   * @param id - Budget identifier
-   */
-  async getById(id: string): Promise<BudgetType> {
-    const { data } = await apiClient.get<ApiBudget>(`/budgets/${id}`);
-    return toBudgetType(data);
-  },
-
-  /**
-   * Creates a new budget. The server calculates max_limit from the user's income.
-   *
-   * @param payload - Budget data to create
-   */
-  async create(payload: BudgetPayload): Promise<BudgetType> {
+  async create(payload) {
     const { data } = await apiClient.post<ApiBudget>('/budgets', {
       ...payload,
       start_date: formatApiDate(payload.start_date),
@@ -73,14 +48,7 @@ export const budgetService = {
     });
     return toBudgetType(data);
   },
-
-  /**
-   * Updates an existing budget.
-   *
-   * @param id - Budget identifier
-   * @param payload - Fields to update
-   */
-  async update(id: string, payload: Partial<BudgetPayload>): Promise<BudgetType> {
+  async update(id, payload) {
     const { data } = await apiClient.put<ApiBudget>(`/budgets/${id}`, {
       ...payload,
       start_date: formatApiDate(payload.start_date),
@@ -88,13 +56,58 @@ export const budgetService = {
     });
     return toBudgetType(data);
   },
+  async remove(id) {
+    await apiClient.delete(`/budgets/${id}`);
+  },
+};
+
+const synced = new SyncingDataSource(apiSource, budgetRepository, 'budget');
+
+export const budgetService = {
+  /**
+   * Returns all budgets for the authenticated user. Falls back to the local
+   * mirror when offline or the API is unreachable.
+   */
+  getAll: (): Promise<BudgetType[]> => synced.getAll(),
+
+  /**
+   * Returns a single budget by id, falling back to the local mirror on a network error.
+   *
+   * @param id - Budget identifier
+   */
+  async getById(id: string): Promise<BudgetType> {
+    try {
+      const { data } = await apiClient.get<ApiBudget>(`/budgets/${id}`);
+      return toBudgetType(data);
+    } catch (err) {
+      if (!isNetworkError(err as AppError)) throw err;
+      const local = await budgetRepository.findById(Number(id));
+      if (local) return local;
+      throw err;
+    }
+  },
+
+  /**
+   * Creates a new budget. Queued locally for sync when offline. The server
+   * calculates max_limit from the user's income when online.
+   *
+   * @param payload - Budget data to create
+   */
+  create: (payload: BudgetPayload): Promise<BudgetType> => synced.create(payload),
+
+  /**
+   * Updates an existing budget. `id` may be a server id or, for a record
+   * that hasn't synced yet, its local `client_id`.
+   *
+   * @param id - Budget identifier
+   * @param payload - Fields to update
+   */
+  update: (id: string, payload: Partial<BudgetPayload>): Promise<BudgetType> => synced.update(id, payload),
 
   /**
    * Deletes a budget and its associated expenses.
    *
    * @param id - Budget identifier
    */
-  async remove(id: string): Promise<void> {
-    await apiClient.delete(`/budgets/${id}`);
-  },
+  remove: (id: string): Promise<void> => synced.remove(id),
 };

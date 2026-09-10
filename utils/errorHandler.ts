@@ -53,3 +53,15 @@ export function normalizeError(error: unknown): AppError {
 export function getFieldError(fieldErrors: FieldErrors | undefined, field: string): string | undefined {
   return fieldErrors?.[field]?.[0];
 }
+
+/**
+ * True when the error means "the request never got a response" — no internet,
+ * DNS failure, connection refused, or a timeout — as opposed to the server
+ * responding with a real status (validation, auth, 5xx). Used to decide whether
+ * a service call should fall back to the local offline data source.
+ *
+ * @param error - A normalized {@link AppError}
+ */
+export function isNetworkError(error: AppError): boolean {
+  return error.raw instanceof AxiosError && !error.raw.response;
+}

@@ -8,7 +8,7 @@ import { EmptyState, ManageTxSheet, TransactionRow, balanceSignedAmount } from '
 import { Sheet } from '@/components/ui';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
 import { BalanceType } from '@/types/BalanceType';
-import { cashFormat, signedCash } from '@/utils/formatting';
+import { cashFormat, formatApiDate, signedCash } from '@/utils/formatting';
 import { useBalance } from '@/hooks/useBalance';
 
 type RangeKey = 'today' | 'week' | 'month' | 'all';
@@ -22,7 +22,7 @@ const RANGES: { value: RangeKey; label: string }[] = [
 ];
 
 /** YYYY-MM-DD key for a balance row. */
-const dayKey = (item: BalanceType) => String(item.created_at).slice(0, 10);
+const dayKey = (item: BalanceType) => formatApiDate(item.created_at) ?? '';
 
 /** Human label for a day key. */
 function dayLabel(key: string): string {

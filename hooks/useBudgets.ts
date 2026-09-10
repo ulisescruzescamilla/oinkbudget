@@ -104,11 +104,14 @@ export function useBudgets() {
           ? { max_limit: budget.max_limit }
           : { percentage_value: budget.percentage_value }),
       };
-      const updated = await budgetService.update(String(budget.id), payload);
+      const key = budget.id != null ? String(budget.id) : budget.client_id!;
+      const updated = await budgetService.update(key, payload);
       setState((s) => ({
         ...s,
         loading: false,
-        budgets: s.budgets.map((b) => (b.id === budget.id ? updated : b)),
+        budgets: s.budgets.map((b) =>
+          (budget.id != null ? b.id === budget.id : b.client_id === budget.client_id) ? updated : b
+        ),
       }));
       return updated;
     } catch (err) {
@@ -129,8 +132,11 @@ export function useBudgets() {
    * @param budget - The budget to remove
    */
   async function removeBudget(budget: BudgetType): Promise<void> {
-    await budgetService.remove(String(budget.id));
-    setState((s) => ({ ...s, budgets: s.budgets.filter((b) => b.id !== budget.id) }));
+    await budgetService.remove(budget.id != null ? String(budget.id) : budget.client_id!);
+    setState((s) => ({
+      ...s,
+      budgets: s.budgets.filter((b) => (budget.id != null ? b.id !== budget.id : b.client_id !== budget.client_id)),
+    }));
   }
 
   return {
