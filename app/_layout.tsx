@@ -9,15 +9,16 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import * as SQLite from 'expo-sqlite';
-import { SQLiteProvider } from 'expo-sqlite';
+import type * as SQLite from 'expo-sqlite';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
-import { initDatabase } from '@/database';
+import { getDBConnection, initDatabase } from '@/database';
+import { initNetworkStatus } from '@/utils/networkStatus';
+import { initAutoSync } from '@/services/syncService';
 import { getNavTheme } from '@/navigation/theme';
 
 export {
@@ -27,11 +28,10 @@ export {
 
 SplashScreen.preventAutoHideAsync();
 
-const db = SQLite.openDatabaseSync('database.db');
-
 /**
- * Root layout: loads fonts, initializes SQLite, and wires the global providers
- * (gesture handler, bottom sheets, safe area, navigation theme).
+ * Root layout: loads fonts, opens the shared SQLite connection and runs
+ * migrations, and wires the global providers (gesture handler, bottom
+ * sheets, safe area, navigation theme).
  */
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -40,38 +40,53 @@ export default function RootLayout() {
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
   });
+  const [db, setDb] = useState<SQLite.SQLiteDatabase | null>(null);
 
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
-    if (loaded) SplashScreen.hideAsync();
-  }, [loaded]);
+    (async () => {
+      await initDatabase();
+      setDb(await getDBConnection());
+    })();
+  }, []);
 
-  if (!loaded) return null;
+  useEffect(() => {
+    if (loaded && db) SplashScreen.hideAsync();
+  }, [loaded, db]);
 
-  return <RootLayoutNav />;
+  if (!loaded || !db) return null;
+
+  return <RootLayoutNav db={db} />;
 }
 
-function RootLayoutNav() {
+function RootLayoutNav({ db }: { db: SQLite.SQLiteDatabase }) {
   const { colorScheme } = useColorScheme();
   useDrizzleStudio(db);
 
+  useEffect(() => {
+    const stopNetworkStatus = initNetworkStatus();
+    const stopAutoSync = initAutoSync();
+    return () => {
+      stopNetworkStatus();
+      stopAutoSync();
+    };
+  }, []);
+
   return (
-    <SQLiteProvider databaseName="database.db" onInit={initDatabase}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <ThemeProvider value={getNavTheme(colorScheme)}>
-            <StatusBar
-              barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
-            />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-          </ThemeProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </SQLiteProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider value={getNavTheme(colorScheme)}>
+          <StatusBar
+            barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+          />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

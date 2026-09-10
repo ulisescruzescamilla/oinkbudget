@@ -49,6 +49,9 @@ export const ICONS = {
   arrowright: 'M5 12h14M13 6l6 6-6 6',
   gift: 'M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7S10 3 7.5 4 9 7 12 7zM12 7s2-4 4.5-3S15 7 12 7z',
   star: 'M12 3l2.6 5.6L21 9.3l-4.5 4.3 1.1 6.1L12 17l-5.6 2.7 1.1-6.1L3 9.3l6.4-.7z',
+  cloudsync: 'M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z',
+  cloudoff: 'M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z|M3 3l18 18',
+  cloudcheck: 'M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z|M9 14l2 2 4-4',
 } as const;
 
 /** Name of an available icon glyph. */

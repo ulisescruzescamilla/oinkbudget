@@ -7,4 +7,5 @@ export { ManageTxSheet, type ManageTxSheetProps } from './ManageTxSheet';
 export { NewAccountForm, type NewAccountFormProps } from './NewAccountForm';
 export { NewBudgetForm, type NewBudgetFormProps } from './NewBudgetForm';
 export { QuickAddSheet, type QuickAddEntry, type QuickAddSheetProps } from './QuickAddSheet';
+export { SyncStatusIndicator } from './SyncStatusIndicator';
 export { TransactionRow, balanceSignedAmount, type TransactionRowProps } from './TransactionRow';

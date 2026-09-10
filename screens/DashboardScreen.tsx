@@ -10,7 +10,6 @@ import { Card, CardHeader, Icon, IconTile, Pill, ProgressBar, Ring, Text, TrendB
 import { EmptyState, TransactionRow, balanceSignedAmount } from '@/components/features';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
 import { useQuickAdd } from '@/navigation/QuickAddProvider';
-import { getBalance } from '@/database/balanceRepository';
 import { BalanceType } from '@/types/BalanceType';
 import { cashFormat } from '@/utils/formatting';
 import { useTheme } from '@/styles/useTheme';

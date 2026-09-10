@@ -70,11 +70,15 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
           amount: entry.amount,
           description: entry.description,
           created_at: new Date(),
+          // Placeholder when the budget hasn't synced yet (id: null); the real
+          // link is resolved via `entry.budget.client_id` inside createExpense.
           budget_id: entry.budget?.id ?? 0,
           account: entry.account,
-          account_id: entry.account.id!,
+          // Placeholder when the account hasn't synced yet (id: null); the real
+          // link is resolved via `entry.account.client_id` inside createExpense.
+          account_id: entry.account.id ?? 0,
         };
-        const created = await createExpense(expense);
+        const created = await createExpense(expense, entry.budget);
         if (!created) return false;
       } else {
         const income: IncomeType = {
@@ -82,7 +86,9 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
           amount: entry.amount,
           description: entry.description,
           account: entry.account,
-          account_id: entry.account.id!,
+          // Placeholder when the account hasn't synced yet (id: null); the real
+          // link is resolved via `entry.account.client_id` inside createIncome.
+          account_id: entry.account.id ?? 0,
           created_at: new Date(),
         };
         const created = await createIncome(income);

@@ -83,11 +83,14 @@ export function useAccounts() {
         type: account.type,
         hidden: account.hidden,
       };
-      const updated = await accountService.update(String(account.id), payload);
+      const key = account.id != null ? String(account.id) : account.client_id!;
+      const updated = await accountService.update(key, payload);
       setState((s) => ({
         ...s,
         loading: false,
-        accounts: s.accounts.map((a) => (a.id === account.id ? updated : a)),
+        accounts: s.accounts.map((a) =>
+          (account.id != null ? a.id === account.id : a.client_id === account.client_id) ? updated : a
+        ),
       }));
       return updated;
     } catch (err) {
@@ -108,8 +111,11 @@ export function useAccounts() {
    * @param account - The account to remove
    */
   async function removeAccount(account: AccountType): Promise<void> {
-    await accountService.remove(String(account.id));
-    setState((s) => ({ ...s, accounts: s.accounts.filter((a) => a.id !== account.id) }));
+    await accountService.remove(account.id != null ? String(account.id) : account.client_id!);
+    setState((s) => ({
+      ...s,
+      accounts: s.accounts.filter((a) => (account.id != null ? a.id !== account.id : a.client_id !== account.client_id)),
+    }));
   }
 
   /**

@@ -57,7 +57,7 @@ export function useIncomes() {
         description: income.description,
         account_id: income.account_id,
       };
-      const created = await incomeService.create(payload);
+      const created = await incomeService.create(payload, income.account);
       setState((s) => ({ ...s, loading: false, incomes: [created, ...s.incomes] }));
       return created;
     } catch (err) {
@@ -78,8 +78,11 @@ export function useIncomes() {
    * @param income - The income to remove
    */
   async function removeIncome(income: IncomeType): Promise<void> {
-    await incomeService.remove(String(income.id));
-    setState((s) => ({ ...s, incomes: s.incomes.filter((e) => e.id !== income.id) }));
+    await incomeService.remove(income.id != null ? String(income.id) : income.client_id!);
+    setState((s) => ({
+      ...s,
+      incomes: s.incomes.filter((e) => (income.id != null ? e.id !== income.id : e.client_id !== income.client_id)),
+    }));
   }
 
   return {

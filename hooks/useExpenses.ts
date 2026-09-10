@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { expenseService, ExpensePayload } from '@/services/expenseService';
 import { ExpenseType } from '@/types/ExpenseType';
+import { BudgetType } from '@/types/BudgetType';
 import { AppError, FieldErrors } from '@/utils/errorHandler';
 
 interface ExpensesState {
@@ -48,8 +49,10 @@ export function useExpenses() {
    * Creates a new expense. Populates `fieldErrors` on 422.
    *
    * @param expense - The expense data to create
+   * @param budget - The expense's budget, needed to resolve the local sync
+   * link when creating offline (an `ExpenseType` only carries `budget_id`, not the full object)
    */
-  async function createExpense(expense: ExpenseType): Promise<ExpenseType | undefined> {
+  async function createExpense(expense: ExpenseType, budget?: BudgetType): Promise<ExpenseType | undefined> {
     setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
     try {
       const payload: ExpensePayload = {
@@ -58,7 +61,7 @@ export function useExpenses() {
         account_id: expense.account_id,
         budget_id: expense.budget_id,
       };
-      const created = await expenseService.create(payload);
+      const created = await expenseService.create(payload, expense.account, budget);
       setState((s) => ({ ...s, loading: false, expenses: [created, ...s.expenses] }));
       return created;
     } catch (err) {
@@ -79,8 +82,11 @@ export function useExpenses() {
    * @param expense - The expense to remove
    */
   async function removeExpense(expense: ExpenseType): Promise<void> {
-    await expenseService.remove(String(expense.id));
-    setState((s) => ({ ...s, expenses: s.expenses.filter((e) => e.id !== expense.id) }));
+    await expenseService.remove(expense.id != null ? String(expense.id) : expense.client_id!);
+    setState((s) => ({
+      ...s,
+      expenses: s.expenses.filter((e) => (expense.id != null ? e.id !== expense.id : e.client_id !== expense.client_id)),
+    }));
   }
 
   return {
