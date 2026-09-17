@@ -25,17 +25,27 @@ export interface SheetProps {
   title?: string;
   /** Optional custom right-side header content (defaults to a close button). */
   right?: React.ReactNode;
+  /** Fixed snap points (e.g. `['100%']`). When omitted, the sheet sizes itself to its content. */
+  snapPoints?: (string | number)[];
   children: React.ReactNode;
 }
 
-/** Controlled modal bottom sheet with dynamic height. */
-export function Sheet({ open, onClose, title, right, children }: SheetProps) {
+/** Controlled modal bottom sheet. Sizes to content by default, or to `snapPoints` when given. */
+export function Sheet({ open, onClose, title, right, snapPoints, children }: SheetProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const ref = useRef<BottomSheetModal>(null);
+  const hasPresented = useRef(false);
 
   useEffect(() => {
-    if (open) ref.current?.present();
+    if (open) {
+      ref.current?.present();
+      hasPresented.current = true;
+    } else if (hasPresented.current) {
+      // Only dismiss once we've actually presented — calling dismiss()
+      // before the first present() can leave the modal unable to open later.
+      // ref.current?.dismiss();
+    }
   }, [open]);
 
   const renderBackdrop = useCallback(
@@ -51,13 +61,22 @@ export function Sheet({ open, onClose, title, right, children }: SheetProps) {
       onDismiss={onClose}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
-      enableDynamicSizing
+      topInset={insets.top}
+      enableDynamicSizing={!snapPoints}
+      snapPoints={snapPoints}
       enablePanDownToClose
       backdropComponent={renderBackdrop}
       handleIndicatorStyle={{ backgroundColor: t.border2, width: 38, height: 4 }}
       backgroundStyle={{ backgroundColor: t.card, borderRadius: 28 }}
     >
-      <BottomSheetView style={{ paddingHorizontal: 18, paddingBottom: insets.bottom + 22, paddingTop: 4 }}>
+      <BottomSheetView
+        style={{
+          paddingHorizontal: 18,
+          paddingBottom: insets.bottom + 22,
+          paddingTop: 4,
+          ...(snapPoints ? { flex: 1 } : null),
+        }}
+      >
         {(title || right) && (
           <View className="mb-4 flex-row items-center justify-between">
             <Heading size="md" className="text-[19px]">

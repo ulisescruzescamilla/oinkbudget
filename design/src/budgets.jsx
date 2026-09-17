@@ -50,6 +50,10 @@ function Budgets({ dark, onAdd }) {
         )}
       </div>
 
+      <a className="btn btn-soft btn-block btn-lg" href="OinkBudget Plan Wizard.html" style={{ textDecoration: "none" }}>
+        <Icon name="bolt" size={19} sw={2.2} /> Armar mi plan con el asistente
+      </a>
+
       {/* budget cards */}
       <div className="card-h" style={{ padding: "4px 4px 0", marginBottom: 0 }}>
         <h3>Tus presupuestos</h3>

@@ -11,7 +11,7 @@ import type { BudgetType } from '@/types/BudgetType';
 import type { BalanceType } from '@/types/BalanceType';
 import type { CategoryType } from '@/types/CategoryType';
 import { AppError, isNetworkError } from '@/utils/errorHandler';
-import { formatApiDate, parseApiDate } from '@/utils/formatting';
+import { formatApiDate, formatApiDateTime, parseApiDate } from '@/utils/formatting';
 import { isOnline, recordApiOutcome, subscribeNetwork } from '@/utils/networkStatus';
 import * as accountRepository from '@/database/accountRepository';
 import * as budgetRepository from '@/database/budgetRepository';
@@ -131,7 +131,13 @@ async function replayExpense(item: SyncQueueItem): Promise<void> {
   // 'create' is the only other operation expenses ever queue — there's no update endpoint.
   const local = await expenseRepository.findByClientId(item.clientId);
   if (!local) return; // deleted locally before it could sync
-  const payload = { amount: local.amount, description: local.description, account_id: local.account_id, budget_id: local.budget_id };
+  const payload = {
+    amount: local.amount,
+    description: local.description,
+    account_id: local.account_id,
+    budget_id: local.budget_id,
+    created_at: formatApiDateTime(local.created_at),
+  };
   const { data } = await apiClient.post<{ id: string }>('/expenses', payload);
   await expenseRepository.attachServerId(item.clientId, Number(data.id));
   // The pending local mirror row (id-less, so a server refresh can't match it) is now
@@ -150,7 +156,12 @@ async function replayIncome(item: SyncQueueItem): Promise<void> {
   }
   const local = await incomeRepository.findByClientId(item.clientId);
   if (!local) return;
-  const payload = { amount: local.amount, description: local.description, account_id: local.account_id };
+  const payload = {
+    amount: local.amount,
+    description: local.description,
+    account_id: local.account_id,
+    created_at: formatApiDateTime(local.created_at),
+  };
   const { data } = await apiClient.post<{ id: string }>('/incomes', payload);
   await incomeRepository.attachServerId(item.clientId, Number(data.id));
   await balanceRepository.removeBySourceClientId(item.clientId);

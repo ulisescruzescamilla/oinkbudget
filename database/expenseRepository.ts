@@ -117,7 +117,7 @@ export async function replaceAllFromServer(expenses: ExpenseType[]): Promise<voi
 export async function createLocal(payload: ExpensePayload, accountClientId: string, budgetClientId: string): Promise<ExpenseType> {
   const db = await getDBConnection();
   const clientId = generateClientId();
-  const createdAt = new Date();
+  const createdAt = payload.created_at ?? new Date();
 
   await db.withTransactionAsync(async () => {
     // Resolve each side's server id up front — an account/budget synced before this expense

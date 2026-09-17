@@ -54,7 +54,11 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
   const open = useCallback((m: TypeBalance = 'expense') => {
     setMode(m);
     setOpen(true);
-  }, []);
+    // Re-pull accounts/budgets so the sheet reflects anything created since
+    // the provider mounted (e.g. a budget added offline on another tab).
+    refreshAccounts();
+    refreshBudgets();
+  }, [refreshAccounts, refreshBudgets]);
 
   const clearServerFieldErrors = useCallback(() => {
     clearExpenseFieldErrors();
@@ -69,7 +73,7 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
           id: null,
           amount: entry.amount,
           description: entry.description,
-          created_at: new Date(),
+          created_at: entry.date,
           // Placeholder when the budget hasn't synced yet (id: null); the real
           // link is resolved via `entry.budget.client_id` inside createExpense.
           budget_id: entry.budget?.id ?? 0,
@@ -89,7 +93,7 @@ export function QuickAddProvider({ children }: { children: React.ReactNode }) {
           // Placeholder when the account hasn't synced yet (id: null); the real
           // link is resolved via `entry.account.client_id` inside createIncome.
           account_id: entry.account.id ?? 0,
-          created_at: new Date(),
+          created_at: entry.date,
         };
         const created = await createIncome(income);
         if (!created) return false;

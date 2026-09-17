@@ -2,6 +2,7 @@ import apiClient from '@/api/client';
 import { IncomeType } from '@/types/IncomeType';
 import type { AccountType } from '@/types/AccountType';
 import { AppError, isNetworkError } from '@/utils/errorHandler';
+import { formatApiDateTime } from '@/utils/formatting';
 import { isOnline, recordApiOutcome } from '@/utils/networkStatus';
 import * as incomeRepository from '@/database/incomeRepository';
 import * as accountRepository from '@/database/accountRepository';
@@ -13,7 +14,9 @@ import { notifyQueueChanged } from '@/services/syncService';
 type ApiIncome = Omit<IncomeType, 'id' | 'created_at'> & { id: string; created_at: string };
 
 /** Fields required to create an income. */
-export type IncomePayload = Pick<IncomeType, 'amount' | 'description' | 'account_id'>;
+export type IncomePayload = Pick<IncomeType, 'amount' | 'description' | 'account_id'> & {
+  created_at?: Date;
+};
 
 const toIncomeType = (e: ApiIncome): IncomeType => ({
   ...e,
@@ -65,7 +68,10 @@ export const incomeService = {
 
     if (isOnline() && !accountPending) {
       try {
-        const { data } = await apiClient.post<ApiIncome>('/incomes', payload);
+        const { data } = await apiClient.post<ApiIncome>('/incomes', {
+          ...payload,
+          created_at: formatApiDateTime(payload.created_at),
+        });
         recordApiOutcome(true);
         const created = toIncomeType(data);
         await incomeRepository.upsertFromServer(created);

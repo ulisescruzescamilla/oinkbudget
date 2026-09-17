@@ -2,6 +2,8 @@ import type * as SQLite from 'expo-sqlite';
 import { BalanceType, TypeBalance } from '@/types/BalanceType';
 import { getDBConnection } from '.';
 import { generateClientId } from './clientId';
+import { CDMX_SQL_SHIFT } from './timezone';
+import { dayInAppTimeZone, todayInAppTimeZone } from '@/utils/formatting';
 
 interface BalanceRow {
   client_id: string;
@@ -34,8 +36,8 @@ export async function getAll(range?: string, type?: string): Promise<BalanceType
 
   if (range && range !== 'all') {
     const days = range === 'today' ? 0 : range === 'week' ? 7 : 30;
-    clauses.push("DATE(created_at) >= DATE('now', ?)");
-    params.push(`-${days} days`);
+    clauses.push('DATE(created_at, ?) >= ?');
+    params.push(CDMX_SQL_SHIFT, dayInAppTimeZone(-days));
   }
   if (type && type !== 'all') {
     clauses.push('type = ?');
@@ -52,30 +54,34 @@ export async function getAll(range?: string, type?: string): Promise<BalanceType
 export async function replaceAllFromServer(balances: BalanceType[]): Promise<void> {
   const db = await getDBConnection();
   for (const balance of balances) {
-    const existing =
-      balance.id != null
-        ? await db.getFirstAsync<{ client_id: string }>('SELECT client_id FROM balances WHERE id = ?;', [balance.id])
-        : null;
-    if (existing) {
-      await db.runAsync(
-        "UPDATE balances SET amount = ?, description = ?, type = ?, account_name = ?, created_at = ?, sync_status = 'synced', deleted = 0 WHERE client_id = ?;",
-        [balance.amount, balance.description, balance.type, balance.account_name, balance.created_at.toISOString(), existing.client_id]
-      );
-    } else {
-      await db.runAsync(
-        "INSERT INTO balances (client_id, id, amount, description, type, account_name, account_id, created_at, sync_status) VALUES (?,?,?,?,?,?,?,?,'synced');",
-        [
-          generateClientId(),
-          balance.id,
-          balance.amount,
-          balance.description,
-          balance.type,
-          balance.account_name,
-          balance.account?.id ?? null,
-          balance.created_at?.toISOString() ?? 'Sin fecha',
-        ]
-      );
-    }
+    // A single atomic upsert (rather than a SELECT-then-INSERT/UPDATE) so two
+    // overlapping calls to this function (e.g. a tab refresh racing a
+    // reconnect-triggered mirror sync) can't both see "not found" for the
+    // same `id` and then both try to INSERT it, which previously tripped
+    // `balances.id`'s UNIQUE constraint.
+    await db.runAsync(
+      `INSERT INTO balances (client_id, id, amount, description, type, account_name, account_id, created_at, sync_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'synced')
+       ON CONFLICT(id) DO UPDATE SET
+         amount = excluded.amount,
+         description = excluded.description,
+         type = excluded.type,
+         account_name = excluded.account_name,
+         account_id = excluded.account_id,
+         created_at = excluded.created_at,
+         sync_status = 'synced',
+         deleted = 0;`,
+      [
+        generateClientId(),
+        balance.id,
+        balance.amount,
+        balance.description,
+        balance.type,
+        balance.account_name,
+        balance.account?.id ?? null,
+        balance.created_at?.toISOString() ?? 'Sin fecha',
+      ]
+    );
   }
 }
 
@@ -133,7 +139,8 @@ export async function removeBySourceClientId(sourceClientId: string): Promise<vo
 export async function getTodayExpensesTotal(): Promise<{ total: number } | null> {
   const db = await getDBConnection();
   return db.getFirstAsync<{ total: number }>(
-    "SELECT SUM(amount) as total FROM balances WHERE type = 'expense' AND deleted = 0 AND DATE(created_at) = DATE('now');"
+    "SELECT SUM(amount) as total FROM balances WHERE type = 'expense' AND deleted = 0 AND DATE(created_at, ?) = ?;",
+    [CDMX_SQL_SHIFT, todayInAppTimeZone()]
   );
 }
 

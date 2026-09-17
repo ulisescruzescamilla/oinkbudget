@@ -5,7 +5,7 @@
 import { View } from 'react-native';
 import { Button, IconTile, Sheet, Text } from '@/components/ui';
 import { BalanceType } from '@/types/BalanceType';
-import { signedCash } from '@/utils/formatting';
+import { formatDisplayDate, signedCash } from '@/utils/formatting';
 import { balanceSignedAmount } from './TransactionRow';
 import { useTheme } from '@/styles/useTheme';
 
@@ -22,7 +22,7 @@ function detailRows(tx: BalanceType): [string, string][] {
   return [
     ['Categoría', tx.budget_name || (income ? 'Ingreso' : 'Otro')],
     ['Cuenta', tx.account_name],
-    ['Fecha', new Date(tx.created_at).toLocaleDateString('es-MX')],
+    ['Fecha', formatDisplayDate(tx.created_at)],
     ['Tipo', income ? 'Ingreso' : 'Gasto'],
   ];
 }
