@@ -1,14 +1,16 @@
 /**
  * HistoryScreen — period balance summary, filters and date-grouped movements.
  */
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Card, Chip, Icon, IconButton, Pill, Text } from '@/components/ui';
 import { EmptyState, ManageTxSheet, TransactionRow, balanceSignedAmount } from '@/components/features';
 import { Sheet } from '@/components/ui';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
+import { useQuickAdd } from '@/navigation/QuickAddProvider';
 import { BalanceType } from '@/types/BalanceType';
-import { cashFormat, formatApiDate, signedCash } from '@/utils/formatting';
+import { cashFormat, dayInAppTimeZone, formatDateInAppTimeZone, signedCash, todayInAppTimeZone } from '@/utils/formatting';
 import { useBalance } from '@/hooks/useBalance';
 
 type RangeKey = 'today' | 'week' | 'month' | 'all';
@@ -21,18 +23,22 @@ const RANGES: { value: RangeKey; label: string }[] = [
   { value: 'all', label: 'Todo' },
 ];
 
-/** YYYY-MM-DD key for a balance row. */
-const dayKey = (item: BalanceType) => formatApiDate(item.created_at) ?? '';
+/** YYYY-MM-DD key for a balance row, anchored to Mexico City's calendar day. */
+const dayKey = (item: BalanceType) => formatDateInAppTimeZone(item.created_at);
 
-/** Human label for a day key. */
+/** Human label for a day key ("Hoy"/"Ayer" relative to Mexico City's current date). */
 function dayLabel(key: string): string {
-  const today = new Date().toISOString().slice(0, 10);
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  const yesterday = y.toISOString().slice(0, 10);
-  if (key === today) return 'Hoy';
-  if (key === yesterday) return 'Ayer';
-  return new Date(key).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (key === todayInAppTimeZone()) return 'Hoy';
+  if (key === dayInAppTimeZone(-1)) return 'Ayer';
+  // Format via a UTC-anchored Date so the weekday/day/month can't shift by the device's own
+  // timezone — `key` is a plain calendar day, not an instant.
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('es-MX', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
 }
 
 /** Movimientos tab. */
@@ -42,7 +48,12 @@ export function HistoryScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<BalanceType | null>(null);
 
+  const { version } = useQuickAdd();
   const { balances, loading, refresh } = useBalance(range, type);
+
+  // Re-pull whenever the tab regains focus, and whenever a quick-add save
+  // bumps `version` (e.g. the user added a movement from the Dashboard).
+  useFocusEffect(useCallback(() => { refresh(); }, [refresh, version]));
 
   const income = (balances ?? []).filter((t) => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount), 0);
   const expense = (balances ?? []).filter((t) => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0);

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OinkBudget · Icon Export</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --violet:#7b4be0; --ink:oklch(0.24 0.03 295); --sub:oklch(0.52 0.03 295);
+    --line:oklch(0.9 0.02 296); --card:#fff; --bg:oklch(0.975 0.012 296);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Plus Jakarta Sans",system-ui,sans-serif; }
+  .mono{ font-family:"JetBrains Mono",monospace; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:56px 32px 96px; }
+
+  header{ display:flex; align-items:center; gap:26px; margin-bottom:14px; }
+  header img{ width:96px; height:96px; border-radius:21px; box-shadow:0 12px 30px rgba(60,24,110,.28); }
+  header h1{ font-size:30px; font-weight:800; letter-spacing:-.02em; margin:0 0 4px; }
+  header p{ margin:0; color:var(--sub); font-size:15px; font-weight:500; }
+  .swatch{ display:inline-flex; align-items:center; gap:7px; margin-top:9px; font-size:12px; color:var(--sub); }
+  .swatch i{ width:14px; height:14px; border-radius:4px; background:var(--violet); display:inline-block; }
+
+  section{ margin-top:48px; }
+  .shead{ display:flex; align-items:baseline; gap:12px; margin-bottom:20px; padding-bottom:11px; border-bottom:1px solid var(--line); }
+  .shead h2{ font-size:18px; font-weight:800; letter-spacing:-.01em; margin:0; }
+  .shead span{ font-size:13px; color:var(--sub); font-weight:500; }
+
+  .row{ display:flex; flex-wrap:wrap; gap:26px; align-items:flex-end; }
+  .tile{ display:flex; flex-direction:column; align-items:center; gap:9px; }
+  .tile img{ display:block; box-shadow:0 6px 16px rgba(60,24,110,.16); }
+  .tile.sq img{ border-radius:22.37%; }      /* iOS visual mask preview only */
+  .tile .lbl{ font-size:11px; color:var(--sub); text-align:center; line-height:1.35; }
+  .tile .lbl b{ display:block; color:var(--ink); font-weight:700; font-size:12px; }
+
+  .cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:18px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .card .cn{ font-size:13px; font-weight:700; } .card .cd{ font-size:11px; color:var(--sub); text-align:center; line-height:1.4; }
+
+  /* adaptive composition demo */
+  .adaptive{ position:relative; width:108px; height:108px; }
+  .adaptive .layer{ position:absolute; inset:0; width:100%; height:100%; }
+  .mask-sq{ border-radius:24%; overflow:hidden; }
+  .mask-circle{ border-radius:50%; overflow:hidden; }
+  .mask-squircle{ overflow:hidden; clip-path: url(#sq-clip); }
+
+  .note{ margin-top:14px; font-size:12.5px; color:var(--sub); line-height:1.6; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
+  .note code{ font-family:"JetBrains Mono",monospace; background:oklch(0.95 0.02 296); padding:1px 6px; border-radius:5px; font-size:11.5px; color:var(--violet); }
+  .files{ columns:2; gap:30px; font-size:12px; color:var(--sub); }
+  .files .grp{ break-inside:avoid; margin-bottom:14px; }
+  .files .grp b{ color:var(--ink); display:block; margin-bottom:4px; font-size:12.5px; }
+  .files .grp div{ padding:1px 0; }
+</style>
+</head>
+<body>
+<svg width="0" height="0"><defs><clipPath id="sq-clip" clipPathUnits="objectBoundingBox">
+  <path d="M0,0.5 C0,0.07 0.07,0 0.5,0 C0.93,0 1,0.07 1,0.5 C1,0.93 0.93,1 0.5,1 C0.07,1 0,0.93 0,0.5 Z" />
+</clipPath></defs></svg>
+
+<div class="wrap">
+  <header>
+    <img src="app-icon-assets/master/glifo-512.png" alt="OinkBudget icon" />
+    <div>
+      <h1>OinkBudget — App Icon</h1>
+      <p>Glifo · store-ready assets for iOS &amp; Android</p>
+      <span class="swatch"><i></i><span class="mono">#7B4BE0</span> · white pig-snout mark</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="shead"><h2>iOS</h2><span>full-bleed squares · system applies the rounded mask</span></div>
+    <div class="row">
+      <div class="tile sq"><img src="app-icon-assets/ios/AppIcon.appiconset/Icon-1024.png" width="120" height="120" alt="" /><span class="lbl"><b>1024</b>App Store</span></div>
+      <div class="tile sq"><img src="app-icon-assets/ios/AppIcon.appiconset/Icon-60-3x.png" width="90" height="90" alt="" /><span class="lbl"><b>180</b>iPhone @3x</span></div>
+      <div class="tile sq"><img src="app-icon-assets/ios/AppIcon.appiconset/Icon-83.5-2x.png" width="83" height="83" alt="" /><span class="lbl"><b>167</b>iPad Pro</span></div>
+      <div class="tile sq"><img src="app-icon-assets/ios/AppIcon.appiconset/Icon-76-2x.png" width="76" height="76" alt="" /><span class="lbl"><b>152</b>iPad @2x</span></div>
+      <div class="tile sq"><img src="app-icon-assets/ios/AppIcon.appiconset/Icon-40-3x.png" width="60" height="60" alt="" /><span class="lbl"><b>120</b>Spotlight</span></div>
+      <div class="tile sq"><img src="app-icon-assets/ios/AppIcon.appiconset/Icon-29-3x.png" width="43" height="43" alt="" /><span class="lbl"><b>87</b>Settings</span></div>
+      <div class="tile sq"><img src="app-icon-assets/ios/AppIcon.appiconset/Icon-20-2x.png" width="30" height="30" alt="" /><span class="lbl"><b>40</b>Notif</span></div>
+    </div>
+    <div class="note"><b>Drop-in:</b> drag <code>ios/AppIcon.appiconset</code> into your <code>Assets.xcassets</code>. Contents.json is included (15 sizes + marketing). Icons are opaque squares with no rounded corners or transparency — Apple's requirement.</div>
+  </section>
+
+  <section>
+    <div class="shead"><h2>Android</h2><span>adaptive icon + legacy mipmaps + Play Store listing</span></div>
+    <div class="cards">
+      <div class="card">
+        <div class="adaptive mask-squircle">
+          <img class="layer" src="app-icon-assets/android/mipmap-xxxhdpi/ic_launcher_background.png" alt="" />
+          <img class="layer" src="app-icon-assets/android/mipmap-xxxhdpi/ic_launcher_foreground.png" alt="" />
+        </div>
+        <div class="cn">Adaptive · squircle</div>
+        <div class="cd">background + foreground layers, masked by the launcher</div>
+      </div>
+      <div class="card">
+        <div class="adaptive mask-circle">
+          <img class="layer" src="app-icon-assets/android/mipmap-xxxhdpi/ic_launcher_background.png" alt="" />
+          <img class="layer" src="app-icon-assets/android/mipmap-xxxhdpi/ic_launcher_foreground.png" alt="" />
+        </div>
+        <div class="cn">Adaptive · circle</div>
+        <div class="cd">same layers, circular mask</div>
+      </div>
+      <div class="card">
+        <img src="app-icon-assets/android/mipmap-xxxhdpi/ic_launcher_round.png" width="108" height="108" alt="" />
+        <div class="cn">Legacy round</div>
+        <div class="cd">pre-API 26 launchers</div>
+      </div>
+      <div class="card">
+        <img src="app-icon-assets/android/play-store-icon-512.png" width="108" height="108" style="border-radius:24%" alt="" />
+        <div class="cn">Play Store · 512</div>
+        <div class="cd">high-res listing icon</div>
+      </div>
+    </div>
+    <div class="note"><b>Drop-in:</b> copy each <code>mipmap-*</code> folder into <code>app/src/main/res/</code>, plus <code>mipmap-anydpi-v26/</code> (adaptive XML) and <code>values/ic_launcher_background.xml</code> (the <code>#7B4BE0</code> color). The foreground snout is padded into the 66dp safe zone so no mask clips it.</div>
+  </section>
+
+  <section>
+    <div class="shead"><h2>Package contents</h2><span>43 files</span></div>
+    <div class="files">
+      <div class="grp"><b>master/</b><div>glifo-1024.png</div><div>glifo-512.png</div></div>
+      <div class="grp"><b>ios/AppIcon.appiconset/</b><div>15 PNGs (20→1024)</div><div>Contents.json</div></div>
+      <div class="grp"><b>android/mipmap-{m,h,xh,xxh,xxxh}dpi/</b><div>ic_launcher.png</div><div>ic_launcher_round.png</div><div>ic_launcher_foreground.png</div><div>ic_launcher_background.png</div></div>
+      <div class="grp"><b>android/mipmap-anydpi-v26/</b><div>ic_launcher.xml</div><div>ic_launcher_round.xml</div></div>
+      <div class="grp"><b>android/values/</b><div>ic_launcher_background.xml</div></div>
+      <div class="grp"><b>android/</b><div>play-store-icon-512.png</div></div>
+      <div class="grp"><b>/</b><div>README.txt</div></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

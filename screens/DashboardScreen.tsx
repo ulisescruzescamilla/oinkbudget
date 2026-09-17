@@ -29,12 +29,12 @@ export function DashboardScreen() {
   // Balance section
   const { balances, loading: balanceLoading, refresh: refreshBalance } = useBalance();
   // Budget section data
-  const { budgets, loading: loadingBudgets } =
+  const { budgets, loading: loadingBudgets, refresh: refreshBudgets } =
     useBudgets();
 
   const load = useCallback(async () => {
-    refresh()
-  }, [refresh]);
+    await Promise.all([refresh(), refreshBalance(), refreshBudgets()]);
+  }, [refresh, refreshBalance, refreshBudgets]);
 
   useFocusEffect(useCallback(() => { load(); }, [load, version]));
 

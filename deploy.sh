@@ -16,6 +16,17 @@ sed -i "s/versionCode $CURRENT_CODE/versionCode $NEXT_CODE/" "$BUILD_GRADLE"
 echo "    versionCode $CURRENT_CODE -> $NEXT_CODE"
 echo "    (versionName is not auto-bumped — update it in $BUILD_GRADLE if this is a user-facing release)"
 
+echo "==> Ensuring .env points at the release API..."
+ENV_FILE=".env"
+API_URL_LINE="EXPO_PUBLIC_API_URL=http://app.home.lab:8081/api"
+touch "$ENV_FILE"
+if grep -q '^EXPO_PUBLIC_API_URL=' "$ENV_FILE"; then
+  sed -i "s|^EXPO_PUBLIC_API_URL=.*|$API_URL_LINE|" "$ENV_FILE"
+else
+  echo "$API_URL_LINE" >> "$ENV_FILE"
+fi
+echo "    $API_URL_LINE"
+
 echo "==> Building release APK..."
 cd android
 # Gradle doesn't track .env files as bundle task inputs, so a plain

@@ -3,6 +3,7 @@ import { ExpenseType } from '@/types/ExpenseType';
 import type { AccountType } from '@/types/AccountType';
 import type { BudgetType } from '@/types/BudgetType';
 import { AppError, isNetworkError } from '@/utils/errorHandler';
+import { formatApiDateTime } from '@/utils/formatting';
 import { isOnline, recordApiOutcome } from '@/utils/networkStatus';
 import * as expenseRepository from '@/database/expenseRepository';
 import * as accountRepository from '@/database/accountRepository';
@@ -15,7 +16,9 @@ import { notifyQueueChanged } from '@/services/syncService';
 type ApiExpense = Omit<ExpenseType, 'id' | 'created_at'> & { id: string; created_at: string };
 
 /** Fields required to create an expense. */
-export type ExpensePayload = Pick<ExpenseType, 'amount' | 'description' | 'account_id' | 'budget_id'>;
+export type ExpensePayload = Pick<ExpenseType, 'amount' | 'description' | 'account_id' | 'budget_id'> & {
+  created_at?: Date;
+};
 
 const toExpenseType = (e: ApiExpense): ExpenseType => ({
   ...e,
@@ -79,7 +82,10 @@ export const expenseService = {
 
     if (isOnline() && !accountPending && !budgetPending) {
       try {
-        const { data } = await apiClient.post<ApiExpense>('/expenses', payload);
+        const { data } = await apiClient.post<ApiExpense>('/expenses', {
+          ...payload,
+          created_at: formatApiDateTime(payload.created_at),
+        });
         recordApiOutcome(true);
         const created = toExpenseType(data);
         await expenseRepository.upsertFromServer(created);

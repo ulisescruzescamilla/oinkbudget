@@ -1,17 +1,27 @@
 /* quickadd.jsx — fast expense/income capture sheet */
 const { useState: useStateQA, useEffect: useEffectQA } = React;
 
+const isoDay = (offset = 0) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); };
+const dayLabel = (iso) => {
+  if (iso === isoDay(0)) return "Hoy";
+  if (iso === isoDay(-1)) return "Ayer";
+  const [y, m, d] = iso.split("-").map(Number);
+  const months = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  return `${d} ${months[m - 1]}${y !== new Date().getFullYear() ? " " + y : ""}`;
+};
+
 function QuickAdd({ open, mode: initMode, onClose, onSave, dark }) {
   const [mode, setMode] = useStateQA(initMode || "expense");
   const [amount, setAmount] = useStateQA("0");
   const [cat, setCat] = useStateQA("Mercado");
   const [acct, setAcct] = useStateQA("BBVA");
   const [desc, setDesc] = useStateQA("");
+  const [date, setDate] = useStateQA(isoDay(0));
   const [saved, setSaved] = useStateQA(false);
 
   useEffectQA(() => {
     if (open) { setMode(initMode || "expense"); setAmount("0"); setDesc(""); setSaved(false);
-      setCat(initMode === "income" ? "Ingreso" : "Mercado"); }
+      setDate(isoDay(0)); setCat(initMode === "income" ? "Ingreso" : "Mercado"); }
   }, [open, initMode]);
 
   const press = (k) => {
@@ -30,7 +40,7 @@ function QuickAdd({ open, mode: initMode, onClose, onSave, dark }) {
 
   const doSave = () => {
     setSaved(true);
-    onSave && onSave({ mode, amount: parseFloat(amount) || 0, cat, acct, desc });
+    onSave && onSave({ mode, amount: parseFloat(amount) || 0, cat, acct, desc, date });
     setTimeout(onClose, 850);
   };
 
@@ -90,6 +100,20 @@ function QuickAdd({ open, mode: initMode, onClose, onSave, dark }) {
               <Icon name={a.icon} size={15} sw={2.2} /> {a.name}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* date */}
+      <div className="field" style={{ marginBottom: 14 }}>
+        <label>Fecha</label>
+        <div className="daterow">
+          <button className={"chip" + (date === isoDay(0) ? " on" : "")} onClick={() => setDate(isoDay(0))}>Hoy</button>
+          <button className={"chip" + (date === isoDay(-1) ? " on" : "")} onClick={() => setDate(isoDay(-1))}>Ayer</button>
+          <label className={"datepick" + (date !== isoDay(0) && date !== isoDay(-1) ? " on" : "")}>
+            <Icon name="cal" size={15} sw={2.2} />
+            <span>{date === isoDay(0) || date === isoDay(-1) ? "Otra fecha" : dayLabel(date)}</span>
+            <input type="date" value={date} max={isoDay(0)} onChange={(e) => e.target.value && setDate(e.target.value)} />
+          </label>
         </div>
       </div>
 

@@ -66,6 +66,7 @@ export function useBudgets() {
         is_recurrent: budget.is_recurrent,
         period: budget.period,
         category_id: budget.category_id,
+        expense_amount: 0,
         ...(budget.max_limit > 0
           ? { max_limit: budget.max_limit }
           : { percentage_value: budget.percentage_value }),

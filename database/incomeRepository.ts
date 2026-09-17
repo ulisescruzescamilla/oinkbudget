@@ -94,7 +94,7 @@ export async function replaceAllFromServer(incomes: IncomeType[]): Promise<void>
 export async function createLocal(payload: IncomePayload, accountClientId: string): Promise<IncomeType> {
   const db = await getDBConnection();
   const clientId = generateClientId();
-  const createdAt = new Date();
+  const createdAt = payload.created_at ?? new Date();
 
   await db.withTransactionAsync(async () => {
     // Resolve the account's server id up front — one synced before this income was created

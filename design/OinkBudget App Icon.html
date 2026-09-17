@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OinkBudget · App Icon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; height: 100%; font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
+  .spec { font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 500; letter-spacing: -.01em; color: oklch(0.55 0.02 295); }
+  .iconwrap { display: grid; place-items: center; gap: 18px; height: 100%; padding: 8px; }
+  .cap { text-align: center; display: flex; flex-direction: column; gap: 4px; }
+  .cap b { font-size: 14px; font-weight: 800; letter-spacing: -.01em; color: oklch(0.28 0.03 295); }
+
+  /* ---- home-screen mock ---- */
+  .phone { width: 100%; height: 100%; border-radius: 30px; overflow: hidden; position: relative; display: flex; flex-direction: column;
+    font-family: "Plus Jakarta Sans", sans-serif; }
+  .phone.light { background: radial-gradient(120% 90% at 20% 0%, oklch(0.93 0.06 300), oklch(0.86 0.07 290) 55%, oklch(0.8 0.09 280)); }
+  .phone.dark  { background: radial-gradient(120% 90% at 80% 0%, oklch(0.3 0.09 295), oklch(0.18 0.05 292) 60%, oklch(0.12 0.03 290)); }
+  .pstat { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px 4px; font-size: 13px; font-weight: 800; }
+  .light .pstat { color: oklch(0.25 0.03 295); } .dark .pstat { color: #fff; }
+  .pstat .dots { display: flex; gap: 4px; } .pstat .dots i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .8; display: block; }
+  .grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 6px; padding: 26px 20px 10px; align-content: start; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .cell .nm { font-size: 10.5px; font-weight: 600; }
+  .light .cell .nm { color: oklch(0.22 0.02 295); } .dark .cell .nm { color: rgba(255,255,255,.92); }
+  .dock { margin: 0 14px 16px; padding: 14px 18px; border-radius: 28px; display: flex; justify-content: space-around;
+    background: rgba(255,255,255,.28); backdrop-filter: blur(14px); }
+  .dark .dock { background: rgba(255,255,255,.1); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="icon-kit.jsx"></script>
+
+<script type="text/babel">
+const { useEffect } = React;
+
+/* an icon + caption inside an artboard */
+function IconCard({ Comp, name, spec, size = 188 }) {
+  return (
+    <div className="iconwrap">
+      <Comp size={size} />
+      <div className="cap"><b>{name}</b><span className="spec">{spec}</span></div>
+    </div>
+  );
+}
+
+/* neutral placeholder app tile (not a real brand) */
+function PlaceTile({ a, b }) {
+  const gid = ("pt" + a + b).replace(/[^a-z0-9]/gi, "");
+  return (
+    <svg width="58" height="58" viewBox="0 0 100 100" style={{ display: "block", filter: "drop-shadow(0 4px 8px rgba(20,10,40,.18))" }}>
+      <defs><linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor={a} /><stop offset="100%" stopColor={b} />
+      </linearGradient></defs>
+      <path d={SQ} fill={`url(#${gid})`} />
+    </svg>
+  );
+}
+const PLACE = [
+  ["oklch(0.78 0.03 260)", "oklch(0.68 0.04 260)"],
+  ["oklch(0.8 0.05 150)",  "oklch(0.7 0.06 150)"],
+  ["oklch(0.82 0.06 60)",  "oklch(0.74 0.08 50)"],
+  ["oklch(0.78 0.05 20)",  "oklch(0.68 0.07 20)"],
+  ["oklch(0.8 0.04 200)",  "oklch(0.7 0.05 200)"],
+  ["oklch(0.76 0.03 300)", "oklch(0.66 0.04 300)"],
+  ["oklch(0.82 0.05 110)", "oklch(0.73 0.06 110)"],
+];
+
+function HomeIcon({ Comp, name }) {
+  return (
+    <div className="cell">
+      <div style={{ filter: "drop-shadow(0 5px 10px rgba(20,10,40,.22))" }}><Comp size={58} radiusShadow={false} /></div>
+      <span className="nm">{name}</span>
+    </div>
+  );
+}
+function PlaceCell({ pair, name }) {
+  return <div className="cell"><PlaceTile a={pair[0]} b={pair[1]} /><span className="nm">{name}</span></div>;
+}
+
+function Phone({ mode, hero }) {
+  const Hero = hero;
+  return (
+    <div className={"phone " + mode}>
+      <div className="pstat"><span>9:41</span><div className="dots"><i /><i /><i style={{ width: 14, borderRadius: 3 }} /></div></div>
+      <div className="grid">
+        <PlaceCell pair={PLACE[0]} name="Calendar" />
+        <PlaceCell pair={PLACE[1]} name="Notes" />
+        <HomeIcon Comp={IconConfeti} name="Confeti" />
+        <PlaceCell pair={PLACE[2]} name="Camera" />
+        <PlaceCell pair={PLACE[3]} name="Music" />
+        <HomeIcon Comp={hero} name="OinkBudget" />
+        <PlaceCell pair={PLACE[4]} name="Weather" />
+        <PlaceCell pair={PLACE[5]} name="Files" />
+        <PlaceCell pair={PLACE[6]} name="Health" />
+        <HomeIcon Comp={IconSoft} name="Suave" />
+        <PlaceCell pair={PLACE[0]} name="Mail" />
+        <PlaceCell pair={PLACE[2]} name="Maps" />
+      </div>
+      <div className="dock">
+        <Hero size={56} radiusShadow={false} />
+        <PlaceTile a={PLACE[3][0]} b={PLACE[3][1]} />
+        <PlaceTile a={PLACE[1][0]} b={PLACE[1][1]} />
+        <PlaceTile a={PLACE[5][0]} b={PLACE[5][1]} />
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <React.Fragment>
+      <GradientDefs />
+      <DesignCanvas title="OinkBudget · App Icon" subtitle="New icon explorations built from the existing violet identity & snout mark">
+
+        <DCSection id="signature" title="Signature directions" subtitle="One mark, the three OinkBudget moods — Aurora, Confeti, Lingote">
+          <DCArtboard id="aurora"  label="Aurora · default" width={280} height={300}>
+            <IconCard Comp={IconAurora}  name="Aurora" spec="violet gradient · 290→301° + glow" />
+          </DCArtboard>
+          <DCArtboard id="confeti" label="Confeti · playful" width={280} height={300}>
+            <IconCard Comp={IconConfeti} name="Confeti" spec="pink→violet→coral · confetti" />
+          </DCArtboard>
+          <DCArtboard id="lingote" label="Lingote · premium" width={280} height={300}>
+            <IconCard Comp={IconLingote} name="Lingote" spec="dark violet · soft-white snout + keyline" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="concepts" title="Concept explorations" subtitle="Pushing the mark toward the product story">
+          <DCArtboard id="ring" label="Halo · budget ring" width={280} height={300}>
+            <IconCard Comp={IconRing} name="Halo" spec="snout inside the spend ring" />
+          </DCArtboard>
+          <DCArtboard id="coin" label="Lingote de ahorro" width={280} height={300}>
+            <IconCard Comp={IconCoin} name="Moneda" spec="tonal violet coin · engraved snout" />
+          </DCArtboard>
+          <DCArtboard id="soft" label="Suave · light" width={280} height={300}>
+            <IconCard Comp={IconSoft} name="Suave" spec="violet snout on soft lilac" />
+          </DCArtboard>
+          <DCArtboard id="flat" label="Glifo · minimal" width={280} height={300}>
+            <IconCard Comp={IconFlat} name="Glifo" spec="flat solid violet · white snout" />
+          </DCArtboard>
+          <DCArtboard id="mesh" label="Aurora Mesh · vivid" width={280} height={300}>
+            <IconCard Comp={IconMesh} name="Mesh" spec="violet mesh · coral + pink glow" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="scale" title="Reads at every size" subtitle="The recommended Aurora mark from 1024 down to a notification glyph">
+          <DCArtboard id="sizes" label="Size ladder" width={520} height={300}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 26, height: "100%" }}>
+              {[168, 100, 60, 38, 22].map(s => (
+                <div key={s} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                  <IconAurora size={s} radiusShadow={s >= 38} />
+                  <span className="spec">{s}px</span>
+                </div>
+              ))}
+            </div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="context" title="On the home screen" subtitle="The icon among neighbours — light & dark">
+          <DCArtboard id="light" label="Light wallpaper" width={300} height={600}>
+            <Phone mode="light" hero={IconAurora} />
+          </DCArtboard>
+          <DCArtboard id="dark" label="Dark wallpaper" width={300} height={600}>
+            <Phone mode="dark" hero={IconLingote} />
+          </DCArtboard>
+        </DCSection>
+
+      </DesignCanvas>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

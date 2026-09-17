@@ -22,6 +22,7 @@ type ApiBudget = Omit<BudgetType, 'id' | 'start_date' | 'end_date' | 'category'>
 export type BudgetPayload = Pick<BudgetType, 'name' | 'is_recurrent' | 'period'> & {
   max_limit?: number;
   percentage_value?: number;
+  expense_amount?: number;
   start_date?: Date;
   end_date?: Date;
   category_id?: number | null;

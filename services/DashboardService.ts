@@ -7,6 +7,8 @@ import { getDBConnection } from '@/database';
 import * as balanceRepository from '@/database/balanceRepository';
 import * as budgetRepository from '@/database/budgetRepository';
 import * as expenseRepository from '@/database/expenseRepository';
+import { CDMX_SQL_SHIFT } from '@/database/timezone';
+import { dayInAppTimeZone, formatApiDate, todayInAppTimeZone } from '@/utils/formatting';
 
 const PERIOD_DAYS: Record<BudgetPeriodType, number> = {
   weekly: 7,
@@ -18,10 +20,10 @@ const PERIOD_DAYS: Record<BudgetPeriodType, number> = {
 async function getExpenseTrend(days: number): Promise<{ d: string; v: number }[]> {
   const db = await getDBConnection();
   const rows = await db.getAllAsync<{ d: string; v: number }>(
-    `SELECT DATE(created_at) as d, SUM(amount) as v FROM balances
-     WHERE type = 'expense' AND deleted = 0 AND DATE(created_at) >= DATE('now', ?)
-     GROUP BY DATE(created_at) ORDER BY d ASC;`,
-    [`-${days - 1} days`]
+    `SELECT DATE(created_at, ?) as d, SUM(amount) as v FROM balances
+     WHERE type = 'expense' AND deleted = 0 AND DATE(created_at, ?) >= ?
+     GROUP BY DATE(created_at, ?) ORDER BY d ASC;`,
+    [CDMX_SQL_SHIFT, CDMX_SQL_SHIFT, dayInAppTimeZone(-(days - 1)), CDMX_SQL_SHIFT]
   );
   return rows;
 }
@@ -41,11 +43,13 @@ async function computeLocalDashboard(): Promise<DashboardType> {
     expenseRepository.getAll(),
   ]);
 
-  const today = new Date();
+  const today = todayInAppTimeZone();
   const activeBudgets = budgets.filter((b) => {
     if (b.is_recurrent) return true;
-    if (!b.start_date || !b.end_date) return false;
-    return b.start_date <= today && today <= b.end_date;
+    const start = formatApiDate(b.start_date);
+    const end = formatApiDate(b.end_date);
+    if (!start || !end) return false;
+    return start <= today && today <= end;
   });
 
   const dailyLimit = activeBudgets.reduce((sum, b) => sum + b.max_limit / PERIOD_DAYS[b.period], 0);

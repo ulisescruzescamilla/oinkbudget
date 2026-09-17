@@ -13,7 +13,7 @@
 import { AppError, isNetworkError } from '@/utils/errorHandler';
 import { isOnline, recordApiOutcome } from '@/utils/networkStatus';
 import * as syncQueueRepository from '@/database/syncQueueRepository';
-import { notifyQueueChanged } from '@/services/syncService';
+import { notifyQueueChanged, runSync } from '@/services/syncService';
 import type { ApiEntitySource, LocalEntityRepository } from './DataSource';
 
 const isClientId = (idOrClientId: string): boolean => !/^\d+$/.test(idOrClientId);
@@ -32,6 +32,12 @@ export class SyncingDataSource<
 
   async getAll(): Promise<T[]> {
     if (isOnline()) {
+      // Flush any offline-queued writes (this entity's and others', in dependency
+      // order) before reading, so a record created while offline is pushed to the
+      // API first instead of being shadowed by a server list that doesn't have it
+      // yet — otherwise the mirror below would overwrite local state without ever
+      // having sent it. No-ops quickly when the queue is empty or already syncing.
+      await runSync();
       try {
         const items = await this.api.getAll();
         recordApiOutcome(true);

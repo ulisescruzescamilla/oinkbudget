@@ -56,6 +56,7 @@ export function useIncomes() {
         amount: income.amount,
         description: income.description,
         account_id: income.account_id,
+        created_at: income.created_at,
       };
       const created = await incomeService.create(payload, income.account);
       setState((s) => ({ ...s, loading: false, incomes: [created, ...s.incomes] }));
