@@ -18,6 +18,8 @@ export interface IconButtonProps {
   /** Explicit icon color override. */
   color?: string;
   className?: string;
+  /** Accessible name for screen readers — this button has no visible label. */
+  accessibilityLabel?: string;
 }
 
 /** Compact square button holding a single icon. */
@@ -29,12 +31,15 @@ export function IconButton({
   iconSize = 20,
   color,
   className,
+  accessibilityLabel,
 }: IconButtonProps) {
   const t = useTheme();
   const fg = color ?? (solid ? t.primary : t.text);
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       style={{ width: size, height: size }}
       className={cn(
         'items-center justify-center rounded-[14px] active:scale-90',

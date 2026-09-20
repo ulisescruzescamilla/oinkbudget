@@ -43,6 +43,7 @@ export function AccountCard({ account, total, masked, onToggleMask, onManage }: 
             iconSize={17}
             onPress={onToggleMask}
             className="bg-card-2 border-0 shadow-none"
+            accessibilityLabel={masked ? 'Mostrar saldo' : 'Ocultar saldo'}
           />
           <IconButton
             icon="dots"
@@ -50,11 +51,16 @@ export function AccountCard({ account, total, masked, onToggleMask, onManage }: 
             iconSize={18}
             onPress={onManage}
             className="bg-card-2 border-0 shadow-none"
+            accessibilityLabel="Más opciones"
           />
         </View>
       </View>
       <View className="mt-3 h-1.5 overflow-hidden rounded-pill bg-card-2">
-        <View className="h-full rounded-pill" style={{ width: `${share}%`, backgroundColor: style.color }} />
+        <View
+          testID="account-share-bar"
+          className="h-full rounded-pill"
+          style={{ width: `${share}%`, backgroundColor: style.color }}
+        />
       </View>
     </Card>
   );
