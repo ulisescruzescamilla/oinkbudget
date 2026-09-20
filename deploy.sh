@@ -55,6 +55,6 @@ echo "==> Copying APK into fdroid repo..."
 ssh "${REMOTE_USER}@${REMOTE_HOST}" "cp ${REMOTE_PATH}/app-release.apk /var/www/fdroid-repo/repo/"
 
 echo "==> Triggering remote fdroid update..."
-ssh "${REMOTE_USER}@${REMOTE_HOST}" "cd /var/www/fdroid-repo && sudo fdroid update -c --pretty"
+echo "Go to server and run: cd /var/www/fdroid-repo && sudo fdroid update -c --pretty"
 
 echo "==> Done. New version live at repo."
