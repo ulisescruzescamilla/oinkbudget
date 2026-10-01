@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Button, Card, IconButton, Pill, Sheet, Text } from '@/components/ui';
-import { AccountCard, EmptyState, NewAccountForm } from '@/components/features';
+import { AccountCard, EmptyState, NewAccountForm, TransferForm } from '@/components/features';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
 import { useAccounts } from '@/hooks/useAccounts';
 import { AccountType } from '@/types/AccountType';
@@ -14,14 +14,25 @@ import { cashFormat } from '@/utils/formatting';
 
 /** Cuentas tab. */
 export function AccountsScreen() {
-  const { accounts, loading, fieldErrors, refresh, clearFieldErrors, createAccount, updateAccount, removeAccount } =
-    useAccounts();
+  const {
+    accounts,
+    loading,
+    error,
+    fieldErrors,
+    refresh,
+    clearFieldErrors,
+    createAccount,
+    updateAccount,
+    removeAccount,
+    transferAccounts,
+  } = useAccounts();
 
   const [hideAll, setHideAll] = useState(false);
   const [masked, setMasked] = useState<Record<number, boolean>>({});
   const [selected, setSelected] = useState<AccountType | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<AccountType | null>(null);
+  const [transferFrom, setTransferFrom] = useState<AccountType | null>(null);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
@@ -32,6 +43,8 @@ export function AccountsScreen() {
   const openCreate = () => { setEditing(null); clearFieldErrors(); setFormOpen(true); };
   const openEdit = (a: AccountType) => { setSelected(null); setEditing(a); clearFieldErrors(); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); clearFieldErrors(); };
+  const openTransfer = (a: AccountType) => { setSelected(null); clearFieldErrors(); setTransferFrom(a); };
+  const closeTransfer = () => { setTransferFrom(null); clearFieldErrors(); };
 
   const confirmDelete = (a: AccountType) => {
     setSelected(null);
@@ -96,6 +109,9 @@ export function AccountsScreen() {
             <Button variant="ghost" icon="edit" block onPress={() => openEdit(selected)}>
               Editar cuenta
             </Button>
+            <Button variant="ghost" icon="swap" block onPress={() => openTransfer(selected)}>
+              Transferir saldo
+            </Button>
             <Button variant="danger-soft" icon="trash" block onPress={() => confirmDelete(selected)}>
               Eliminar cuenta
             </Button>
@@ -111,6 +127,19 @@ export function AccountsScreen() {
           fieldErrors={fieldErrors}
           loading={loading}
         />
+      </Sheet>
+
+      <Sheet open={!!transferFrom} onClose={closeTransfer} title="Transferir saldo">
+        {transferFrom && (
+          <TransferForm
+            from={transferFrom}
+            accounts={accounts}
+            onSubmit={transferAccounts}
+            fieldErrors={fieldErrors}
+            errorMessage={error?.message}
+            loading={loading}
+          />
+        )}
       </Sheet>
     </ScreenLayout>
   );

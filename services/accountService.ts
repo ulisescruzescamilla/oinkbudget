@@ -89,7 +89,8 @@ export const accountService = {
 
   /**
    * Transfers an amount between two accounts. Requires connectivity — a
-   * compound server-side operation with no offline representation.
+   * compound server-side operation with no offline representation. A 422
+   * surfaces field errors keyed `account_from`, `account_to` and `amount`.
    *
    * @param fromId - Origin account identifier
    * @param toId - Destination account identifier
@@ -99,6 +100,10 @@ export const accountService = {
     if (!isOnline()) {
       throw { message: 'Se requiere conexión a internet para transferir entre cuentas' } as AppError;
     }
-    await apiClient.post('/accounts/transfer', { fromId, toId, amount });
+    await apiClient.post('/accounts/transfer', {
+      account_from: Number(fromId),
+      account_to: Number(toId),
+      amount,
+    });
   },
 };
