@@ -125,7 +125,11 @@ describe('accountService', () => {
 
       await accountService.transfer('1', '2', 50);
 
-      expect(apiClient.post).toHaveBeenCalledWith('/accounts/transfer', { fromId: '1', toId: '2', amount: 50 });
+      expect(apiClient.post).toHaveBeenCalledWith('/accounts/transfer', {
+        account_from: 1,
+        account_to: 2,
+        amount: 50,
+      });
     });
   });
 });

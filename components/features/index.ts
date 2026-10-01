@@ -10,4 +10,5 @@ export { NewBudgetForm, type NewBudgetFormProps } from './NewBudgetForm';
 export { QuickAddSheet, type QuickAddEntry, type QuickAddSheetProps } from './QuickAddSheet';
 export { SuccessState, type SuccessStateProps } from './SuccessState';
 export { SyncStatusIndicator } from './SyncStatusIndicator';
+export { TransferForm, type TransferFormProps } from './TransferForm';
 export { TransactionRow, balanceSignedAmount, type TransactionRowProps } from './TransactionRow';

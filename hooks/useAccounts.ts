@@ -120,14 +120,39 @@ export function useAccounts() {
 
   /**
    * Transfers an amount between two accounts and refreshes the list.
+   * Populates `fieldErrors` on 422 and `error` on any other failure.
    *
    * @param from - Origin account
    * @param to - Destination account
    * @param amount - Amount to transfer
+   * @returns Whether the transfer succeeded
    */
-  async function transferAccounts(from: AccountType, to: AccountType, amount: number): Promise<void> {
-    await accountService.transfer(String(from.id), String(to.id), amount);
+  async function transferAccounts(from: AccountType, to: AccountType, amount: number): Promise<boolean> {
+    if (from.id == null || to.id == null) {
+      // Accounts created offline have no server id yet, so the API can't reference them.
+      setState((s) => ({
+        ...s,
+        error: { message: 'Sincroniza tus cuentas antes de transferir entre ellas' },
+        fieldErrors: null,
+      }));
+      return false;
+    }
+    setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
+    try {
+      await accountService.transfer(String(from.id), String(to.id), amount);
+    } catch (err) {
+      const appErr = err as AppError;
+      console.error(err);
+      setState((s) => ({
+        ...s,
+        loading: false,
+        error: appErr,
+        fieldErrors: appErr.fieldErrors ?? null,
+      }));
+      return false;
+    }
     await fetchAccounts();
+    return true;
   }
 
   return {
