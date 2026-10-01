@@ -7,7 +7,7 @@ export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { ManageTxSheet, type ManageTxSheetProps } from './ManageTxSheet';
 export { NewAccountForm, type NewAccountFormProps } from './NewAccountForm';
 export { NewBudgetForm, type NewBudgetFormProps } from './NewBudgetForm';
-export { QuickAddSheet, type QuickAddEntry, type QuickAddSheetProps } from './QuickAddSheet';
+export { QuickAddForm, type QuickAddEntry, type QuickAddFormProps } from './QuickAddForm';
 export { SuccessState, type SuccessStateProps } from './SuccessState';
 export { SyncStatusIndicator } from './SyncStatusIndicator';
 export { TransferForm, type TransferFormProps } from './TransferForm';

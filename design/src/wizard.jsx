@@ -32,14 +32,23 @@ function Wizard({ dark }) {
   const [income, setIncome] = useStateWz(saved?.income ?? 0);
   const [mode, setMode]     = useStateWz(saved?.mode ?? "amt");
   const [rows, setRows]     = useStateWz(saved?.rows ?? []);
+  const [newAccs, setNewAccs] = useStateWz(saved?.newAccs ?? []);
+
+  const accounts = [...ACCOUNTS, ...newAccs];
 
   /* persist */
   useEffectWz(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify({ step, period, accSel, income, mode, rows })); } catch (e) {}
-  }, [step, period, accSel, income, mode, rows]);
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ step, period, accSel, income, mode, rows, newAccs })); } catch (e) {}
+  }, [step, period, accSel, income, mode, rows, newAccs]);
 
-  const accTotal = ACCOUNTS.reduce((s, a) => s + (accSel[a.id] ? a.balance : 0), 0);
-  const accCount = ACCOUNTS.filter(a => accSel[a.id]).length;
+  const addAccount = (acc) => {
+    const id = "n" + Date.now();
+    setNewAccs(l => [...l, { ...acc, id, hidden: false }]);
+    setAccSel(s => ({ ...s, [id]: true }));
+  };
+
+  const accTotal = accounts.reduce((s, a) => s + (accSel[a.id] ? a.balance : 0), 0);
+  const accCount = accounts.filter(a => accSel[a.id]).length;
   const allocated = rows.reduce((s, r) => s + r.amt, 0);
   const remaining = Math.max(0, income - allocated);
 
@@ -68,7 +77,7 @@ function Wizard({ dark }) {
 
   const restart = () => {
     setStep(0); setPeriod("mensual"); setAccSel({ a1: true, a2: true, a3: false, a4: true });
-    setIncome(0); setMode("amt"); setRows([]);
+    setIncome(0); setMode("amt"); setRows([]); setNewAccs([]);
   };
 
   /* gating */
@@ -153,7 +162,7 @@ function Wizard({ dark }) {
       <div className="wiz-body" key={step}>
         <div className="screen-anim">
           {step === 0 && <StepPeriodo period={period} setPeriod={setPeriod} />}
-          {step === 1 && <StepCuentas accSel={accSel} toggleAcc={toggleAcc} dark={dark} />}
+          {step === 1 && <StepCuentas accounts={accounts} accSel={accSel} toggleAcc={toggleAcc} addAccount={addAccount} dark={dark} />}
           {step === 2 && <StepIngreso income={income} setIncome={setIncome} period={period} accTotal={accTotal} />}
           {step === 3 && <StepReparto income={income} rows={rows} setRowAmt={setRowAmt} removeRow={removeRow}
             addRow={addRow} mode={mode} setMode={setMode} allocated={allocated} remaining={remaining}

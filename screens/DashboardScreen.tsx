@@ -21,7 +21,7 @@ import { useBalance } from '@/hooks/useBalance';
 export function DashboardScreen() {
   const t = useTheme();
   const router = useRouter();
-  const { open, version } = useQuickAdd();
+  const { open } = useQuickAdd();
 
   // Graph dashboard info
   const { dashboard, loading: loadingDashboard, fieldErrors, refresh, clearFieldErrors } =
@@ -36,7 +36,7 @@ export function DashboardScreen() {
     await Promise.all([refresh(), refreshBalance(), refreshBudgets()]);
   }, [refresh, refreshBalance, refreshBudgets]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load, version]));
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const withAvail = budgets.map((b) => ({ b, avail: b.max_limit - (b.expense_amount ?? 0) }));
   const totalAvail = withAvail.reduce((s, x) => s + x.avail, 0);

@@ -241,7 +241,7 @@ export function QuickAddForm({
               style={{ width: '32%' }}
             >
               {k === 'del' ? (
-                <Icon name="close" size={20} strokeWidth={2.4} color={t.text} />
+                <Icon name="back" size={20} strokeWidth={2.4} color={t.text} />
               ) : (
                 <Text className="font-strong text-[22px]">{k}</Text>
               )}

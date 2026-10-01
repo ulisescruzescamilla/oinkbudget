@@ -415,6 +415,8 @@ body.is-dark .chrome .hint { color: oklch(0.6 0.02 295); }
   transition: transform .15s ease;
 }
 .fab:active { transform: scale(.92) rotate(90deg); }
+.fab svg { transition: transform .2s cubic-bezier(.2,.7,.2,1); }
+.fab.on svg { transform: rotate(45deg); }
 
 /* ===========================================================
    Bottom sheet (quick add, manage)
@@ -451,6 +453,26 @@ body.is-dark .chrome .hint { color: oklch(0.6 0.02 295); }
 .amount-display.inc .v { color: var(--income); }
 
 .keypad { display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+/* quick-add screen */
+.qa-page { display: flex; flex-direction: column; gap: 18px; padding: 4px var(--pad) 96px; }
+.qa-tabs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
+  background: var(--card-2); border: 1px solid var(--border); border-radius: var(--r-pill);
+}
+.qa-tabs button {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  height: 42px; border: none; border-radius: var(--r-pill); cursor: pointer;
+  background: transparent; font-family: inherit; font-size: 14.5px; font-weight: 800; color: var(--muted);
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.qa-page.exp .qa-tabs button.on { background: var(--card); color: var(--expense); box-shadow: 0 2px 8px rgba(20,10,40,.10); }
+.qa-page.inc .qa-tabs button.on { background: var(--card); color: var(--income); box-shadow: 0 2px 8px rgba(20,10,40,.10); }
+.qa-page .amount-display { padding: 6px 0 0; }
+.qa-fields { display: flex; flex-direction: column; gap: 16px; padding: 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--r-card); }
+.qa-save { position: sticky; bottom: 84px; z-index: 2; padding: 14px 0 4px; background: linear-gradient(to bottom, transparent, var(--surface) 35%); }
+.qa-done { min-height: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 10px; }
+.qa-done-ic { width: 72px; height: 72px; border-radius: 26px; margin-bottom: 16px; display: grid; place-items: center; animation: rise .4s cubic-bezier(.2,.8,.2,1); }
 .key {
   border: none; background: var(--card-2); font-family: inherit;
   border-radius: 16px; padding: 16px 0; font-size: 22px; font-weight: 700; color: var(--text);

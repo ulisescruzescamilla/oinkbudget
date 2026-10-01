@@ -8,7 +8,6 @@ import { Card, Chip, Icon, IconButton, Pill, Text } from '@/components/ui';
 import { EmptyState, ManageTxSheet, TransactionRow, balanceSignedAmount } from '@/components/features';
 import { Sheet } from '@/components/ui';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
-import { useQuickAdd } from '@/navigation/QuickAddProvider';
 import { BalanceType } from '@/types/BalanceType';
 import { cashFormat, dayInAppTimeZone, formatDateInAppTimeZone, signedCash, todayInAppTimeZone } from '@/utils/formatting';
 import { useBalance } from '@/hooks/useBalance';
@@ -48,12 +47,10 @@ export function HistoryScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<BalanceType | null>(null);
 
-  const { version } = useQuickAdd();
   const { balances, loading, refresh } = useBalance(range, type);
 
-  // Re-pull whenever the tab regains focus, and whenever a quick-add save
-  // bumps `version` (e.g. the user added a movement from the Dashboard).
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh, version]));
+  // Re-pull whenever the tab regains focus (e.g. after saving a movement on the quick-add screen).
+  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
   const income = (balances ?? []).filter((t) => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount), 0);
   const expense = (balances ?? []).filter((t) => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0);

@@ -13,12 +13,16 @@ const SCREENS = {
   tx:       { eyebrow: "Historial",     title: "Movimientos" },
   budgets:  { eyebrow: "Plan mensual",  title: "Presupuestos" },
   accounts: { eyebrow: "Tu dinero",     title: "Cuentas" },
+  add:      { eyebrow: "Registrar",     title: "Nuevo movimiento" },
 };
 
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [screen, setScreen] = useState("home");
-  const [add, setAdd] = useState({ open: false, mode: "expense" });
+  const [addMode, setAddMode] = useState("expense");
+  const [prevScreen, setPrevScreen] = useState("home");
+  const openAdd = (m) => { if (screen !== "add") setPrevScreen(screen); setAddMode(m || "expense"); setScreen("add"); };
+  const closeAdd = () => setScreen(prevScreen);
   const [newBudget, setNewBudget] = useState(false);
   const [newAccount, setNewAccount] = useState(false);
   const dark = t.theme === "dark";
@@ -60,7 +64,9 @@ function App() {
           {/* appbar */}
           <div className="appbar">
             <div className="rowflex gap10">
-              <span className="brandmark"><OinkMark size={22} /></span>
+              {screen === "add"
+                ? <button className="iconbtn" onClick={closeAdd} aria-label="volver"><Icon name="back" size={20} sw={2.4} /></button>
+                : <span className="brandmark"><OinkMark size={22} /></span>}
               <div className="ttl">
                 <small>{meta.eyebrow}</small>
                 <h1>{meta.title}</h1>
@@ -75,7 +81,8 @@ function App() {
 
           {/* screen */}
           <div className="screen" key={screen}>
-            {screen === "home" && <Dashboard dark={dark} onAdd={(m) => setAdd({ open: true, mode: m })} onNav={setScreen} />}
+            {screen === "home" && <Dashboard dark={dark} onAdd={openAdd} onNav={setScreen} />}
+            {screen === "add" && <QuickAdd mode={addMode} dark={dark} onClose={closeAdd} onSave={() => {}} />}
             {screen === "tx" && <Transactions dark={dark} />}
             {screen === "budgets" && <Budgets dark={dark} onAdd={() => setNewBudget(true)} />}
             {screen === "accounts" && <Accounts dark={dark} onAdd={() => setNewAccount(true)} />}
@@ -95,17 +102,13 @@ function App() {
             <div className="tabbar">
               <Tab id="home" cur={screen} set={setScreen} icon="home" label="Inicio" />
               <Tab id="tx" cur={screen} set={setScreen} icon="swap" label="Movimientos" />
-              <button className="fab" onClick={() => setAdd({ open: true, mode: "expense" })} aria-label="Agregar">
+              <button className={"fab" + (screen === "add" ? " on" : "")} onClick={() => screen === "add" ? closeAdd() : openAdd("expense")} aria-label={screen === "add" ? "Cerrar" : "Agregar"}>
                 <Icon name="plus" size={26} sw={2.6} />
               </button>
               <Tab id="accounts" cur={screen} set={setScreen} icon="bank" label="Cuentas" />
               <Tab id="budgets" cur={screen} set={setScreen} icon="chart" label="Presupuestos" />
             </div>
           </div>
-
-          {/* quick add */}
-          <QuickAdd open={add.open} mode={add.mode} dark={dark}
-            onClose={() => setAdd(a => ({ ...a, open: false }))} onSave={() => {}} />
 
           {/* new budget */}
           <Sheet open={newBudget} onClose={() => setNewBudget(false)} title="Nuevo presupuesto">
