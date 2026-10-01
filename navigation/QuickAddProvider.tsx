@@ -1,128 +1,50 @@
 /**
- * QuickAddProvider — owns the quick-add bottom sheet and exposes an `open(mode)`
- * action to descendants (the FAB in the tab bar and the Dashboard shortcuts).
- *
- * Captured entries are persisted via the API through `useExpenses` / `useIncomes`.
- * A `version` counter is bumped after each save so data screens can reload.
+ * QuickAddProvider — navigation state for the quick-add screen (`app/(tabs)/add.tsx`).
+ * Exposes `open(mode)` / `close()` to descendants (the FAB in the tab bar, the
+ * Dashboard shortcuts and the screen itself) plus the mode it was opened in.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { QuickAddEntry, QuickAddSheet } from '@/components/features';
-import { useAccounts } from '@/hooks/useAccounts';
-import { useBudgets } from '@/hooks/useBudgets';
-import { useExpenses } from '@/hooks/useExpenses';
-import { useIncomes } from '@/hooks/useIncomes';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { TypeBalance } from '@/types/BalanceType';
-import { ExpenseType } from '@/types/ExpenseType';
-import { IncomeType } from '@/types/IncomeType';
 
 interface QuickAddContextValue {
-  /** Opens the quick-add sheet in the given mode (defaults to expense). */
+  /** Mode the quick-add screen was last opened in. */
+  mode: TypeBalance;
+  /** Navigates to the quick-add screen in the given mode (defaults to expense). */
   open: (mode?: TypeBalance) => void;
-  /** Increments after every successful save; use as a refresh signal. */
-  version: number;
+  /** Leaves the quick-add screen, returning to the tab the user came from. */
+  close: () => void;
 }
 
-const QuickAddContext = createContext<QuickAddContextValue>({ open: () => { }, version: 0 });
+const QuickAddContext = createContext<QuickAddContextValue>({
+  mode: 'expense',
+  open: () => { },
+  close: () => { },
+});
 
 /** Hook to access the quick-add controls. */
 export const useQuickAdd = () => useContext(QuickAddContext);
 
-/** Provides the quick-add sheet + open action to the tab tree. */
+/** Provides the quick-add open/close actions to the tab tree. */
 export function QuickAddProvider({ children }: { children: React.ReactNode }) {
-  const { accounts, refresh: refreshAccounts } = useAccounts();
-  const { budgets, refresh: refreshBudgets } = useBudgets();
-  const {
-    createExpense,
-    fieldErrors: expenseFieldErrors,
-    clearFieldErrors: clearExpenseFieldErrors,
-  } = useExpenses();
-  const {
-    createIncome,
-    fieldErrors: incomeFieldErrors,
-    clearFieldErrors: clearIncomeFieldErrors,
-  } = useIncomes();
-
-  const [isOpen, setOpen] = useState(false);
+  const router = useRouter();
   const [mode, setMode] = useState<TypeBalance>('expense');
-  const [version, setVersion] = useState(0);
-  const [lastType, setLastType] = useState<TypeBalance>('expense');
-
-  useEffect(() => {
-    refreshAccounts();
-  }, [refreshAccounts]);
 
   const open = useCallback((m: TypeBalance = 'expense') => {
     setMode(m);
-    setOpen(true);
-    // Re-pull accounts/budgets so the sheet reflects anything created since
-    // the provider mounted (e.g. a budget added offline on another tab).
-    refreshAccounts();
-    refreshBudgets();
-  }, [refreshAccounts, refreshBudgets]);
+    router.navigate('/add');
+  }, [router]);
 
-  const clearServerFieldErrors = useCallback(() => {
-    clearExpenseFieldErrors();
-    clearIncomeFieldErrors();
-  }, [clearExpenseFieldErrors, clearIncomeFieldErrors]);
+  const close = useCallback(() => {
+    // The tab navigator keeps a history (`backBehavior="history"`), so going
+    // back lands on whichever tab opened the screen.
+    if (router.canGoBack()) router.back();
+    else router.navigate('/');
+  }, [router]);
 
-  const handleSubmit = useCallback(
-    async (entry: QuickAddEntry): Promise<boolean> => {
-      setLastType(entry.type);
-      if (entry.type === 'expense') {
-        const expense: ExpenseType = {
-          id: null,
-          amount: entry.amount,
-          description: entry.description,
-          created_at: entry.date,
-          // Placeholder when the budget hasn't synced yet (id: null); the real
-          // link is resolved via `entry.budget.client_id` inside createExpense.
-          budget_id: entry.budget?.id ?? 0,
-          account: entry.account,
-          // Placeholder when the account hasn't synced yet (id: null); the real
-          // link is resolved via `entry.account.client_id` inside createExpense.
-          account_id: entry.account.id ?? 0,
-        };
-        const created = await createExpense(expense, entry.budget);
-        if (!created) return false;
-      } else {
-        const income: IncomeType = {
-          id: null,
-          amount: entry.amount,
-          description: entry.description,
-          account: entry.account,
-          // Placeholder when the account hasn't synced yet (id: null); the real
-          // link is resolved via `entry.account.client_id` inside createIncome.
-          account_id: entry.account.id ?? 0,
-          created_at: entry.date,
-        };
-        const created = await createIncome(income);
-        if (!created) return false;
-      }
-      setVersion((v) => v + 1);
-      await Promise.all([refreshAccounts(), refreshBudgets()]);
-      return true;
-    },
-    [refreshAccounts, refreshBudgets, createExpense, createIncome]
-  );
+  const value = useMemo(() => ({ mode, open, close }), [mode, open, close]);
 
-  const value = useMemo(() => ({ open, version }), [open, version]);
-  const serverFieldErrors = lastType === 'income' ? incomeFieldErrors : expenseFieldErrors;
-
-  return (
-    <QuickAddContext.Provider value={value}>
-      {children}
-      <QuickAddSheet
-        open={isOpen}
-        mode={mode}
-        onClose={() => setOpen(false)}
-        accounts={accounts}
-        budgets={budgets}
-        onSubmit={handleSubmit}
-        serverFieldErrors={serverFieldErrors}
-        onClearServerFieldErrors={clearServerFieldErrors}
-      />
-    </QuickAddContext.Provider>
-  );
+  return <QuickAddContext.Provider value={value}>{children}</QuickAddContext.Provider>;
 }
 
 export default QuickAddProvider;

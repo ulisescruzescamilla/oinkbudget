@@ -1,13 +1,12 @@
 /**
- * QuickAddSheet — fast expense/income capture with a numeric keypad.
+ * QuickAddForm — expense/income capture form with a numeric keypad.
  * Ported from `design/src/quickadd.jsx`. Collects the entry and delegates
- * persistence to `onSubmit` (the tab layout writes it to the local balances log).
+ * persistence to `onSubmit` (`QuickAddScreen` sends it through the API hooks).
  */
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Pressable, View } from 'react-native';
-import { Button, Chip, Icon, ModalField, Segmented, Sheet, Text } from '@/components/ui';
+import { Pressable, ScrollView, View } from 'react-native';
+import { Button, Card, Chip, Field, Icon, Text, cn } from '@/components/ui';
 import { DateField } from './DateField';
 import { SuccessState } from './SuccessState';
 import { AccountType } from '@/types/AccountType';
@@ -28,20 +27,27 @@ export interface QuickAddEntry {
   date: Date;
 }
 
-export interface QuickAddSheetProps {
-  open: boolean;
-  /** Initial mode when opened. */
+export interface QuickAddFormProps {
+  /** Initial mode when mounted. */
   mode?: TypeBalance;
-  onClose: () => void;
   accounts: AccountType[];
   budgets: BudgetType[];
-  /** Resolves to whether the entry was saved; `false` keeps the sheet open so errors can be shown. */
+  /** Resolves to whether the entry was saved; `false` keeps the form up so errors can be shown. */
   onSubmit: (entry: QuickAddEntry) => Promise<boolean>;
+  /** Called once the success confirmation has been shown, to leave the screen. */
+  onSaved: () => void;
   /** Per-field errors from the last failed submit (422 response). */
   serverFieldErrors?: FieldErrors | null;
-  /** Clears `serverFieldErrors`; called whenever the sheet is (re)opened. */
-  onClearServerFieldErrors?: () => void;
 }
+
+/** How long the success confirmation stays up before `onSaved` fires. */
+const SUCCESS_DELAY_MS = 900;
+
+/** Mode tabs shown at the top of the form. */
+const MODES: { value: TypeBalance; label: string; icon: IconName }[] = [
+  { value: 'expense', label: 'Gasto', icon: 'down' },
+  { value: 'income', label: 'Ingreso', icon: 'up' },
+];
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
 
@@ -74,22 +80,23 @@ function zodToFieldErrors(result: z.ZodSafeParseError<unknown>): FieldErrors {
   return out;
 }
 
-/** Bottom sheet for capturing a quick expense or income. */
-export function QuickAddSheet({
-  open,
+/**
+ * Full-screen form for capturing an expense or income. State lives for the
+ * lifetime of the component — remount it (via `key`) to start a fresh entry.
+ */
+export function QuickAddForm({
   mode = 'expense',
-  onClose,
   accounts,
   budgets,
   onSubmit,
+  onSaved,
   serverFieldErrors,
-  onClearServerFieldErrors,
-}: QuickAddSheetProps) {
+}: QuickAddFormProps) {
   const t = useTheme();
   const [type, setType] = useState<TypeBalance>(mode);
   const [amount, setAmount] = useState('0');
-  const [accountId, setAccountId] = useState<number | null>(null);
-  const [budgetId, setBudgetId] = useState<number | null>(null);
+  const [accountId, setAccountId] = useState<number | null>(accounts[0]?.id ?? null);
+  const [budgetId, setBudgetId] = useState<number | null>(budgets[0]?.id ?? null);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState<Date>(dayOffset(0));
   const [saving, setSaving] = useState(false);
@@ -98,22 +105,15 @@ export function QuickAddSheet({
   const [success, setSuccess] = useState(false);
   const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // The lists are re-fetched when the screen gains focus, so they can arrive
+  // after mount — preselect the first option once there is one.
   useEffect(() => {
-    if (open) {
-      setType(mode);
-      setAmount('0');
-      setDescription('');
-      setDate(dayOffset(0));
-      setAccountId(accounts[0]?.id ?? null);
-      setBudgetId(budgets[0]?.id ?? null);
-      setSubmitted(false);
-      setFieldErrors(null);
-      setSuccess(false);
-      onClearServerFieldErrors?.();
-    }
-    if (closeTimeout.current) clearTimeout(closeTimeout.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mode]);
+    setAccountId((current) => current ?? accounts[0]?.id ?? null);
+  }, [accounts]);
+
+  useEffect(() => {
+    setBudgetId((current) => current ?? budgets[0]?.id ?? null);
+  }, [budgets]);
 
   useEffect(() => {
     return () => {
@@ -122,6 +122,7 @@ export function QuickAddSheet({
   }, []);
 
   const isIncome = type === 'income';
+  const accent = isIncome ? t.income : t.expense;
   const value = parseFloat(amount) || 0;
   const hasBudgets = budgets.length > 0;
   const hasAccounts = accounts.length > 0;
@@ -163,7 +164,7 @@ export function QuickAddSheet({
       const saved = await onSubmit({ type, amount: value, description, account, budget, date });
       if (saved) {
         setSuccess(true);
-        closeTimeout.current = setTimeout(onClose, 1400);
+        closeTimeout.current = setTimeout(onSaved, SUCCESS_DELAY_MS);
       }
     } finally {
       setSaving(false);
@@ -172,39 +173,86 @@ export function QuickAddSheet({
 
   if (success) {
     return (
-      <Sheet open={open} onClose={onClose}>
+      <View className="flex-1 items-center justify-center px-[18px]">
         <SuccessState
-          iconColor={isIncome ? t.income : t.expense}
+          iconColor={accent}
           iconBackgroundColor={isIncome ? t.incomeSoft : t.expenseSoft}
           title={isIncome ? 'Ingreso guardado' : 'Gasto guardado'}
           subtitle={`${cashFormat(value)} · ${description}`}
         />
-      </Sheet>
+      </View>
     );
   }
 
   return (
-    <Sheet open={open} onClose={onClose} snapPoints={['100%']}>
-      <View style={{ flex: 1 }}>
-        <BottomSheetScrollView
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          style={{ flex: 0.9 }}
-        >
-          {/* View amount $ */}
-          <View className="items-center py-4">
-            <Text className="font-display text-[52px]" style={{ color: isIncome ? t.income : t.expense }}>
-              <Text className="text-[30px] text-muted">$ </Text>
-              {amount}
-            </Text>
-            {submitted && errorFor('amount') ? (
-              <Text className="text-[12px] font-semi text-expense">{errorFor('amount')}</Text>
-            ) : null}
-          </View>
+    <View className="flex-1">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 4, paddingBottom: 12, gap: 18 }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Gasto / Ingreso */}
+        <View accessibilityRole="tablist" className="flex-row gap-1 rounded-pill border border-border bg-card-2 p-1">
+          {MODES.map((m) => {
+            const active = type === m.value;
+            const color = active ? accent : t.muted;
+            return (
+              <Pressable
+                key={m.value}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                onPress={() => setType(m.value)}
+                className={cn(
+                  'h-[42px] flex-1 flex-row items-center justify-center gap-[7px] rounded-pill',
+                  active && 'bg-card shadow-soft'
+                )}
+              >
+                <Icon name={m.icon} size={17} strokeWidth={2.4} color={color} />
+                <Text className="font-display text-[14.5px]" style={{ color }}>
+                  {m.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
+        {/* Amount */}
+        <View className="items-center pt-1.5">
+          <Text className="font-display text-[52px]" style={{ color: accent }}>
+            <Text className="text-[30px] text-muted">$ </Text>
+            {amount}
+          </Text>
+          {submitted && errorFor('amount') ? (
+            <Text className="text-[12px] font-semi text-expense">{errorFor('amount')}</Text>
+          ) : null}
+        </View>
+
+        {/* Keypad */}
+        <View className="flex-row flex-wrap justify-between gap-y-2">
+          {KEYS.map((k) => (
+            <Pressable
+              key={k}
+              onPress={() => press(k)}
+              accessibilityRole="button"
+              accessibilityLabel={k === 'del' ? 'Borrar' : k}
+              className="items-center justify-center rounded-2xl bg-card-2 py-4 active:scale-95 active:bg-primary-soft"
+              style={{ width: '32%' }}
+            >
+              {k === 'del' ? (
+                <Icon name="back" size={20} strokeWidth={2.4} color={t.text} />
+              ) : (
+                <Text className="font-strong text-[22px]">{k}</Text>
+              )}
+            </Pressable>
+          ))}
+        </View>
+
+        <Card className="gap-4">
           {/* Select budget */}
           {!isIncome && (
-            <View className="mb-3.5 gap-[7px]">
+            <View className="gap-[7px]">
               <Text className="text-[12.5px] font-strong text-muted">Presupuesto</Text>
               {hasBudgets ? (
                 <>
@@ -230,7 +278,7 @@ export function QuickAddSheet({
           )}
 
           {/* Select account */}
-          <View className="mb-3.5 gap-[7px]">
+          <View className="gap-[7px]">
             <Text className="text-[12.5px] font-strong text-muted">Cuenta</Text>
             {hasAccounts ? (
               <>
@@ -249,55 +297,35 @@ export function QuickAddSheet({
           </View>
 
           {/* Date */}
-          <DateField value={date} onChange={setDate} className="mb-3.5" />
+          <DateField value={date} onChange={setDate} />
 
           {/* Description */}
-          <View className="mb-3.5">
-            <ModalField
-              label="Descripción"
-              placeholder={isIncome ? 'Ej. Nómina, freelance…' : 'Ej. Café, súper…'}
-              value={description}
-              onChangeText={setDescription}
-              error={submitted ? errorFor('description') : undefined}
-            />
-          </View>
+          <Field
+            label="Descripción"
+            placeholder={isIncome ? 'Ej. Nómina, freelance…' : 'Ej. Café, súper…'}
+            value={description}
+            onChangeText={setDescription}
+            error={submitted ? errorFor('description') : undefined}
+          />
+        </Card>
+      </ScrollView>
 
-          {/* KeyPad */}
-          <View className="mb-3.5 flex-row flex-wrap justify-between">
-            {KEYS.map((k) => (
-              <Pressable
-                key={k}
-                onPress={() => press(k)}
-                className="mb-2 items-center justify-center rounded-2xl bg-card-2 active:scale-95 active:bg-primary-soft"
-                style={{ width: '32%', paddingVertical: 5 }}
-              >
-                {k === 'del' ? (
-                  <Icon name="close" size={20} strokeWidth={2.4} color={t.text} />
-                ) : (
-                  <Text className="font-strong text-[22px]">{k}</Text>
-                )}
-              </Pressable>
-            ))}
-          </View>
-        </BottomSheetScrollView>
-
-        {/* Save button — pinned in its own 10% band so it's always reachable */}
-        <View style={{ flex: 0.1, justifyContent: 'center' }}>
-          <Button
-            icon="check"
-            block
-            size="lg"
-            loading={saving}
-            disabled={saving || !isValid}
-            onPress={save}
-            className={isIncome ? 'bg-income' : undefined}
-          >
-            {`Guardar ${isIncome ? 'ingreso' : 'gasto'} · ${cashFormat(value)}`}
-          </Button>
-        </View>
+      {/* Save button — pinned above the tab bar; the bottom padding clears the FAB's overhang. */}
+      <View className="bg-surface px-[18px] pb-[34px] pt-2.5">
+        <Button
+          icon="check"
+          block
+          size="lg"
+          loading={saving}
+          disabled={saving || !isValid}
+          onPress={save}
+          className={isIncome ? 'bg-income' : undefined}
+        >
+          {`Guardar ${isIncome ? 'ingreso' : 'gasto'} · ${cashFormat(value)}`}
+        </Button>
       </View>
-    </Sheet>
+    </View>
   );
 }
 
-export default QuickAddSheet;
+export default QuickAddForm;

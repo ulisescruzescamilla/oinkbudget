@@ -6,7 +6,9 @@ import { QuickAddProvider } from '@/navigation/QuickAddProvider';
 /**
  * Tab navigator: hides the default header/tab bar and renders the custom
  * Aurora tab bar with a central quick-add FAB. Wrapped in QuickAddProvider so
- * the FAB and the Dashboard shortcuts share one capture sheet.
+ * the FAB and the Dashboard shortcuts open the same `add` screen, which has no
+ * tab button of its own. `backBehavior="history"` makes leaving it return to
+ * the tab it was opened from.
  *
  * `BottomSheetModalProvider` lives here (not the root layout) so its portal host
  * sits inside the navigator's navigation context — otherwise portaled sheet
@@ -17,6 +19,7 @@ export default function TabLayout() {
     <BottomSheetModalProvider>
       <QuickAddProvider>
         <Tabs
+          backBehavior="history"
           screenOptions={{ headerShown: false }}
           tabBar={(props) => <CustomTabBar {...props} />}
         >
@@ -24,6 +27,7 @@ export default function TabLayout() {
           <Tabs.Screen name="history" />
           <Tabs.Screen name="accounts" />
           <Tabs.Screen name="budgets" />
+          <Tabs.Screen name="add" />
         </Tabs>
       </QuickAddProvider>
     </BottomSheetModalProvider>

@@ -1,11 +1,13 @@
 /**
- * CustomTabBar — bottom navigation with a central gradient FAB.
+ * CustomTabBar — bottom navigation with a central gradient FAB that opens the
+ * quick-add screen (and closes it while that screen is showing).
  * Ported from the `.tabbar` / `.fab` block in `design/src/app.jsx`.
  * Passed to expo-router `<Tabs tabBar={...} />`.
  */
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName, Text } from '@/components/ui';
 import { useQuickAdd } from './QuickAddProvider';
@@ -22,6 +24,8 @@ const TAB_META: Record<string, { icon: IconName; label: string }> = {
 /** Visual order around the center FAB. */
 const LEFT = ['index', 'history'];
 const RIGHT = ['accounts', 'budgets'];
+/** Quick-add route: has no tab button, the FAB toggles it. */
+const ADD_ROUTE = 'add';
 
 export type CustomTabBarProps = BottomTabBarProps;
 
@@ -29,9 +33,17 @@ export type CustomTabBarProps = BottomTabBarProps;
 export function CustomTabBar({ state, navigation }: CustomTabBarProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { open } = useQuickAdd();
+  const { open, close } = useQuickAdd();
 
   const activeName = state.routes[state.index]?.name;
+  const adding = activeName === ADD_ROUTE;
+
+  // Plus → "X" while the quick-add screen is showing.
+  const spin = useRef(new Animated.Value(adding ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(spin, { toValue: adding ? 1 : 0, duration: 200, useNativeDriver: true }).start();
+  }, [adding, spin]);
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '45deg'] });
 
   const renderTab = (name: string) => {
     const meta = TAB_META[name];
@@ -65,14 +77,22 @@ export function CustomTabBar({ state, navigation }: CustomTabBarProps) {
       style={{ paddingBottom: insets.bottom + 10 }}
     >
       {LEFT.map(renderTab)}
-      <Pressable onPress={() => open('expense')} className="active:scale-90" style={{ marginTop: -36 }}>
+      <Pressable
+        onPress={() => (adding ? close() : open('expense'))}
+        accessibilityRole="button"
+        accessibilityLabel={adding ? 'Cerrar' : 'Agregar'}
+        className="active:scale-90"
+        style={{ marginTop: -36 }}
+      >
         <LinearGradient
           colors={t.hero}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ width: 68, height: 68, borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Icon name="plus" size={48} strokeWidth={2.6} color="#fff" />
+          <Animated.View style={{ transform: [{ rotate }] }}>
+            <Icon name="plus" size={48} strokeWidth={2.6} color="#fff" />
+          </Animated.View>
         </LinearGradient>
       </Pressable>
       {RIGHT.map(renderTab)}

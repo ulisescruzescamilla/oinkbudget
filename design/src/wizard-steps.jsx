@@ -1,6 +1,6 @@
 /* wizard-steps.jsx — step views for the "Crear plan" flow
    Pure presentational; all state lives in Wizard (wizard.jsx). */
-const { useMemo: useMemoW } = React;
+const { useMemo: useMemoW, useState: useStateW } = React;
 
 /* ---- period catalogue ---- */
 const PERIODS = {
@@ -43,16 +43,58 @@ function StepPeriodo({ period, setPeriod }) {
 }
 
 /* =================== STEP 2 · CUENTAS =================== */
-function StepCuentas({ accSel, toggleAcc, dark }) {
-  const total = ACCOUNTS.reduce((s, a) => s + (accSel[a.id] ? a.balance : 0), 0);
-  const count = ACCOUNTS.filter(a => accSel[a.id]).length;
+const ACC_TYPES = [
+  { type: "Banco",     icon: "building", hue: 210 },
+  { type: "Cartera",   icon: "wallet",   hue: 30  },
+  { type: "Tarjeta",   icon: "card",     hue: 293 },
+  { type: "Inversión", icon: "piggy",    hue: 158 },
+];
+
+function NewAccountInline({ onCancel, onCreate, dark }) {
+  const [name, setName] = useStateW("");
+  const [typeIx, setTypeIx] = useStateW(0);
+  const [bal, setBal] = useStateW("");
+  const t = ACC_TYPES[typeIx];
+  const valid = name.trim().length > 0;
+  return (
+    <div className="newacc">
+      <div className="newacc-h">
+        <IconTile icon={t.icon} hue={t.hue} size={36} dark={dark} />
+        <span className="t1">Nueva cuenta</span>
+        <button className="brow-x" onClick={onCancel} aria-label="cancelar"><Icon name="close" size={15} sw={2.4} /></button>
+      </div>
+      <div className="field"><label>Nombre</label>
+        <input className="input" placeholder="Ej. Santander" value={name} autoFocus onChange={e => setName(e.target.value)} /></div>
+      <div className="field"><label>Tipo</label>
+        <div className="chips" style={{ flexWrap: "wrap" }}>
+          {ACC_TYPES.map((o, i) => (
+            <button key={o.type} className={"chip" + (typeIx === i ? " on" : "")} onClick={() => setTypeIx(i)}>
+              <Icon name={o.icon} size={15} sw={2.2} /> {o.type}
+            </button>
+          ))}
+        </div></div>
+      <div className="field"><label>Saldo actual</label>
+        <input className="input money" placeholder="$0.00" inputMode="decimal" value={bal} onChange={e => setBal(e.target.value)} /></div>
+      <button className="btn btn-primary btn-block" disabled={!valid} style={{ opacity: valid ? 1 : .5 }}
+        onClick={() => onCreate({ name: name.trim(), type: t.type, icon: t.icon, hue: t.hue, balance: parseFloat(String(bal).replace(/[^0-9.-]/g, "")) || 0 })}>
+        <Icon name="check" size={18} sw={2.4} /> Agregar al plan
+      </button>
+    </div>
+  );
+}
+
+function StepCuentas({ accounts, accSel, toggleAcc, addAccount, dark }) {
+  const list = accounts || ACCOUNTS;
+  const [adding, setAdding] = useStateW(false);
+  const total = list.reduce((s, a) => s + (accSel[a.id] ? a.balance : 0), 0);
+  const count = list.filter(a => accSel[a.id]).length;
   return (
     <div className="wiz-pad">
       <div className="acc-total">
         <span className="lab">{count} {count === 1 ? "cuenta" : "cuentas"} en este plan</span>
         <span className="val money">{fmt(total)}</span>
       </div>
-      {ACCOUNTS.map(a => (
+      {list.map(a => (
         <button key={a.id} className={"opt compact" + (accSel[a.id] ? " on" : "")} onClick={() => toggleAcc(a.id)}>
           <IconTile icon={a.icon} hue={a.hue} size={42} soft={!accSel[a.id]} dark={dark} />
           <span className="opt-mid">
@@ -62,6 +104,18 @@ function StepCuentas({ accSel, toggleAcc, dark }) {
           <span className="opt-check"><Icon name="check" size={14} sw={3} /></span>
         </button>
       ))}
+      {adding ? (
+        <NewAccountInline dark={dark} onCancel={() => setAdding(false)}
+          onCreate={(acc) => { addAccount(acc); setAdding(false); }} />
+      ) : (
+        <button className="opt-add" onClick={() => setAdding(true)}>
+          <span className="ic"><Icon name="plus" size={20} sw={2.6} /></span>
+          <span className="opt-mid">
+            <span className="t1">Crear cuenta nueva</span>
+            <span className="t2">Agrega una cuenta que aún no tengas registrada</span>
+          </span>
+        </button>
+      )}
     </div>
   );
 }
@@ -222,4 +276,4 @@ function HappyOink({ size = 96 }) {
   );
 }
 
-Object.assign(window, { PERIODS, PLAN_TEMPLATE, StepPeriodo, StepCuentas, StepIngreso, StepReparto, HappyOink });
+Object.assign(window, { PERIODS, PLAN_TEMPLATE, ACC_TYPES, NewAccountInline, StepPeriodo, StepCuentas, StepIngreso, StepReparto, HappyOink });

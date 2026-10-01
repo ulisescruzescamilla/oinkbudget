@@ -25,7 +25,7 @@ npx jest path/to/test.file.ts
 ## Architecture
 
 ### Routing
-File-based routing via **Expo Router**. All screens live under `app/`. The main UI is a 4-tab layout (`app/(tabs)/`): Dashboard, History, Accounts, Budgets.
+File-based routing via **Expo Router**. All screens live under `app/`. The main UI is a 4-tab layout (`app/(tabs)/`): Dashboard, History, Accounts, Budgets. A fifth route, `app/(tabs)/add.tsx` (quick-add), has no tab button: the tab bar's center FAB opens it and, while it is showing, closes it. The navigator uses `backBehavior="history"` so leaving it returns to the originating tab.
 
 ### API Layer
 HTTP communication via **Axios**. Follows a strict 4-layer separation — screens never call axios directly.
@@ -77,9 +77,9 @@ No global state library. Each screen fetches its own data via `useFocusEffect` (
 
 Component organization (all at the repo root — there is no `src/`):
 - `components/ui/` — dumb primitives: `Icon`/`OinkMark`, `Button`, `Card`/`CardHeader`, `IconButton`, `IconTile`, `Pill`, `ProgressBar`, `Ring`, `TrendBars`, `Chip`, `Segmented`, `Sheet`, `Field`/`Input`, `Text`/`Heading`. Barrel: `components/ui/index.ts`.
-- `components/features/` — business components: `TransactionRow`, `AccountCard`, `BudgetAccordionCard`, `AllocationBar`, `QuickAddSheet`, `NewBudgetForm`, `NewAccountForm`, `ManageTxSheet`, `EmptyState`.
-- `screens/` — one component per tab (`DashboardScreen`, `HistoryScreen`, `AccountsScreen`, `BudgetsScreen`); the `app/(tabs)/*.tsx` route files are thin wrappers that render them.
-- `navigation/` — `AppBar`, `CustomTabBar` (bottom nav + center FAB), `ScreenLayout`, `QuickAddProvider` (quick-add context), and React Navigation `theme`.
+- `components/features/` — business components: `TransactionRow`, `AccountCard`, `BudgetAccordionCard`, `AllocationBar`, `QuickAddForm`, `NewBudgetForm`, `NewAccountForm`, `ManageTxSheet`, `EmptyState`.
+- `screens/` — one component per route (`DashboardScreen`, `HistoryScreen`, `AccountsScreen`, `BudgetsScreen`, `QuickAddScreen`); the `app/(tabs)/*.tsx` route files are thin wrappers that render them.
+- `navigation/` — `AppBar`, `CustomTabBar` (bottom nav + center FAB), `ScreenLayout`, `QuickAddProvider` (`open(mode)`/`close()` navigation for the quick-add screen), and React Navigation `theme`.
 
 ### Styling
 Tailwind via NativeWind. Theme defined in `tailwind.config.js` with semantic Aurora tokens (`primary`, `income`, `expense`, `surface`, `card`, `text`, `muted`, `border`, …) backed by CSS variables in `global.css` for light/dark. Raw token values + radii/shadows live in `styles/theme.ts`; the category palette in `styles/categories.ts`; account-type visuals in `styles/accounts.ts`. Use `useTheme()`/`useIsDark()` from `styles/useTheme.ts` for raw colors (SVG, gradients). The display font is Plus Jakarta Sans (`font-display`/`font-bold`/`font-semibold`/`font-sans`). Dark mode toggles via NativeWind `useColorScheme()` (the AppBar has a toggle).

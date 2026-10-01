@@ -1,6 +1,6 @@
 /**
- * AppBar — sticky screen header with the brandmark, eyebrow + title, and a
- * light/dark theme toggle. Ported from the `.appbar` block in `design/src/app.jsx`.
+ * AppBar — sticky screen header with the brandmark (or a back button), eyebrow +
+ * title, and a light/dark theme toggle. Ported from the `.appbar` block in `design/src/app.jsx`.
  */
 import { View } from 'react-native';
 import { useColorScheme } from 'nativewind';
@@ -14,10 +14,12 @@ export interface AppBarProps {
   eyebrow: string;
   /** Screen title. */
   title: string;
+  /** When set, a back button replaces the brandmark. */
+  onBack?: () => void;
 }
 
 /** Top app bar shown on every tab. */
-export function AppBar({ eyebrow, title }: AppBarProps) {
+export function AppBar({ eyebrow, title, onBack }: AppBarProps) {
   const t = useTheme();
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const dark = colorScheme === 'dark';
@@ -25,14 +27,18 @@ export function AppBar({ eyebrow, title }: AppBarProps) {
   return (
     <View className="flex-row items-center justify-between bg-surface px-[18px] pb-3 pt-2">
       <View className="flex-row items-center gap-2.5">
-        <LinearGradient
-          colors={t.hero}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <OinkMark size={22} />
-        </LinearGradient>
+        {onBack ? (
+          <IconButton icon="back" onPress={onBack} accessibilityLabel="Volver" />
+        ) : (
+          <LinearGradient
+            colors={t.hero}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <OinkMark size={22} />
+          </LinearGradient>
+        )}
         <View>
           <Muted className="text-[12.5px]">{eyebrow}</Muted>
           <Heading size="lg" className="text-[23px] leading-tight">
