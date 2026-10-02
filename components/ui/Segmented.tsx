@@ -33,7 +33,9 @@ export function Segmented<T extends string = string>({
           <Pressable
             key={opt.value}
             onPress={() => onChange(opt.value)}
-            className={cn('rounded-pill px-4 py-2', active && 'bg-primary shadow-btn')}
+            // `shadow-none` keeps a shadow class on inactive segments: NativeWind
+            // crashes in dev when a shadow is first added after mount.
+            className={cn('rounded-pill px-4 py-2', active ? 'bg-primary shadow-btn' : 'shadow-none')}
           >
             <Text className={cn('text-[13.5px] font-strong', active ? 'text-on-primary' : 'text-muted')}>
               {opt.label}

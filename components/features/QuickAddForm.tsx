@@ -204,9 +204,11 @@ export function QuickAddForm({
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 onPress={() => setType(m.value)}
+                // `shadow-none` keeps a shadow class on the inactive tab: NativeWind
+                // crashes in dev when a shadow is first added after mount.
                 className={cn(
                   'h-[42px] flex-1 flex-row items-center justify-center gap-[7px] rounded-pill',
-                  active && 'bg-card shadow-soft'
+                  active ? 'bg-card shadow-soft' : 'shadow-none'
                 )}
               >
                 <Icon name={m.icon} size={17} strokeWidth={2.4} color={color} />
