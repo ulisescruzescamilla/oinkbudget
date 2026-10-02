@@ -200,11 +200,20 @@ export async function runSync(): Promise<{ succeeded: number; failed: number }> 
       await syncQueueRepository.markInProgress(item.id);
       try {
         await replay(item);
+        recordApiOutcome(true);
         await syncQueueRepository.markSucceeded(item.id);
         resolvedThisRun.add(item.clientId);
         succeeded += 1;
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        if (isNetworkError(err as AppError)) {
+          // The API is unreachable, not rejecting the item: keep it queued without spending
+          // an attempt, and stop here — every remaining item would only wait on the same
+          // dead connection.
+          recordApiOutcome(false);
+          await syncQueueRepository.markPending(item.id);
+          break;
+        }
+        const message = err instanceof Error ? err.message : ((err as AppError)?.message ?? String(err));
         await syncQueueRepository.markFailed(item.id, message);
         lastError = message;
         failed += 1;

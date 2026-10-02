@@ -95,6 +95,20 @@ describe('SyncingDataSource', () => {
     });
   });
 
+  describe('getCached', () => {
+    it('reads the local mirror without syncing or touching the API, even when online', async () => {
+      (isOnline as jest.Mock).mockReturnValue(true);
+      const items: Entity[] = [{ id: 1, client_id: 'c-1', name: 'Cash' }];
+      local.getAll.mockResolvedValue(items);
+
+      const result = await source.getCached();
+
+      expect(result).toBe(items);
+      expect(runSync).not.toHaveBeenCalled();
+      expect(api.getAll).not.toHaveBeenCalled();
+    });
+  });
+
   describe('create', () => {
     it('creates via the API and mirrors it locally when online', async () => {
       (isOnline as jest.Mock).mockReturnValue(true);

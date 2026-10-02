@@ -124,7 +124,7 @@ export const expenseService = {
   async remove(id: string): Promise<void> {
     const pending = !/^\d+$/.test(id);
     if (pending) {
-      await expenseRepository.removeSyncedRow(id);
+      await expenseRepository.removePendingLocal(id);
       await balanceRepository.removeBySourceClientId(id);
       await syncQueueRepository.removePendingCreateFor(id);
       notifyQueueChanged();

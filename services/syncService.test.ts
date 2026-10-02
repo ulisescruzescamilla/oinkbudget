@@ -3,7 +3,9 @@ import * as accountRepository from '@/database/accountRepository';
 import * as budgetRepository from '@/database/budgetRepository';
 import * as syncQueueRepository from '@/database/syncQueueRepository';
 import type { SyncQueueItem } from '@/database/syncQueueRepository';
-import { isOnline } from '@/utils/networkStatus';
+import { isOnline, recordApiOutcome } from '@/utils/networkStatus';
+import { AxiosError, type AxiosResponse } from 'axios';
+import type { AppError } from '@/utils/errorHandler';
 
 jest.mock('@/api/client', () => ({
   __esModule: true,
@@ -84,6 +86,41 @@ describe('syncService', () => {
 
       const status = await getSyncStatus();
       expect(status.lastError).toBe('boom');
+    });
+
+    it('records the normalized API error message on a rejected replay', async () => {
+      (isOnline as jest.Mock).mockReturnValue(true);
+      (syncQueueRepository.dequeuePending as jest.Mock).mockResolvedValue([queueItem()]);
+      const rejected: AppError = {
+        message: 'The name field is required.',
+        status: 422,
+        raw: new AxiosError('Request failed', undefined, undefined, undefined, { status: 422 } as AxiosResponse),
+      };
+      (apiClient.post as jest.Mock).mockRejectedValue(rejected);
+
+      const result = await runSync();
+
+      expect(syncQueueRepository.markFailed).toHaveBeenCalledWith(1, 'The name field is required.');
+      expect(result).toEqual({ succeeded: 0, failed: 1 });
+    });
+
+    it('keeps an item queued without spending an attempt, and stops the run, when the API is unreachable', async () => {
+      (isOnline as jest.Mock).mockReturnValue(true);
+      (syncQueueRepository.dequeuePending as jest.Mock).mockResolvedValue([
+        queueItem(),
+        queueItem({ id: 2, clientId: 'client-2' }),
+      ]);
+      const unreachable: AppError = { message: 'Network Error', raw: new AxiosError('Network Error') };
+      (apiClient.post as jest.Mock).mockRejectedValue(unreachable);
+
+      const result = await runSync();
+
+      expect(apiClient.post).toHaveBeenCalledTimes(1);
+      expect(syncQueueRepository.markPending).toHaveBeenCalledWith(1);
+      expect(syncQueueRepository.markFailed).not.toHaveBeenCalled();
+      expect(syncQueueRepository.markInProgress).not.toHaveBeenCalledWith(2);
+      expect(recordApiOutcome).toHaveBeenCalledWith(false);
+      expect(result).toEqual({ succeeded: 0, failed: 0 });
     });
 
     it('skips an item whose dependency has not synced yet', async () => {

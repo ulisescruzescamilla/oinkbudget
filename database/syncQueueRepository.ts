@@ -76,6 +76,12 @@ export async function markInProgress(id: number): Promise<void> {
   await db.runAsync("UPDATE sync_queue SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP WHERE id = ?;", [id]);
 }
 
+/** Puts an in-progress item back in the queue without spending an attempt — used when the replay never reached the API (no connectivity, host unreachable, timeout). */
+export async function markPending(id: number): Promise<void> {
+  const db = await getDBConnection();
+  await db.runAsync("UPDATE sync_queue SET status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE id = ?;", [id]);
+}
+
 /** A synced operation's ledger entry is removed entirely — the pending-work queue stays empty and ready for the next offline spell. */
 export async function markSucceeded(id: number): Promise<void> {
   const db = await getDBConnection();

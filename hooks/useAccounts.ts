@@ -28,10 +28,16 @@ export function useAccounts() {
     setState((s) => ({ ...s, fieldErrors: null }));
   }, []);
 
-  /** Fetches all accounts from the API. */
+  /**
+   * Fetches all accounts. Shows the ones stored on the device first, so
+   * balances changed by offline movements appear right away instead of after
+   * the API call resolves or times out.
+   */
   const fetchAccounts = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
     try {
+      const cached = await accountService.getCached();
+      setState((s) => ({ ...s, accounts: cached }));
       const accounts = await accountService.getAll();
       setState({ accounts, loading: false, error: null, fieldErrors: null });
     } catch (err) {

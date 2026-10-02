@@ -146,7 +146,7 @@ const SYNC_QUEUE_DDL = `
   CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status, created_at);
 `;
 
-const LATEST_SCHEMA_VERSION = 3;
+const LATEST_SCHEMA_VERSION = 4;
 
 async function tableExists(database: SQLite.SQLiteDatabase, name: string): Promise<boolean> {
   const row = await database.getFirstAsync<{ name: string }>(
@@ -444,6 +444,21 @@ async function migrateBalancesV3(database: SQLite.SQLiteDatabase): Promise<void>
   `);
 }
 
+/**
+ * One-time recovery for queued writes that `runSync` gave up on while the API
+ * was merely unreachable: a replay that never got a response used to count
+ * towards MAX_ATTEMPTS, so a few minutes without the API marked the item
+ * 'failed' for good and it never reached the server. Also releases items left
+ * 'in_progress' by a run that was interrupted mid-replay. Both get a fresh
+ * retry budget.
+ */
+async function requeueStalledSyncItems(database: SQLite.SQLiteDatabase): Promise<void> {
+  await database.execAsync(`
+    UPDATE sync_queue SET status = 'pending', attempts = 0, last_error = NULL, updated_at = CURRENT_TIMESTAMP
+    WHERE status IN ('failed', 'in_progress');
+  `);
+}
+
 export const initDatabase = async () => {
   const database = await getDBConnection();
   await database.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
@@ -468,6 +483,13 @@ export const initDatabase = async () => {
       await migrateBalancesV3(database);
     } catch (error) {
       console.error('[database] migrateBalancesV3 failed', error);
+    }
+  }
+  if (version < 4) {
+    try {
+      await requeueStalledSyncItems(database);
+    } catch (error) {
+      console.error('[database] requeueStalledSyncItems failed', error);
     }
   }
   if (version < LATEST_SCHEMA_VERSION) {

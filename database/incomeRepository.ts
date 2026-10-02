@@ -1,3 +1,4 @@
+import type * as SQLite from 'expo-sqlite';
 import { AccountType } from '@/types/AccountType';
 import { IncomeType } from '@/types/IncomeType';
 import type { IncomePayload } from '@/services/incomeService';
@@ -135,11 +136,43 @@ export async function createLocal(payload: IncomePayload, accountClientId: strin
   return created;
 }
 
+/**
+ * Undoes what `createLocal` applied for an income: takes its amount back off
+ * the account. Takes a `db` handle so it runs inside the caller's transaction.
+ * No-ops if the income is missing or already tombstoned, so a repeated delete
+ * can't revert twice.
+ */
+async function revertLocalEffects(db: SQLite.SQLiteDatabase, clientId: string): Promise<void> {
+  const income = await db.getFirstAsync<{ amount: number; account_client_id: string }>(
+    'SELECT amount, account_client_id FROM incomes WHERE client_id = ? AND deleted = 0;',
+    [clientId]
+  );
+  if (!income) return;
+
+  await db.runAsync(
+    "UPDATE accounts SET amount = amount - ?, sync_status = CASE WHEN sync_status = 'synced' THEN 'pending' ELSE sync_status END, updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;",
+    [income.amount, income.account_client_id]
+  );
+}
+
+/** Soft-deletes an income offline (tombstoned until its queued 'delete' op confirms synced) and reverts its account amount in the same transaction. */
 export async function markDeletedLocal(clientId: string): Promise<void> {
   const db = await getDBConnection();
-  await db.runAsync("UPDATE incomes SET deleted = 1, sync_status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;", [
-    clientId,
-  ]);
+  await db.withTransactionAsync(async () => {
+    await revertLocalEffects(db, clientId);
+    await db.runAsync("UPDATE incomes SET deleted = 1, sync_status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;", [
+      clientId,
+    ]);
+  });
+}
+
+/** Removes an income that never reached the server, reverting its account amount in the same transaction. */
+export async function removePendingLocal(clientId: string): Promise<void> {
+  const db = await getDBConnection();
+  await db.withTransactionAsync(async () => {
+    await revertLocalEffects(db, clientId);
+    await db.runAsync('DELETE FROM incomes WHERE client_id = ?;', [clientId]);
+  });
 }
 
 export async function attachServerId(clientId: string, serverId: number): Promise<void> {
