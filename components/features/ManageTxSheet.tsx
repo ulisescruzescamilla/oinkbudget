@@ -13,6 +13,8 @@ export interface ManageTxSheetProps {
   /** Selected transaction, or null when closed. */
   tx: BalanceType | null;
   onClose: () => void;
+  /** Called with the transaction when "Editar" is pressed; the sheet closes itself. */
+  onEdit?: (tx: BalanceType) => void;
   onDelete?: (tx: BalanceType) => void;
 }
 
@@ -28,7 +30,7 @@ function detailRows(tx: BalanceType): [string, string][] {
 }
 
 /** Bottom sheet showing a transaction's details. */
-export function ManageTxSheet({ tx, onClose, onDelete }: ManageTxSheetProps) {
+export function ManageTxSheet({ tx, onClose, onEdit, onDelete }: ManageTxSheetProps) {
   const t = useTheme();
   const signed = tx ? balanceSignedAmount(tx) : 0;
   const income = signed > 0;
@@ -62,7 +64,16 @@ export function ManageTxSheet({ tx, onClose, onDelete }: ManageTxSheetProps) {
           </View>
 
           <View className="flex-row gap-2.5">
-            <Button variant="soft" icon="edit" block onPress={onClose} className="flex-1">
+            <Button
+              variant="soft"
+              icon="edit"
+              block
+              className="flex-1"
+              onPress={() => {
+                onEdit?.(tx);
+                onClose();
+              }}
+            >
               Editar
             </Button>
             <Button

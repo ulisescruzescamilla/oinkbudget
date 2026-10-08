@@ -14,5 +14,8 @@ export interface BalanceType {
   account_name: string;
   type: TypeBalance;
   account: AccountType | null;
+  /** Server id of the expense/income this row was generated from. Absent on rows that only exist in the local mirror. */
+  balanceable_id?: number | null;
   created_at: Date;
+  budget_name?: string | null;
 }

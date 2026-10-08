@@ -40,4 +40,22 @@ export const balanceService = {
     }
     return balanceRepository.getAll(range, type);
   },
+
+  /**
+   * Deletes a balance row; the backend removes the expense/income behind it
+   * as well. Online only — deletions aren't queued for sync, so a network
+   * failure surfaces as an error instead of being deferred.
+   *
+   * @param id - Server id of the balance row
+   */
+  async remove(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/balances/${id}`);
+      recordApiOutcome(true);
+      await balanceRepository.removeByServerId(id);
+    } catch (err) {
+      if (isNetworkError(err as AppError)) recordApiOutcome(false);
+      throw err;
+    }
+  },
 };

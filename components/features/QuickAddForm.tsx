@@ -27,6 +27,14 @@ export interface QuickAddEntry {
   date: Date;
 }
 
+/** Values an existing movement prefills the form with when editing. */
+export interface QuickAddInitial {
+  amount: number;
+  description: string;
+  accountId: number | null;
+  budgetId: number | null;
+}
+
 export interface QuickAddFormProps {
   /** Initial mode when mounted. */
   mode?: TypeBalance;
@@ -38,6 +46,10 @@ export interface QuickAddFormProps {
   onSaved: () => void;
   /** Per-field errors from the last failed submit (422 response). */
   serverFieldErrors?: FieldErrors | null;
+  /** Prefilled values. Read once on mount — remount (via `key`) to load another movement. */
+  initial?: QuickAddInitial;
+  /** Editing an existing movement: its type and date are fixed, so those controls are hidden. */
+  editing?: boolean;
 }
 
 /** How long the success confirmation stays up before `onSaved` fires. */
@@ -91,13 +103,15 @@ export function QuickAddForm({
   onSubmit,
   onSaved,
   serverFieldErrors,
+  initial,
+  editing = false,
 }: QuickAddFormProps) {
   const t = useTheme();
   const [type, setType] = useState<TypeBalance>(mode);
-  const [amount, setAmount] = useState('0');
-  const [accountId, setAccountId] = useState<number | null>(accounts[0]?.id ?? null);
-  const [budgetId, setBudgetId] = useState<number | null>(budgets[0]?.id ?? null);
-  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : '0');
+  const [accountId, setAccountId] = useState<number | null>(initial?.accountId ?? accounts[0]?.id ?? null);
+  const [budgetId, setBudgetId] = useState<number | null>(initial?.budgetId ?? budgets[0]?.id ?? null);
+  const [description, setDescription] = useState(initial?.description ?? '');
   const [date, setDate] = useState<Date>(dayOffset(0));
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -177,7 +191,7 @@ export function QuickAddForm({
         <SuccessState
           iconColor={accent}
           iconBackgroundColor={isIncome ? t.incomeSoft : t.expenseSoft}
-          title={isIncome ? 'Ingreso guardado' : 'Gasto guardado'}
+          title={editing ? 'Movimiento actualizado' : isIncome ? 'Ingreso guardado' : 'Gasto guardado'}
           subtitle={`${cashFormat(value)} · ${description}`}
         />
       </View>
@@ -194,31 +208,33 @@ export function QuickAddForm({
         showsVerticalScrollIndicator={false}
       >
         {/* Gasto / Ingreso */}
-        <View accessibilityRole="tablist" className="flex-row gap-1 rounded-pill border border-border bg-card-2 p-1">
-          {MODES.map((m) => {
-            const active = type === m.value;
-            const color = active ? accent : t.muted;
-            return (
-              <Pressable
-                key={m.value}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                onPress={() => setType(m.value)}
-                // `shadow-none` keeps a shadow class on the inactive tab: NativeWind
-                // crashes in dev when a shadow is first added after mount.
-                className={cn(
-                  'h-[42px] flex-1 flex-row items-center justify-center gap-[7px] rounded-pill',
-                  active ? 'bg-card shadow-soft' : 'shadow-none'
-                )}
-              >
-                <Icon name={m.icon} size={17} strokeWidth={2.4} color={color} />
-                <Text className="font-display text-[14.5px]" style={{ color }}>
-                  {m.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {!editing && (
+          <View accessibilityRole="tablist" className="flex-row gap-1 rounded-pill border border-border bg-card-2 p-1">
+            {MODES.map((m) => {
+              const active = type === m.value;
+              const color = active ? accent : t.muted;
+              return (
+                <Pressable
+                  key={m.value}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => setType(m.value)}
+                  // `shadow-none` keeps a shadow class on the inactive tab: NativeWind
+                  // crashes in dev when a shadow is first added after mount.
+                  className={cn(
+                    'h-[42px] flex-1 flex-row items-center justify-center gap-[7px] rounded-pill',
+                    active ? 'bg-card shadow-soft' : 'shadow-none'
+                  )}
+                >
+                  <Icon name={m.icon} size={17} strokeWidth={2.4} color={color} />
+                  <Text className="font-display text-[14.5px]" style={{ color }}>
+                    {m.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
 
         {/* Amount */}
         <View className="items-center pt-1.5">
@@ -299,7 +315,7 @@ export function QuickAddForm({
           </View>
 
           {/* Date */}
-          <DateField value={date} onChange={setDate} />
+          {!editing && <DateField value={date} onChange={setDate} />}
 
           {/* Description */}
           <Field
@@ -323,7 +339,7 @@ export function QuickAddForm({
           onPress={save}
           className={isIncome ? 'bg-income' : undefined}
         >
-          {`Guardar ${isIncome ? 'ingreso' : 'gasto'} · ${cashFormat(value)}`}
+          {`Guardar ${editing ? 'cambios' : isIncome ? 'ingreso' : 'gasto'} · ${cashFormat(value)}`}
         </Button>
       </View>
     </View>

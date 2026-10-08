@@ -74,6 +74,38 @@ export function useIncomes() {
   }
 
   /**
+   * Updates an existing (already synced) income. Populates `fieldErrors` on 422.
+   *
+   * @param income - The income with its new values; must carry a server `id`
+   */
+  async function updateIncome(income: IncomeType): Promise<IncomeType | undefined> {
+    if (income.id == null) return;
+    setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
+    try {
+      const updated = await incomeService.update(income.id, {
+        amount: income.amount,
+        description: income.description,
+        account_id: income.account_id,
+      });
+      setState((s) => ({
+        ...s,
+        loading: false,
+        incomes: s.incomes.map((e) => (e.id === updated.id ? updated : e)),
+      }));
+      return updated;
+    } catch (err) {
+      const appErr = err as AppError;
+      console.error(err);
+      setState((s) => ({
+        ...s,
+        loading: false,
+        error: appErr,
+        fieldErrors: appErr.fieldErrors ?? null,
+      }));
+    }
+  }
+
+  /**
    * Deletes an income.
    *
    * @param income - The income to remove
@@ -91,6 +123,7 @@ export function useIncomes() {
     refresh: fetchIncomes,
     clearFieldErrors,
     createIncome,
+    updateIncome,
     removeIncome,
   };
 }

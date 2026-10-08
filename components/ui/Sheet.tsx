@@ -42,9 +42,10 @@ export function Sheet({ open, onClose, title, right, snapPoints, children }: She
       ref.current?.present();
       hasPresented.current = true;
     } else if (hasPresented.current) {
-      // Only dismiss once we've actually presented — calling dismiss()
-      // before the first present() can leave the modal unable to open later.
-      // ref.current?.dismiss();
+      // Closing programmatically goes through close() (never dismiss(), which
+      // breaks the modal once it has hidden): it animates down exactly like a
+      // swipe, and is a no-op when the user already dismissed the sheet.
+      ref.current?.close();
     }
   }, [open]);
 

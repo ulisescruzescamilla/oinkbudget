@@ -136,6 +136,12 @@ export async function removeBySourceClientId(sourceClientId: string): Promise<vo
   await db.runAsync('DELETE FROM balances WHERE source_client_id = ?;', [sourceClientId]);
 }
 
+/** Removes the mirrored row for a balance the server has confirmed deleted. */
+export async function removeByServerId(id: number): Promise<void> {
+  const db = await getDBConnection();
+  await db.runAsync('DELETE FROM balances WHERE id = ?;', [id]);
+}
+
 export async function getTodayExpensesTotal(): Promise<{ total: number } | null> {
   const db = await getDBConnection();
   return db.getFirstAsync<{ total: number }>(
