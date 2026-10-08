@@ -140,4 +140,25 @@ describe('QuickAddForm', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit.mock.calls[0][0]).toMatchObject({ account: bbva, budget: food });
   });
+
+  it('prefills an edited movement, hides the type switch and submits the changes', async () => {
+    const onSubmit = jest.fn().mockResolvedValue(true);
+    await setup({
+      onSubmit,
+      editing: true,
+      initial: { amount: 45.5, description: 'Cine', accountId: 2, budgetId: 11 },
+    });
+
+    expect(screen.queryByText('Ingreso')).toBeNull();
+    expect(screen.getByDisplayValue('Cine')).toBeTruthy();
+
+    await type('del', '9');
+    await fireEvent.press(screen.getByText(/Guardar cambios · \$45\.90$/));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'expense', amount: 45.9, description: 'Cine', account: cash, budget: fun })
+      )
+    );
+  });
 });

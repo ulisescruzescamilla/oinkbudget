@@ -97,6 +97,30 @@ export const incomeService = {
   },
 
   /**
+   * Updates an already-synced income. Online only — edits aren't queued for
+   * sync, so a network failure surfaces as an error instead of being deferred.
+   *
+   * @param id - Server id of the income
+   * @param payload - New income data
+   */
+  async update(id: number, payload: IncomePayload): Promise<IncomeType> {
+    try {
+      const { data } = await apiClient.put<ApiIncome>(`/incomes/${id}`, {
+        amount: payload.amount,
+        description: payload.description,
+        account_id: payload.account_id,
+      });
+      recordApiOutcome(true);
+      const updated = toIncomeType(data);
+      await incomeRepository.upsertFromServer(updated);
+      return updated;
+    } catch (err) {
+      if (isNetworkError(err as AppError)) recordApiOutcome(false);
+      throw err;
+    }
+  },
+
+  /**
    * Deletes an income. `id` may be a server id or, for a record that hasn't
    * synced yet, its local `client_id`.
    *
@@ -105,7 +129,7 @@ export const incomeService = {
   async remove(id: string): Promise<void> {
     const pending = !/^\d+$/.test(id);
     if (pending) {
-      await incomeRepository.removeSyncedRow(id);
+      await incomeRepository.removePendingLocal(id);
       await balanceRepository.removeBySourceClientId(id);
       await syncQueueRepository.removePendingCreateFor(id);
       notifyQueueChanged();

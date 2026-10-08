@@ -1,3 +1,4 @@
+import type * as SQLite from 'expo-sqlite';
 import { AccountType } from '@/types/AccountType';
 import { ExpenseType } from '@/types/ExpenseType';
 import type { ExpensePayload } from '@/services/expenseService';
@@ -169,11 +170,47 @@ export async function createLocal(payload: ExpensePayload, accountClientId: stri
   return created;
 }
 
+/**
+ * Undoes what `createLocal` applied for an expense: gives its amount back to
+ * the account and takes it off the budget's spent amount. Takes a `db` handle
+ * so it runs inside the caller's transaction. No-ops if the expense is missing
+ * or already tombstoned, so a repeated delete can't revert twice.
+ */
+async function revertLocalEffects(db: SQLite.SQLiteDatabase, clientId: string): Promise<void> {
+  const expense = await db.getFirstAsync<{ amount: number; account_client_id: string; budget_client_id: string }>(
+    'SELECT amount, account_client_id, budget_client_id FROM expenses WHERE client_id = ? AND deleted = 0;',
+    [clientId]
+  );
+  if (!expense) return;
+
+  await db.runAsync(
+    "UPDATE accounts SET amount = amount + ?, sync_status = CASE WHEN sync_status = 'synced' THEN 'pending' ELSE sync_status END, updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;",
+    [expense.amount, expense.account_client_id]
+  );
+  await db.runAsync(
+    "UPDATE budgets SET expense_amount = expense_amount - ?, sync_status = CASE WHEN sync_status = 'synced' THEN 'pending' ELSE sync_status END, updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;",
+    [expense.amount, expense.budget_client_id]
+  );
+}
+
+/** Soft-deletes an expense offline (tombstoned until its queued 'delete' op confirms synced) and reverts its account/budget amounts in the same transaction. */
 export async function markDeletedLocal(clientId: string): Promise<void> {
   const db = await getDBConnection();
-  await db.runAsync("UPDATE expenses SET deleted = 1, sync_status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;", [
-    clientId,
-  ]);
+  await db.withTransactionAsync(async () => {
+    await revertLocalEffects(db, clientId);
+    await db.runAsync("UPDATE expenses SET deleted = 1, sync_status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;", [
+      clientId,
+    ]);
+  });
+}
+
+/** Removes an expense that never reached the server, reverting its account/budget amounts in the same transaction. */
+export async function removePendingLocal(clientId: string): Promise<void> {
+  const db = await getDBConnection();
+  await db.withTransactionAsync(async () => {
+    await revertLocalEffects(db, clientId);
+    await db.runAsync('DELETE FROM expenses WHERE client_id = ?;', [clientId]);
+  });
 }
 
 export async function attachServerId(clientId: string, serverId: number): Promise<void> {

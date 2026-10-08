@@ -78,6 +78,39 @@ export function useExpenses() {
   }
 
   /**
+   * Updates an existing (already synced) expense. Populates `fieldErrors` on 422.
+   *
+   * @param expense - The expense with its new values; must carry a server `id`
+   */
+  async function updateExpense(expense: ExpenseType): Promise<ExpenseType | undefined> {
+    if (expense.id == null) return;
+    setState((s) => ({ ...s, loading: true, error: null, fieldErrors: null }));
+    try {
+      const updated = await expenseService.update(expense.id, {
+        amount: expense.amount,
+        description: expense.description,
+        account_id: expense.account_id,
+        budget_id: expense.budget_id,
+      });
+      setState((s) => ({
+        ...s,
+        loading: false,
+        expenses: s.expenses.map((e) => (e.id === updated.id ? updated : e)),
+      }));
+      return updated;
+    } catch (err) {
+      const appErr = err as AppError;
+      console.error(err);
+      setState((s) => ({
+        ...s,
+        loading: false,
+        error: appErr,
+        fieldErrors: appErr.fieldErrors ?? null,
+      }));
+    }
+  }
+
+  /**
    * Deletes an expense.
    *
    * @param expense - The expense to remove
@@ -95,6 +128,7 @@ export function useExpenses() {
     refresh: fetchExpenses,
     clearFieldErrors,
     createExpense,
+    updateExpense,
     removeExpense,
   };
 }

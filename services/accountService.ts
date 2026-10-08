@@ -48,6 +48,12 @@ export const accountService = {
   getAll: (): Promise<AccountType[]> => synced.getAll(),
 
   /**
+   * Returns the accounts already stored on the device, without syncing or
+   * calling the API. Includes balances adjusted by movements saved offline.
+   */
+  getCached: (): Promise<AccountType[]> => synced.getCached(),
+
+  /**
    * Returns a single account by id, falling back to the local mirror on a network error.
    *
    * @param id - Account identifier

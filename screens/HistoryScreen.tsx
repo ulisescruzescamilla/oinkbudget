@@ -1,16 +1,18 @@
 /**
  * HistoryScreen — period balance summary, filters and date-grouped movements.
  */
-import { useCallback, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Card, Chip, Icon, IconButton, Pill, Text } from '@/components/ui';
-import { EmptyState, ManageTxSheet, TransactionRow, balanceSignedAmount } from '@/components/features';
+import { EmptyState, ManageTxSheet, SuccessState, TransactionRow, balanceSignedAmount } from '@/components/features';
 import { Sheet } from '@/components/ui';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
+import { useQuickAdd } from '@/navigation/QuickAddProvider';
 import { BalanceType } from '@/types/BalanceType';
 import { cashFormat, dayInAppTimeZone, formatDateInAppTimeZone, signedCash, todayInAppTimeZone } from '@/utils/formatting';
 import { useBalance } from '@/hooks/useBalance';
+import { useTheme } from '@/styles/useTheme';
 
 type RangeKey = 'today' | 'week' | 'month' | 'all';
 type TypeKey = 'all' | 'in' | 'out';
@@ -21,6 +23,9 @@ const RANGES: { value: RangeKey; label: string }[] = [
   { value: 'month', label: 'Mes' },
   { value: 'all', label: 'Todo' },
 ];
+
+/** How long the delete confirmation stays up before it closes itself. */
+const SUCCESS_DELAY_MS = 900;
 
 /** YYYY-MM-DD key for a balance row, anchored to Mexico City's calendar day. */
 const dayKey = (item: BalanceType) => formatDateInAppTimeZone(item.created_at);
@@ -46,8 +51,62 @@ export function HistoryScreen() {
   const [type, setType] = useState<TypeKey>('all');
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<BalanceType | null>(null);
+  // Last deleted movement; kept after the confirmation closes so it stays rendered while the sheet animates out.
+  const [deleted, setDeleted] = useState<BalanceType | null>(null);
+  const [deletedOpen, setDeletedOpen] = useState(false);
+  const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const theme = useTheme();
 
-  const { balances, loading, refresh } = useBalance(range, type);
+  const mapType = (t: TypeKey): 'income' | 'expense' | undefined => {
+    if (t === 'all') return undefined;
+    return t === 'in' ? 'income' : 'expense';
+  };
+
+  const { balances, loading, refresh, removeBalance } = useBalance(range, mapType(type));
+  const { edit } = useQuickAdd();
+
+  /** Opens the edit form for a movement. Only rows already linked to a synced expense/income can be edited. */
+  const handleEdit = (tx: BalanceType) => {
+    if (tx.balanceable_id == null) {
+      Alert.alert('No disponible', 'Este movimiento solo se puede editar con conexión y una vez sincronizado.');
+      return;
+    }
+    edit(tx);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeout.current) clearTimeout(closeTimeout.current);
+    };
+  }, []);
+
+  /** Shows the delete confirmation for a movement, closing it on its own after a moment. */
+  const showDeleted = (tx: BalanceType) => {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+    setDeleted(tx);
+    setDeletedOpen(true);
+    closeTimeout.current = setTimeout(() => setDeletedOpen(false), SUCCESS_DELAY_MS);
+  };
+
+  /** Asks for confirmation, deletes the movement and reports the outcome. */
+  const handleDelete = (tx: BalanceType) => {
+    if (tx.id == null) {
+      Alert.alert('No disponible', 'Este movimiento solo se puede eliminar con conexión y una vez sincronizado.');
+      return;
+    }
+    Alert.alert('Eliminar movimiento', `¿Eliminar "${tx.description}"?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          const removed = await removeBalance(tx);
+          if (removed) showDeleted(tx);
+          else Alert.alert('No se pudo eliminar', 'Revisa tu conexión e inténtalo de nuevo.');
+        },
+      },
+    ]);
+  };
 
   // Re-pull whenever the tab regains focus (e.g. after saving a movement on the quick-add screen).
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
@@ -142,7 +201,18 @@ export function HistoryScreen() {
         </View>
       </Sheet>
 
-      <ManageTxSheet tx={selected} onClose={() => setSelected(null)} />
+      <Sheet open={deletedOpen} onClose={() => setDeletedOpen(false)}>
+        {deleted && (
+          <SuccessState
+            iconColor={deleted.type === 'income' ? theme.income : theme.expense}
+            iconBackgroundColor={deleted.type === 'income' ? theme.incomeSoft : theme.expenseSoft}
+            title="Movimiento eliminado"
+            subtitle={`${cashFormat(Math.abs(deleted.amount))} · ${deleted.description}`}
+          />
+        )}
+      </Sheet>
+
+      <ManageTxSheet tx={selected} onClose={() => setSelected(null)} onEdit={handleEdit} onDelete={handleDelete} />
     </ScreenLayout>
   );
 }

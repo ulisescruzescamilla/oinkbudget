@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppError, FieldErrors } from '@/utils/errorHandler';
-import type { RangeType, TypeBalance } from '@/types/BalanceType';
+import type { BalanceType, RangeType, TypeBalance } from '@/types/BalanceType';
 import { balanceService } from '@/services/balanceService';
-import { FilterBalanceType } from '@/types/filters.ts/FilterBalanceType';
 
 interface BalanceState {
-  balances: FilterBalanceType[] | null;
+  balances: BalanceType[] | null;
   loading: boolean;
   error: AppError | null;
   /** Per-field validation errors from the last failed mutation (422 response). */
@@ -45,9 +44,29 @@ export function useBalance(range?: RangeType, type?: TypeBalance) {
     fetchBalance();
   }, [fetchBalance]);
 
+  /**
+   * Deletes a movement (and the expense/income behind it).
+   *
+   * @param balance - The balance row to remove; must carry a server `id`
+   * @returns Whether the movement was deleted
+   */
+  async function removeBalance(balance: BalanceType): Promise<boolean> {
+    if (balance.id == null) return false;
+    try {
+      await balanceService.remove(balance.id);
+      setState((s) => ({ ...s, balances: (s.balances ?? []).filter((b) => b.id !== balance.id) }));
+      return true;
+    } catch (err) {
+      console.error(err);
+      setState((s) => ({ ...s, error: err as AppError }));
+      return false;
+    }
+  }
+
   return {
     ...state,
     refresh: fetchBalance,
     clearFieldErrors,
+    removeBalance,
   };
 }

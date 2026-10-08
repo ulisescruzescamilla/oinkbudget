@@ -51,6 +51,15 @@ export class SyncingDataSource<
     return this.local.getAll();
   }
 
+  /**
+   * Reads the local mirror only — no sync, no network. Lets a caller render
+   * what's already on the device (including offline writes) while `getAll()`
+   * is still waiting on the API.
+   */
+  getCached(): Promise<T[]> {
+    return this.local.getAll();
+  }
+
   async create(payload: CreatePayload): Promise<T> {
     if (isOnline()) {
       try {

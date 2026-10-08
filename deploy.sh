@@ -8,20 +8,29 @@ REMOTE_PATH="/home/uli"
 APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
 BUILD_GRADLE="android/app/build.gradle"
 APP_JSON="app.json"
+PACKAGE_JSON="package.json"
+PACKAGE_LOCK="package-lock.json"
 # ----------------
 
 # Always run from the repo root so the relative paths above resolve.
 cd "$(dirname "$0")"
 
-echo "==> Syncing version from package.json..."
-# package.json is the single source of truth for the user-facing version:
-# bump it there (e.g. `npm version patch --no-git-tag-version`) before deploying.
-VERSION=$(node -p "require('./package.json').version")
-if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "ERROR: package.json version \"$VERSION\" is not in X.Y.Z format"
+echo "==> Bumping patch version..."
+# package.json is the single source of truth for the user-facing version.
+# Every run bumps its patch number (X.Y.Z -> X.Y.Z+1) and the result is
+# propagated to build.gradle and app.json below.
+PREVIOUS_VERSION=$(node -p "require('./$PACKAGE_JSON').version")
+if ! [[ "$PREVIOUS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "ERROR: $PACKAGE_JSON version \"$PREVIOUS_VERSION\" is not in X.Y.Z format"
   exit 1
 fi
+# --no-git-tag-version: only rewrite package.json/package-lock.json; the
+# commit is made at the end of this script, once the APK is uploaded.
+npm version patch --no-git-tag-version > /dev/null
+VERSION=$(node -p "require('./$PACKAGE_JSON').version")
+echo "    $PACKAGE_JSON $PREVIOUS_VERSION -> $VERSION"
 
+echo "==> Syncing version into $BUILD_GRADLE and $APP_JSON..."
 CURRENT_NAME=$(grep -oP 'versionName "\K[^"]+' "$BUILD_GRADLE")
 sed -i "s/versionName \"$CURRENT_NAME\"/versionName \"$VERSION\"/" "$BUILD_GRADLE"
 # Keep the Expo config in step so a future `expo prebuild` doesn't revert it.
@@ -82,6 +91,6 @@ echo "Go to server and run: cd /var/www/fdroid-repo && sudo fdroid update -c --p
 echo "==> Committing version bump..."
 # Pathspecs limit the commit to the version files, leaving any other
 # staged or unstaged work untouched.
-git commit -m "chore: release v$VERSION (versionCode $NEXT_CODE)" -- "$BUILD_GRADLE" "$APP_JSON"
+git commit -m "chore: release v$VERSION (versionCode $NEXT_CODE)" -- "$BUILD_GRADLE" "$APP_JSON" "$PACKAGE_JSON" "$PACKAGE_LOCK"
 
 echo "==> Done. New version live at repo."

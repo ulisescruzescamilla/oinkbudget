@@ -116,6 +116,31 @@ export const expenseService = {
   },
 
   /**
+   * Updates an already-synced expense. Online only — edits aren't queued for
+   * sync, so a network failure surfaces as an error instead of being deferred.
+   *
+   * @param id - Server id of the expense
+   * @param payload - New expense data
+   */
+  async update(id: number, payload: ExpensePayload): Promise<ExpenseType> {
+    try {
+      const { data } = await apiClient.put<ApiExpense>(`/expenses/${id}`, {
+        amount: payload.amount,
+        description: payload.description,
+        account_id: payload.account_id,
+        budget_id: payload.budget_id,
+      });
+      recordApiOutcome(true);
+      const updated = toExpenseType(data);
+      await expenseRepository.upsertFromServer(updated);
+      return updated;
+    } catch (err) {
+      if (isNetworkError(err as AppError)) recordApiOutcome(false);
+      throw err;
+    }
+  },
+
+  /**
    * Deletes an expense. `id` may be a server id or, for a record that hasn't
    * synced yet, its local `client_id`.
    *
@@ -124,7 +149,7 @@ export const expenseService = {
   async remove(id: string): Promise<void> {
     const pending = !/^\d+$/.test(id);
     if (pending) {
-      await expenseRepository.removeSyncedRow(id);
+      await expenseRepository.removePendingLocal(id);
       await balanceRepository.removeBySourceClientId(id);
       await syncQueueRepository.removePendingCreateFor(id);
       notifyQueueChanged();
