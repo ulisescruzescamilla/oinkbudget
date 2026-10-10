@@ -114,7 +114,7 @@ export function TransferForm({ from, accounts, onSubmit, fieldErrors, errorMessa
             <Text className="text-[12px] font-semi text-danger">Necesitas otra cuenta para transferir saldo.</Text>
           )}
           {getFieldError(errors, 'account_to') ? (
-            <Text className="text-[12px] font-semi text-expense">{getFieldError(errors, 'account_to')}</Text>
+            <Text className="text-[12px] font-semi text-danger">{getFieldError(errors, 'account_to')}</Text>
           ) : null}
         </View>
 
@@ -128,7 +128,7 @@ export function TransferForm({ from, accounts, onSubmit, fieldErrors, errorMessa
         />
 
         {failed && !errors && errorMessage ? (
-          <Text className="text-[12px] font-semi text-expense">{errorMessage}</Text>
+          <Text className="text-[12px] font-semi text-danger">{errorMessage}</Text>
         ) : null}
 
         <Button icon="swap" block size="lg" loading={loading} disabled={destinations.length === 0} onPress={submit}>

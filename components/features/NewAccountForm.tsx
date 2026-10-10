@@ -18,26 +18,39 @@ export interface NewAccountFormProps {
   /** Submit handler returning the created/updated account (undefined on error). */
   onSubmit: (account: AccountType) => Promise<AccountType | undefined>;
   onDone: () => void;
+  /** Per-field errors from the last failed submit (422 response). */
   fieldErrors: FieldErrors | null;
+  /** General error message from the last failed submit (offline, server error…). */
+  errorMessage?: string | null;
   loading?: boolean;
 }
 
+/** Fields whose 422 errors the form renders inline; any other failure falls back to `errorMessage`. */
+const DISPLAYED_FIELDS = ['name', 'type', 'amount'];
+
 /** Form for creating or editing an account. */
-export function NewAccountForm({ account, onSubmit, onDone, fieldErrors, loading }: NewAccountFormProps) {
+export function NewAccountForm({ account, onSubmit, onDone, fieldErrors, errorMessage, loading }: NewAccountFormProps) {
   const [name, setName] = useState(account?.name ?? '');
   const [amount, setAmount] = useState(account ? String(account.amount) : '');
   const [type, setType] = useState<KindOfAccountType>(account?.type ?? 'cash');
   const [hidden, setHidden] = useState(account?.hidden ?? false);
+  const [failed, setFailed] = useState(false);
   const theme = useTheme();
+
+  const errors = fieldErrors ?? undefined;
+  const typeError = getFieldError(errors, 'type');
+  const hasInlineError = DISPLAYED_FIELDS.some((field) => getFieldError(errors, field));
 
   useEffect(() => {
     setName(account?.name ?? '');
     setAmount(account ? String(account.amount) : '');
     setType(account?.type ?? 'cash');
     setHidden(account?.hidden ?? false);
+    setFailed(false);
   }, [account]);
 
   const submit = async () => {
+    setFailed(false);
     const result = await onSubmit({
       id: account?.id ?? null,
       name: name.trim(),
@@ -46,6 +59,7 @@ export function NewAccountForm({ account, onSubmit, onDone, fieldErrors, loading
       hidden,
     });
     if (result) onDone();
+    else setFailed(true);
   };
 
   return (
@@ -72,6 +86,7 @@ export function NewAccountForm({ account, onSubmit, onDone, fieldErrors, loading
               />
             ))}
           </View>
+          {typeError ? <Text className="text-[12px] font-semi text-red-400">{typeError}</Text> : null}
         </View>
 
         <ModalField
@@ -93,6 +108,10 @@ export function NewAccountForm({ account, onSubmit, onDone, fieldErrors, loading
           </View>
           <Switch value={hidden} onValueChange={setHidden} />
         </View>
+
+        {failed && !hasInlineError && errorMessage ? (
+          <Text className="text-[12px] font-semi text-danger">{errorMessage}</Text>
+        ) : null}
 
         <Button icon="check" block size="lg" loading={loading} onPress={submit}>
           {account ? 'Guardar cambios' : 'Crear cuenta'}
