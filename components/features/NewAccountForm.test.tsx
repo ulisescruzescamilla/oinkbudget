@@ -89,6 +89,78 @@ describe('NewAccountForm', () => {
     expect(screen.getByText('El nombre es requerido')).toBeTruthy();
   });
 
+  it('renders the field error for type', async () => {
+    await render(
+      <NewAccountForm
+        onSubmit={jest.fn()}
+        onDone={jest.fn()}
+        fieldErrors={{ type: ['El tipo seleccionado es inválido'] }}
+      />
+    );
+
+    expect(screen.getByText('El tipo seleccionado es inválido')).toBeTruthy();
+  });
+
+  it.each([
+    ['Inversión', 'investment'],
+    ['Banco', 'bank'],
+  ])('submits the "%s" chip as type "%s"', async (label, type) => {
+    const onSubmit = jest.fn().mockResolvedValue({ id: 1 });
+    await render(<NewAccountForm onSubmit={onSubmit} onDone={jest.fn()} fieldErrors={null} />);
+
+    await fireEvent.press(screen.getByText(label));
+    await fireEvent.press(screen.getByText('Crear cuenta'));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ type })));
+  });
+
+  it('shows the general error message only after a failed submit', async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+    await render(
+      <NewAccountForm onSubmit={onSubmit} onDone={jest.fn()} fieldErrors={null} errorMessage="Error del servidor" />
+    );
+
+    expect(screen.queryByText('Error del servidor')).toBeNull();
+
+    await fireEvent.press(screen.getByText('Crear cuenta'));
+
+    await waitFor(() => expect(screen.getByText('Error del servidor')).toBeTruthy());
+  });
+
+  it('shows the general error message when the 422 is keyed on a field the form does not render', async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+    await render(
+      <NewAccountForm
+        onSubmit={onSubmit}
+        onDone={jest.fn()}
+        fieldErrors={{ hidden: ['El campo es inválido'] }}
+        errorMessage="Los datos son inválidos"
+      />
+    );
+
+    await fireEvent.press(screen.getByText('Crear cuenta'));
+
+    await waitFor(() => expect(screen.getByText('Los datos son inválidos')).toBeTruthy());
+  });
+
+  it('hides the general error message when a field error is already shown', async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+    await render(
+      <NewAccountForm
+        onSubmit={onSubmit}
+        onDone={jest.fn()}
+        fieldErrors={{ type: ['El tipo seleccionado es inválido'] }}
+        errorMessage="Los datos son inválidos"
+      />
+    );
+
+    await fireEvent.press(screen.getByText('Crear cuenta'));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(screen.getByText('El tipo seleccionado es inválido')).toBeTruthy();
+    expect(screen.queryByText('Los datos son inválidos')).toBeNull();
+  });
+
   it('shows a spinner and hides the label while loading', async () => {
     await render(<NewAccountForm onSubmit={jest.fn()} onDone={jest.fn()} fieldErrors={null} loading />);
     expect(screen.queryByText('Crear cuenta')).toBeNull();

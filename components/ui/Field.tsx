@@ -39,7 +39,7 @@ export function Field({ label, error, ...rest }: FieldProps) {
     <View className="gap-[7px]">
       {label ? <Text className="text-[12.5px] font-strong text-muted">{label}</Text> : null}
       <Input {...rest} />
-      {error ? <Text className="text-[12px] font-semi text-expense">{error}</Text> : null}
+      {error ? <Text className="text-[12px] font-semi text-danger">{error}</Text> : null}
     </View>
   );
 }

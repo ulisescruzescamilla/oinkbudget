@@ -243,7 +243,7 @@ export function QuickAddForm({
             {amount}
           </Text>
           {submitted && errorFor('amount') ? (
-            <Text className="text-[12px] font-semi text-expense">{errorFor('amount')}</Text>
+            <Text className="text-[12px] font-semi text-danger">{errorFor('amount')}</Text>
           ) : null}
         </View>
 
@@ -286,7 +286,7 @@ export function QuickAddForm({
                     ))}
                   </View>
                   {submitted && errorFor('budgetId', 'budget_id') ? (
-                    <Text className="text-[12px] font-semi text-expense">{errorFor('budgetId', 'budget_id')}</Text>
+                    <Text className="text-[12px] font-semi text-danger">{errorFor('budgetId', 'budget_id')}</Text>
                   ) : null}
                 </>
               ) : (
@@ -306,7 +306,7 @@ export function QuickAddForm({
                   ))}
                 </View>
                 {submitted && errorFor('accountId', 'account_id') ? (
-                  <Text className="text-[12px] font-semi text-expense">{errorFor('accountId', 'account_id')}</Text>
+                  <Text className="text-[12px] font-semi text-danger">{errorFor('accountId', 'account_id')}</Text>
                 ) : null}
               </>
             ) : (

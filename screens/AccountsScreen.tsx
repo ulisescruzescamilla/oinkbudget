@@ -125,6 +125,7 @@ export function AccountsScreen() {
           onSubmit={editing ? updateAccount : createAccount}
           onDone={closeForm}
           fieldErrors={fieldErrors}
+          errorMessage={error?.message}
           loading={loading}
         />
       </Sheet>
