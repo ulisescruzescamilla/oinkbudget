@@ -88,7 +88,7 @@ export async function replaceAllFromServer(balances: BalanceType[]): Promise<voi
 /**
  * Appends a mirrored transaction-log row. Takes a `db`/transaction handle
  * (not `getDBConnection()`) so it can run inside the same
- * `withExclusiveTransactionAsync` block as the expense/income insert that
+ * `withTransactionAsync` block as the expense/income insert that
  * calls it, keeping the balance update atomic. `sourceClientId` (the
  * expense/income's own `client_id`) is what lets `removeBySourceClientId`
  * find this row again once that expense/income syncs or is cancelled —

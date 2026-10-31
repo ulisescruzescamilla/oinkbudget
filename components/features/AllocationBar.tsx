@@ -4,7 +4,7 @@
  * `percentage_value` (out of 100%); the remainder is shown as "Sin asignar".
  */
 import { View } from 'react-native';
-import { Text } from '@/components/ui';
+import { StackedBar, Text } from '@/components/ui';
 import { BudgetType } from '@/types/BudgetType';
 import { useTheme } from '@/styles/useTheme';
 
@@ -30,11 +30,7 @@ export function AllocationBar({ budgets }: AllocationBarProps) {
 
   return (
     <View>
-      <View className="my-3.5 h-[18px] flex-row gap-0.5 overflow-hidden rounded-pill bg-card-2">
-        {segments.map((s) => (
-          <View key={s.key} style={{ width: `${s.pct}%`, backgroundColor: s.color }} />
-        ))}
-      </View>
+      <StackedBar segments={segments} className="my-3.5" />
 
       <View className="gap-2.5">
         {segments.map((s) => (

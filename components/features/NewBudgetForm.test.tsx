@@ -12,8 +12,8 @@ jest.mock('@/hooks/useCategories');
 const mockUseCategories = useCategories as jest.Mock;
 
 const categories = [
-  { id: 1, name: 'Comida', icon_code: 'food', color: '#F17264' },
-  { id: 2, name: 'Transporte', icon_code: 'car', color: '#1289E7' },
+  { id: 1, name: 'Comida', icon_code: 'food', color: '#F17264', type: 'expense' },
+  { id: 2, name: 'Transporte', icon_code: 'car', color: '#1289E7', type: 'expense' },
 ];
 
 describe('NewBudgetForm', () => {
@@ -80,6 +80,7 @@ describe('NewBudgetForm', () => {
     expect(screen.getByText('Mensual')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByPlaceholderText('Ej. Mercado'), 'Super');
+    await fireEvent.changeText(screen.getByPlaceholderText('$0.00'), '500');
     await fireEvent.press(screen.getByText('Crear presupuesto'));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
@@ -97,6 +98,7 @@ describe('NewBudgetForm', () => {
     expect(screen.getByText('Semanal')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByPlaceholderText('Ej. Mercado'), 'Super');
+    await fireEvent.changeText(screen.getByPlaceholderText('$0.00'), '500');
     await fireEvent.press(screen.getByText('Semanal'));
     await fireEvent.press(screen.getByText('Crear presupuesto'));
 
@@ -115,5 +117,66 @@ describe('NewBudgetForm', () => {
     );
 
     expect(screen.getByText('El monto máximo es requerido')).toBeTruthy();
+  });
+
+  it('keeps the submit button disabled until a limit is set', async () => {
+    const onSubmit = jest.fn();
+    await render(<NewBudgetForm onSubmit={onSubmit} onDone={jest.fn()} fieldErrors={null} />);
+
+    await fireEvent.press(screen.getByText('Crear presupuesto'));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('names the budget after its category when no name is typed', async () => {
+    const onSubmit = jest.fn().mockResolvedValue({ id: 1 });
+    await render(<NewBudgetForm onSubmit={onSubmit} onDone={jest.fn()} fieldErrors={null} />);
+
+    await fireEvent.press(screen.getByText('Transporte'));
+    expect(screen.getByPlaceholderText('Transporte')).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByPlaceholderText('$0.00'), '300');
+    await fireEvent.press(screen.getByText('Crear presupuesto'));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'Transporte', max_limit: 300, category_id: 2 }))
+    );
+  });
+
+  it('submits a share of the income in percent mode, capped at what is still unassigned', async () => {
+    const onSubmit = jest.fn().mockResolvedValue({ id: 1 });
+    await render(
+      <NewBudgetForm onSubmit={onSubmit} onDone={jest.fn()} fieldErrors={null} allocatedPercentage={70} />
+    );
+
+    await fireEvent.press(screen.getByText('%'));
+    expect(screen.getByText(/de 30%/)).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByPlaceholderText('0%'), '45');
+    expect(screen.getByDisplayValue('30')).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByPlaceholderText('0%'), '20');
+    await fireEvent.press(screen.getByText('Crear presupuesto'));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ max_limit: 0, percentage_value: 20 }))
+    );
+  });
+
+  it('gives back the edited budget its own share of the income', async () => {
+    const budget: BudgetType = {
+      id: 1,
+      name: 'Mercado',
+      max_limit: 1500,
+      percentage_value: 25,
+      is_recurrent: false,
+      period: 'monthly',
+      category_id: 1,
+    };
+    await render(
+      <NewBudgetForm budget={budget} onSubmit={jest.fn()} onDone={jest.fn()} fieldErrors={null} allocatedPercentage={90} />
+    );
+
+    await fireEvent.press(screen.getByText('%'));
+    expect(screen.getByText(/de 35%/)).toBeTruthy();
   });
 });

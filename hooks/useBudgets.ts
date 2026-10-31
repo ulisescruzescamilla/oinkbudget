@@ -28,7 +28,7 @@ export function useBudgets() {
    * Used to derive the maximum allowed value for the slider when adding/editing.
    */
   const allocatedPercentage = useMemo(
-    () => state.budgets.reduce((sum, b) => sum + b.percentage_value, 0),
+    () => state.budgets.reduce((sum, b) => sum + (Number(b.percentage_value) || 0), 0),
     [state.budgets]
   );
 

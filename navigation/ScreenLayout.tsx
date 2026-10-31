@@ -19,14 +19,16 @@ export interface ScreenLayoutProps {
   onRefresh?: () => void;
   /** Optional CTA rendered in flow at the bottom of the content. */
   footer?: React.ReactNode;
+  /** When set, the AppBar shows a back button instead of the brandmark and settings. */
+  onBack?: () => void;
 }
 
 /** Standard scrollable screen with header and refresh control. */
-export function ScreenLayout({ eyebrow, title, children, refreshing, onRefresh, footer }: ScreenLayoutProps) {
+export function ScreenLayout({ eyebrow, title, children, refreshing, onRefresh, footer, onBack }: ScreenLayoutProps) {
   const t = useTheme();
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-surface">
-      <AppBar eyebrow={eyebrow} title={title} />
+      <AppBar eyebrow={eyebrow} title={title} onBack={onBack} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 4, paddingBottom: 140, gap: 14 }}

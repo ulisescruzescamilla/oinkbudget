@@ -4,17 +4,28 @@
  */
 import { useCallback, useState } from 'react';
 import { Alert, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { Button, Card, CardHeader, Pill, Sheet, Text } from '@/components/ui';
-import { AllocationBar, BudgetAccordionCard, EmptyState, NewBudgetForm } from '@/components/features';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { askConfirm, Button, Card, CardHeader, Pill, Sheet, Text } from '@/components/ui';
+import { AllocationBar, BudgetAccordionCard, EmptyState, NewBudgetForm, notifySuccess } from '@/components/features';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
 import { useBudgets } from '@/hooks/useBudgets';
 import { BudgetType } from '@/types/BudgetType';
+import { cashFormat } from '@/utils/formatting';
 
 /** Presupuestos tab. */
 export function BudgetsScreen() {
-  const { budgets, loading, fieldErrors, refresh, clearFieldErrors, createBudget, updateBudget, removeBudget } =
-    useBudgets();
+  const router = useRouter();
+  const {
+    budgets,
+    loading,
+    fieldErrors,
+    allocatedPercentage,
+    refresh,
+    clearFieldErrors,
+    createBudget,
+    updateBudget,
+    removeBudget,
+  } = useBudgets();
 
   const [openId, setOpenId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -26,11 +37,32 @@ export function BudgetsScreen() {
   const openEdit = (b: BudgetType) => { setEditing(b); clearFieldErrors(); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); clearFieldErrors(); };
 
+  /** Saves the form's budget and confirms the change. */
+  const saveBudget = async (b: BudgetType) => {
+    const saved = await (editing ? updateBudget(b) : createBudget(b));
+    if (saved) {
+      notifySuccess({
+        title: editing ? 'Presupuesto actualizado' : 'Presupuesto creado',
+        subtitle: `${cashFormat(saved.max_limit)} · ${saved.name}`,
+      });
+    }
+    return saved;
+  };
+
   const confirmDelete = (b: BudgetType) => {
-    Alert.alert('Eliminar presupuesto', `¿Eliminar "${b.name}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Eliminar', style: 'destructive', onPress: () => removeBudget(b) },
-    ]);
+    askConfirm({
+      title: `¿Eliminar el presupuesto ${b.name}?`,
+      message: 'Tus movimientos se conservan, pero dejarán de contar contra este presupuesto. Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar presupuesto',
+      onConfirm: async () => {
+        try {
+          await removeBudget(b);
+          notifySuccess({ title: 'Presupuesto eliminado', subtitle: b.name, tone: 'expense' });
+        } catch {
+          Alert.alert('No se pudo eliminar el presupuesto', 'Inténtalo de nuevo más tarde.');
+        }
+      },
+    });
   };
 
   return (
@@ -55,6 +87,10 @@ export function BudgetsScreen() {
           </Text>
         )}
       </Card>
+
+      <Button variant="soft" icon="bolt" block size="lg" onPress={() => router.push('/plan-wizard')}>
+        Armar mi plan con el asistente
+      </Button>
 
       <View className="flex-row items-center justify-between px-1 pt-1">
         <Text className="font-display text-[14.5px] text-muted">Tus presupuestos</Text>
@@ -81,10 +117,11 @@ export function BudgetsScreen() {
       <Sheet open={formOpen} onClose={closeForm} title={editing ? 'Editar presupuesto' : 'Nuevo presupuesto'}>
         <NewBudgetForm
           budget={editing}
-          onSubmit={editing ? updateBudget : createBudget}
+          onSubmit={saveBudget}
           onDone={closeForm}
           fieldErrors={fieldErrors}
           loading={loading}
+          allocatedPercentage={allocatedPercentage}
         />
       </Sheet>
     </ScreenLayout>

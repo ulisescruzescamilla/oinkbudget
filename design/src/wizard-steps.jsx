@@ -121,7 +121,8 @@ function StepCuentas({ accounts, accSel, toggleAcc, addAccount, dark }) {
 }
 
 /* =================== STEP 3 · INGRESO =================== */
-function StepIngreso({ income, setIncome, period, accTotal }) {
+function StepIngreso({ income, setIncome, period, accTotal, accounts, accSel, incAcc, setIncAcc, dark }) {
+  const selAccs = (accounts || []).filter(a => accSel[a.id]);
   const meta = PERIODS[period];
   const press = (k) => {
     setIncome(prev => {
@@ -157,6 +158,20 @@ function StepIngreso({ income, setIncome, period, accTotal }) {
         <Icon name={meta.icon} size={15} sw={2.1} />
         <span>{meta.incLabel} · {meta.range}</span>
       </div>
+      <div className="field" style={{ marginTop: 18 }}>
+        <label>¿A qué cuenta llega este ingreso?</label>
+        <div className="inc-accs">
+          {selAccs.map(a => (
+            <button key={a.id} className={"inc-acc" + (incAcc === a.id ? " on" : "")} onClick={() => setIncAcc(a.id)}
+              role="radio" aria-checked={incAcc === a.id}>
+              <IconTile icon={a.icon} hue={a.hue} size={34} soft={incAcc !== a.id} dark={dark} />
+              <span className="nm">{a.name}</span>
+              <span className="opt-check"><Icon name="check" size={13} sw={3} /></span>
+            </button>
+          ))}
+        </div>
+        <span className="fs12 t-muted fw7" style={{ padding: "0 2px" }}>Al terminar se registrará como ingreso en esta cuenta.</span>
+      </div>
     </div>
   );
 }
@@ -166,7 +181,7 @@ function StepReparto({ income, rows, setRowAmt, removeRow, addRow, mode, setMode
   const pctOf = (a) => income > 0 ? Math.round(a / income * 100) : 0;
   const segs = rows.filter(r => r.amt > 0);
   const usedCats = rows.map(r => r.cat);
-  const available = Object.keys(CATS).filter(c => c !== "Ingreso" && !usedCats.includes(c));
+  const available = Object.keys(CATS).filter(c => CATS[c].kind !== "income" && !usedCats.includes(c));
 
   return (
     <div className="wiz-pad">
@@ -192,46 +207,25 @@ function StepReparto({ income, rows, setRowAmt, removeRow, addRow, mode, setMode
       </div>
 
       {/* template / reset */}
-      <div className="rowflex gap8" style={{ padding: "0 2px" }}>
+      <div className="stack" style={{ gap: 2, padding: "0 2px" }}>
         <button className="btn btn-soft btn-block" style={{ padding: "11px 14px", fontSize: 13.5 }} onClick={() => applyTemplate("suggest")}>
           <Icon name="bolt" size={16} sw={2.3} /> Sugerir reparto
         </button>
-        <button className="btn btn-ghost" style={{ padding: "11px 14px", fontSize: 13.5, flex: "none" }} onClick={() => applyTemplate("clear")}>
-          Vaciar
+        <button className="btn btn-text btn-block" style={{ fontSize: 13.5 }} onClick={() => applyTemplate("clear")}>
+          Vaciar reparto
         </button>
       </div>
 
       {/* budget rows */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        {rows.map(r => {
-          const fill = income > 0 ? r.amt / income * 100 : 0;
-          const col = catColor(r.cat, 0.62, 0.17);
-          return (
-            <div key={r.id} className="brow">
-              <div className="brow-top">
-                <IconTile icon={catIcon(r.cat)} hue={CATS[r.cat].hue} size={36} dark={dark} />
-                <span className="nm">{r.cat}</span>
-                <span className="brow-val">
-                  <span className="big money">{mode === "pct" ? pctOf(r.amt) + "%" : fmt0(r.amt)}</span>
-                  <span className="sub money"> · {mode === "pct" ? fmt0(r.amt) : pctOf(r.amt) + "%"}</span>
-                </span>
-                <button className="brow-x" onClick={() => removeRow(r.id)} aria-label="quitar"><Icon name="close" size={15} sw={2.4} /></button>
-              </div>
-              <input type="range" className="wslider"
-                min={0} max={income} step={mode === "pct" ? Math.max(1, Math.round(income / 100)) : 50}
-                value={r.amt}
-                style={{
-                  "--slider-fill": col,
-                  background: `linear-gradient(90deg, ${col} ${fill}%, var(--ring-track) ${fill}%)`
-                }}
-                onChange={(e) => setRowAmt(r.id, Number(e.target.value))} />
-            </div>
-          );
-        })}
+        {rows.map(r => (
+          <BudgetRow key={r.id} cat={r.cat} amt={r.amt} base={income} mode={mode} dark={dark}
+            onChange={(v) => setRowAmt(r.id, v)} onRemove={() => removeRow(r.id)} />
+        ))}
         {rows.length === 0 && (
           <div className="empty" style={{ padding: "30px 20px" }}>
             <div className="em-ic"><Icon name="chart" size={26} sw={2} /></div>
-            <p>Agrega categorías para repartir tu ingreso.</p>
+            <p>Agrega presupuestos recurrentes para repartir tu ingreso.</p>
           </div>
         )}
       </div>
@@ -239,7 +233,7 @@ function StepReparto({ income, rows, setRowAmt, removeRow, addRow, mode, setMode
       {/* add category */}
       {available.length > 0 && (
         <div className="stack" style={{ gap: 9 }}>
-          <span className="eyebrow" style={{ padding: "4px 4px 0" }}>Agregar categoría</span>
+          <span className="eyebrow" style={{ padding: "4px 4px 0" }}>Agregar presupuesto recurrente</span>
           <div className="addcat">
             {available.map(c => (
               <button key={c} className="chip" onClick={() => addRow(c)}>

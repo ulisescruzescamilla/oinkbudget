@@ -20,6 +20,8 @@ import { getDBConnection, initDatabase } from '@/database';
 import { initNetworkStatus } from '@/utils/networkStatus';
 import { initAutoSync } from '@/services/syncService';
 import { getNavTheme } from '@/navigation/theme';
+import { ConfirmHost } from '@/components/ui';
+import { SuccessHost } from '@/components/features';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -85,6 +87,8 @@ function RootLayoutNav({ db }: { db: SQLite.SQLiteDatabase }) {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
+          <ConfirmHost />
+          <SuccessHost />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -5,8 +5,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { Button, Card, IconButton, Pill, Sheet, Text } from '@/components/ui';
-import { AccountCard, EmptyState, NewAccountForm, TransferForm } from '@/components/features';
+import { askConfirm, Button, Card, IconButton, Pill, Sheet, Text } from '@/components/ui';
+import { AccountCard, EmptyState, NewAccountForm, notifySuccess, TransferForm } from '@/components/features';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
 import { useAccounts } from '@/hooks/useAccounts';
 import { AccountType } from '@/types/AccountType';
@@ -46,12 +46,33 @@ export function AccountsScreen() {
   const openTransfer = (a: AccountType) => { setSelected(null); clearFieldErrors(); setTransferFrom(a); };
   const closeTransfer = () => { setTransferFrom(null); clearFieldErrors(); };
 
+  /** Saves the form's account and confirms the change. */
+  const saveAccount = async (a: AccountType) => {
+    const saved = await (editing ? updateAccount(a) : createAccount(a));
+    if (saved) {
+      notifySuccess({
+        title: editing ? 'Cuenta actualizada' : 'Cuenta creada',
+        subtitle: `${cashFormat(saved.amount)} · ${saved.name}`,
+      });
+    }
+    return saved;
+  };
+
   const confirmDelete = (a: AccountType) => {
     setSelected(null);
-    Alert.alert('Eliminar cuenta', `¿Eliminar "${a.name}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Eliminar', style: 'destructive', onPress: () => removeAccount(a) },
-    ]);
+    askConfirm({
+      title: `¿Eliminar la cuenta ${a.name}?`,
+      message: `Se eliminará la cuenta y su saldo de ${cashFormat(a.amount)} dejará de contar en tu total. Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar cuenta',
+      onConfirm: async () => {
+        try {
+          await removeAccount(a);
+          notifySuccess({ title: 'Cuenta eliminada', subtitle: a.name, tone: 'expense' });
+        } catch {
+          Alert.alert('No se pudo eliminar la cuenta', 'Inténtalo de nuevo más tarde.');
+        }
+      },
+    });
   };
 
   return (
@@ -122,7 +143,7 @@ export function AccountsScreen() {
       <Sheet open={formOpen} onClose={closeForm} title={editing ? 'Editar cuenta' : 'Nueva cuenta'}>
         <NewAccountForm
           account={editing}
-          onSubmit={editing ? updateAccount : createAccount}
+          onSubmit={saveAccount}
           onDone={closeForm}
           fieldErrors={fieldErrors}
           errorMessage={error?.message}

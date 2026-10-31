@@ -84,7 +84,15 @@ function Accounts({ dark, onAdd }) {
                 <Icon name="swap" size={19} sw={2.2} /> Transferir saldo</button>
               <button className="btn btn-ghost btn-block" style={{ justifyContent: "flex-start" }} onClick={() => setSel(null)}>
                 <Icon name="grip" size={19} sw={2.2} /> Reordenar</button>
-              <button className="btn btn-danger-soft btn-block" style={{ justifyContent: "flex-start" }} onClick={() => setSel(null)}>
+              <button className="btn btn-danger-soft btn-block" style={{ justifyContent: "flex-start" }} onClick={() => {
+                const a = sel;
+                askConfirm({
+                  title: `¿Eliminar la cuenta ${a.name}?`,
+                  message: `Se eliminará la cuenta y su saldo de ${fmt(a.balance)} dejará de contar en tu total. Esta acción no se puede deshacer.`,
+                  confirmLabel: "Eliminar cuenta",
+                  onConfirm: () => { const i = ACCOUNTS.findIndex(x => x.id === a.id); if (i > -1) ACCOUNTS.splice(i, 1); setSel(null); notifySuccess({ title: "Cuenta eliminada", sub: a.name, tone: "expense" }); },
+                });
+              }}>
                 <Icon name="trash" size={19} sw={2.2} /> Eliminar cuenta</button>
             </div>
           </div>

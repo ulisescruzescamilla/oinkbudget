@@ -125,6 +125,7 @@ const CATEGORIES_DDL = `
     name TEXT NOT NULL,
     icon_code TEXT NOT NULL,
     color TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'expense',
     cached_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 `;
@@ -146,7 +147,7 @@ const SYNC_QUEUE_DDL = `
   CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status, created_at);
 `;
 
-const LATEST_SCHEMA_VERSION = 4;
+const LATEST_SCHEMA_VERSION = 5;
 
 async function tableExists(database: SQLite.SQLiteDatabase, name: string): Promise<boolean> {
   const row = await database.getFirstAsync<{ name: string }>(
@@ -459,6 +460,16 @@ async function requeueStalledSyncItems(database: SQLite.SQLiteDatabase): Promise
   `);
 }
 
+/**
+ * Adds the expense/income `type` column to the categories cache. Rows cached
+ * before it existed default to 'expense' until the next refresh from the API.
+ */
+async function migrateCategoriesV5(database: SQLite.SQLiteDatabase): Promise<void> {
+  if (!(await hasColumn(database, 'categories', 'type'))) {
+    await database.execAsync("ALTER TABLE categories ADD COLUMN type TEXT NOT NULL DEFAULT 'expense';");
+  }
+}
+
 export const initDatabase = async () => {
   const database = await getDBConnection();
   await database.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
@@ -490,6 +501,13 @@ export const initDatabase = async () => {
       await requeueStalledSyncItems(database);
     } catch (error) {
       console.error('[database] requeueStalledSyncItems failed', error);
+    }
+  }
+  if (version < 5) {
+    try {
+      await migrateCategoriesV5(database);
+    } catch (error) {
+      console.error('[database] migrateCategoriesV5 failed', error);
     }
   }
   if (version < LATEST_SCHEMA_VERSION) {

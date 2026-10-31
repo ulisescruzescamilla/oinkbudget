@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { Card, Chip, Icon, IconButton, Pill, Text } from '@/components/ui';
+import { askConfirm, Card, Chip, Icon, IconButton, Pill, Text } from '@/components/ui';
 import { EmptyState, ManageTxSheet, SuccessState, TransactionRow, balanceSignedAmount } from '@/components/features';
 import { Sheet } from '@/components/ui';
 import { ScreenLayout } from '@/navigation/ScreenLayout';
@@ -94,18 +94,16 @@ export function HistoryScreen() {
       Alert.alert('No disponible', 'Este movimiento solo se puede eliminar con conexión y una vez sincronizado.');
       return;
     }
-    Alert.alert('Eliminar movimiento', `¿Eliminar "${tx.description}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          const removed = await removeBalance(tx);
-          if (removed) showDeleted(tx);
-          else Alert.alert('No se pudo eliminar', 'Revisa tu conexión e inténtalo de nuevo.');
-        },
+    askConfirm({
+      title: '¿Eliminar este movimiento?',
+      message: `“${tx.description}” por ${signedCash(balanceSignedAmount(tx))} se eliminará de tu historial y del saldo de ${tx.account_name}.`,
+      confirmLabel: 'Eliminar movimiento',
+      onConfirm: async () => {
+        const removed = await removeBalance(tx);
+        if (removed) showDeleted(tx);
+        else Alert.alert('No se pudo eliminar', 'Revisa tu conexión e inténtalo de nuevo.');
       },
-    ]);
+    });
   };
 
   // Re-pull whenever the tab regains focus (e.g. after saving a movement on the quick-add screen).

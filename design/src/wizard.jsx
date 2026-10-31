@@ -12,7 +12,7 @@ const WZ_STEPS = [
   { key: "periodo",  title: "¿Cada cuánto planeas?", sub: "Elige el periodo de tu plan de presupuesto." },
   { key: "cuentas",  title: "¿Qué cuentas incluyes?", sub: "Selecciona el dinero que entra en este plan." },
   { key: "ingreso",  title: "¿Cuánto ingresa?",       sub: "Captura el ingreso que vas a repartir." },
-  { key: "reparto",  title: "Reparte tu ingreso",     sub: "Asigna un monto o porcentaje a cada categoría." },
+  { key: "reparto",  title: "Reparte tu ingreso",     sub: "Asigna un monto o porcentaje a cada presupuesto recurrente." },
 ];
 const LS_KEY = "oink_wizard_v1";
 
@@ -30,6 +30,7 @@ function Wizard({ dark }) {
   const [period, setPeriod] = useStateWz(saved?.period ?? "mensual");
   const [accSel, setAccSel] = useStateWz(saved?.accSel ?? { a1: true, a2: true, a3: false, a4: true });
   const [income, setIncome] = useStateWz(saved?.income ?? 0);
+  const [incAcc, setIncAcc] = useStateWz(saved?.incAcc ?? null);
   const [mode, setMode]     = useStateWz(saved?.mode ?? "amt");
   const [rows, setRows]     = useStateWz(saved?.rows ?? []);
   const [newAccs, setNewAccs] = useStateWz(saved?.newAccs ?? []);
@@ -38,8 +39,8 @@ function Wizard({ dark }) {
 
   /* persist */
   useEffectWz(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify({ step, period, accSel, income, mode, rows, newAccs })); } catch (e) {}
-  }, [step, period, accSel, income, mode, rows, newAccs]);
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ step, period, accSel, income, incAcc, mode, rows, newAccs })); } catch (e) {}
+  }, [step, period, accSel, income, incAcc, mode, rows, newAccs]);
 
   const addAccount = (acc) => {
     const id = "n" + Date.now();
@@ -53,6 +54,19 @@ function Wizard({ dark }) {
   const remaining = Math.max(0, income - allocated);
 
   const toggleAcc = (id) => setAccSel(s => ({ ...s, [id]: !s[id] }));
+  /* keep the income account valid: must be one of the selected accounts */
+  useEffectWz(() => {
+    const sel = accounts.filter(a => accSel[a.id]);
+    if (!sel.some(a => a.id === incAcc)) setIncAcc(sel[0] ? sel[0].id : null);
+  }, [accSel, newAccs]);
+  const incAccObj = accounts.find(a => a.id === incAcc);
+  const finish = () => {
+    if (incAccObj && income > 0) {
+      const tx = { id: "tw" + Date.now(), desc: "Ingreso del plan", cat: "Ingreso", tcat: txCatsByKind("income")[0].id, acct: incAccObj.name, amt: income, day: "Hoy", time: "Ahora" };
+      try { localStorage.setItem("oink.wizard.income-tx", JSON.stringify(tx)); } catch (e) {}
+    }
+    setStep(4);
+  };
 
   /* reparto ops */
   const setRowAmt = (id, val) => setRows(rs => {
@@ -77,13 +91,13 @@ function Wizard({ dark }) {
 
   const restart = () => {
     setStep(0); setPeriod("mensual"); setAccSel({ a1: true, a2: true, a3: false, a4: true });
-    setIncome(0); setMode("amt"); setRows([]); setNewAccs([]);
+    setIncome(0); setIncAcc(null); setMode("amt"); setRows([]); setNewAccs([]);
   };
 
   /* gating */
   const canNext = step === 0 ? true
     : step === 1 ? accCount > 0
-    : step === 2 ? income > 0
+    : step === 2 ? income > 0 && !!incAcc
     : true;
 
   const meta = WZ_STEPS[step];
@@ -114,11 +128,11 @@ function Wizard({ dark }) {
             <div className="check"><Icon name="check" size={22} sw={3} /></div>
           </div>
           <h1>¡Tu plan está listo! 🎉</h1>
-          <p className="sub">Repartiste <b className="money" style={{ color: "var(--text)" }}>{fmt0(allocated)}</b> en {rows.filter(r => r.amt > 0).length} categorías. Empecemos a cuidar tu dinero.</p>
+          <p className="sub">Repartiste <b className="money" style={{ color: "var(--text)" }}>{fmt0(allocated)}</b> en {rows.filter(r => r.amt > 0).length} presupuestos recurrentes. Empecemos a cuidar tu dinero.</p>
 
           <div className="plan-recap">
             <div className="recap-cell"><div className="k">Periodo</div><div className="v"><Icon name={PERIODS[period].icon} size={17} sw={2.2} style={{ color: "var(--primary)" }} /> {PERIODS[period].label}</div></div>
-            <div className="recap-cell"><div className="k">Ingreso</div><div className="v money">{fmt0(income)}</div></div>
+            <div className="recap-cell"><div className="k">Ingreso{incAccObj ? " · " + incAccObj.name : ""}</div><div className="v money">{fmt0(income)}</div></div>
             <div className="recap-cell"><div className="k">Presupuestos</div><div className="v">{rows.filter(r => r.amt > 0).length}</div></div>
             <div className="recap-cell"><div className="k">Ahorro</div><div className="v money" style={{ color: "var(--income)" }}>{pctSave + "%"}</div></div>
           </div>
@@ -163,7 +177,7 @@ function Wizard({ dark }) {
         <div className="screen-anim">
           {step === 0 && <StepPeriodo period={period} setPeriod={setPeriod} />}
           {step === 1 && <StepCuentas accounts={accounts} accSel={accSel} toggleAcc={toggleAcc} addAccount={addAccount} dark={dark} />}
-          {step === 2 && <StepIngreso income={income} setIncome={setIncome} period={period} accTotal={accTotal} />}
+          {step === 2 && <StepIngreso income={income} setIncome={setIncome} period={period} accTotal={accTotal} accounts={accounts} accSel={accSel} incAcc={incAcc} setIncAcc={setIncAcc} dark={dark} />}
           {step === 3 && <StepReparto income={income} rows={rows} setRowAmt={setRowAmt} removeRow={removeRow}
             addRow={addRow} mode={mode} setMode={setMode} allocated={allocated} remaining={remaining}
             applyTemplate={applyTemplate} dark={dark} />}
@@ -174,7 +188,7 @@ function Wizard({ dark }) {
         <div className="wiz-cta">
           <button className="btn btn-primary btn-block btn-lg" disabled={!canNext}
             style={{ opacity: canNext ? 1 : .5 }}
-            onClick={() => setStep(s => Math.min(4, s + 1))}>
+            onClick={() => step === 3 ? finish() : setStep(s => Math.min(4, s + 1))}>
             {ctaLabel}
             {step < 3 && <Icon name="arrowright" size={20} sw={2.4} />}
             {step === 3 && <Icon name="check" size={20} sw={2.6} />}
