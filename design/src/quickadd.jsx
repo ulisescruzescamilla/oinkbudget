@@ -10,16 +10,16 @@ const dayLabel = (iso) => {
   return `${d} ${months[m - 1]}${y !== new Date().getFullYear() ? " " + y : ""}`;
 };
 
-function QuickAdd({ mode: initMode, onClose, onSave, dark }) {
+function QuickAdd({ mode: initMode, onClose, onSave, onNewTxCat, dark }) {
   const [mode, setMode] = useStateQA(initMode || "expense");
   const [amount, setAmount] = useStateQA("0");
-  const [cat, setCat] = useStateQA(initMode === "income" ? "Ingreso" : "Mercado");
+  const [tcat, setTcat] = useStateQA(txCatsByKind(initMode === "income" ? "income" : "expense")[0].id);
+  useTxCatsVersion();
   const [acct, setAcct] = useStateQA("BBVA");
   const [desc, setDesc] = useStateQA("");
   const [date, setDate] = useStateQA(isoDay(0));
-  const [saved, setSaved] = useStateQA(false);
 
-  useEffectQA(() => { setMode(initMode || "expense"); setCat(initMode === "income" ? "Ingreso" : "Mercado"); }, [initMode]);
+  useEffectQA(() => { switchMode(initMode || "expense"); }, [initMode]);
 
   const press = (k) => {
     setAmount(prev => {
@@ -33,26 +33,15 @@ function QuickAdd({ mode: initMode, onClose, onSave, dark }) {
   };
 
   const isInc = mode === "income";
-  const cats = isInc ? ["Ingreso", "Otro"] : ["Mercado", "Restaurantes", "Transporte", "Ocio", "Salud", "Servicios", "Otro"];
-  const switchMode = (m) => { setMode(m); setCat(m === "income" ? "Ingreso" : "Mercado"); };
+  const tcats = txCatsByKind(isInc ? "income" : "expense");
+  function switchMode(m) { setMode(m); setTcat(txCatsByKind(m)[0].id); }
 
   const doSave = () => {
-    setSaved(true);
-    onSave && onSave({ mode, amount: parseFloat(amount) || 0, cat, acct, desc, date });
-    setTimeout(onClose, 900);
+    const n = parseFloat(amount) || 0;
+    onSave && onSave({ mode, amount: n, tcat, acct, desc, date });
+    onClose();
+    notifySuccess({ title: isInc ? "Ingreso registrado" : "Gasto registrado", sub: `${fmt(n)} · ${txCat(tcat).name}`, tone: isInc ? "income" : "primary" });
   };
-
-  if (saved) {
-    return (
-      <div className="qa-done">
-        <div className="qa-done-ic" style={{ background: isInc ? "var(--income-soft)" : "var(--primary-soft)", color: isInc ? "var(--income)" : "var(--primary)" }}>
-          <Icon name="check" size={38} sw={2.6} />
-        </div>
-        <div className="fw8" style={{ fontSize: 19, color: "var(--text)" }}>{isInc ? "Ingreso registrado" : "Gasto registrado"}</div>
-        <div className="t-muted fw7 mt4 money">{fmt(parseFloat(amount) || 0)} · {cat}</div>
-      </div>
-    );
-  }
 
   return (
     <div className={"qa-page " + (isInc ? "inc" : "exp")}>
@@ -79,13 +68,14 @@ function QuickAdd({ mode: initMode, onClose, onSave, dark }) {
 
       <div className="qa-fields">
         <div className="field">
-          <label>{isInc ? "Fuente" : "Categoría"}</label>
+          <label>Categoría</label>
           <div className="chips" style={{ flexWrap: "wrap" }}>
-            {cats.map(c => (
-              <button key={c} className={"chip" + (cat === c ? " on" : "")} onClick={() => setCat(c)}>
-                <Icon name={catIcon(c)} size={15} sw={2.2} /> {c}
+            {tcats.map(c => (
+              <button key={c.id} className={"chip" + (tcat === c.id ? " on" : "")} onClick={() => setTcat(c.id)}>
+                <Icon name={c.icon} size={15} sw={2.2} /> {c.name}
               </button>
             ))}
+            {onNewTxCat && <button className="chip chip-new" onClick={() => onNewTxCat(isInc ? "income" : "expense", setTcat)}><Icon name="plus" size={15} sw={2.4} /> Nueva</button>}
           </div>
         </div>
         <div className="field">

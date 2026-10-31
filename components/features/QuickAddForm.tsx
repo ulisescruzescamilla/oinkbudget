@@ -5,10 +5,11 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
-import { Pressable, ScrollView, View } from 'react-native';
-import { Button, Card, Chip, Field, Icon, Text, cn } from '@/components/ui';
+import { ScrollView, View } from 'react-native';
+import { Button, Card, Chip, Field, Keypad, Text } from '@/components/ui';
 import { DateField } from './DateField';
 import { SuccessState } from './SuccessState';
+import { TypeTabs } from './TypeTabs';
 import { AccountType } from '@/types/AccountType';
 import { BudgetType } from '@/types/BudgetType';
 import { TypeBalance } from '@/types/BalanceType';
@@ -55,11 +56,8 @@ export interface QuickAddFormProps {
 /** How long the success confirmation stays up before `onSaved` fires. */
 const SUCCESS_DELAY_MS = 900;
 
-/** Mode tabs shown at the top of the form. */
-const MODES: { value: TypeBalance; label: string; icon: IconName }[] = [
-  { value: 'expense', label: 'Gasto', icon: 'down' },
-  { value: 'income', label: 'Ingreso', icon: 'up' },
-];
+/** Mode tab labels shown at the top of the form. */
+const MODE_LABELS = { expense: 'Gasto', income: 'Ingreso' };
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
 
@@ -208,33 +206,7 @@ export function QuickAddForm({
         showsVerticalScrollIndicator={false}
       >
         {/* Gasto / Ingreso */}
-        {!editing && (
-          <View accessibilityRole="tablist" className="flex-row gap-1 rounded-pill border border-border bg-card-2 p-1">
-            {MODES.map((m) => {
-              const active = type === m.value;
-              const color = active ? accent : t.muted;
-              return (
-                <Pressable
-                  key={m.value}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: active }}
-                  onPress={() => setType(m.value)}
-                  // `shadow-none` keeps a shadow class on the inactive tab: NativeWind
-                  // crashes in dev when a shadow is first added after mount.
-                  className={cn(
-                    'h-[42px] flex-1 flex-row items-center justify-center gap-[7px] rounded-pill',
-                    active ? 'bg-card shadow-soft' : 'shadow-none'
-                  )}
-                >
-                  <Icon name={m.icon} size={17} strokeWidth={2.4} color={color} />
-                  <Text className="font-display text-[14.5px]" style={{ color }}>
-                    {m.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        )}
+        {!editing && <TypeTabs value={type} onChange={setType} labels={MODE_LABELS} />}
 
         {/* Amount */}
         <View className="items-center pt-1.5">
@@ -248,24 +220,7 @@ export function QuickAddForm({
         </View>
 
         {/* Keypad */}
-        <View className="flex-row flex-wrap justify-between gap-y-2">
-          {KEYS.map((k) => (
-            <Pressable
-              key={k}
-              onPress={() => press(k)}
-              accessibilityRole="button"
-              accessibilityLabel={k === 'del' ? 'Borrar' : k}
-              className="items-center justify-center rounded-2xl bg-card-2 py-4 active:scale-95 active:bg-primary-soft"
-              style={{ width: '32%' }}
-            >
-              {k === 'del' ? (
-                <Icon name="back" size={20} strokeWidth={2.4} color={t.text} />
-              ) : (
-                <Text className="font-strong text-[22px]">{k}</Text>
-              )}
-            </Pressable>
-          ))}
-        </View>
+        <Keypad keys={KEYS} onPress={press} />
 
         <Card className="gap-4">
           {/* Select budget */}

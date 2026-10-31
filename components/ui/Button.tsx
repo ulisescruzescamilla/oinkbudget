@@ -6,6 +6,8 @@
  *  - `ghost`        secondary / neutral (card surface + outline)
  *  - `soft`         tinted violet
  *  - `danger-soft`  tinted destructive
+ *  - `danger`       solid destructive (confirm modal's main action)
+ *  - `text`         borderless, muted label (dismiss / cancel actions)
  */
 import { ActivityIndicator, Pressable, type PressableProps, View } from 'react-native';
 import { tv, type VariantProps } from 'tailwind-variants';
@@ -21,6 +23,8 @@ const button = tv({
       ghost: 'bg-card border border-border-2',
       soft: 'bg-primary-soft',
       'danger-soft': 'bg-expense-soft',
+      danger: 'bg-expense',
+      text: 'bg-transparent active:bg-card-2',
     },
     size: {
       md: 'px-5 py-3.5',
@@ -40,6 +44,8 @@ const label = tv({
       ghost: 'text-text',
       soft: 'text-primary',
       'danger-soft': 'text-expense',
+      danger: 'text-white',
+      text: 'text-muted',
     },
     size: { md: 'text-[15px]', lg: 'text-base' },
   },
@@ -57,6 +63,8 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'disabled
   block?: boolean;
   /** Optional leading icon. */
   icon?: IconName;
+  /** Optional trailing icon. */
+  iconRight?: IconName;
   loading?: boolean;
   disabled?: boolean;
   className?: string;
@@ -72,6 +80,10 @@ function useVariantColor(variant: Variant): string {
       return t.primary;
     case 'danger-soft':
       return t.expense;
+    case 'danger':
+      return 'white';
+    case 'text':
+      return t.muted;
     default:
       return t.text;
   }
@@ -84,12 +96,15 @@ export function Button({
   size = 'md',
   block,
   icon,
+  iconRight,
   loading,
   disabled,
   className,
   ...rest
 }: ButtonProps) {
   const color = useVariantColor(variant);
+  // The primary label is always white (see `label`), so its icons match it.
+  const iconColor = variant === 'primary' ? 'white' : color;
   const isDisabled = disabled || loading;
   return (
     <Pressable
@@ -102,12 +117,13 @@ export function Button({
         <ActivityIndicator color={color} />
       ) : (
         <View className="flex-row items-center gap-2">
-          {icon ? <Icon name={icon} size={20} strokeWidth={2.4} color={'white'} /> : null}
+          {icon ? <Icon name={icon} size={20} strokeWidth={2.4} color={iconColor} /> : null}
           {typeof children === 'string' ? (
             <Text className={label({ variant, size })}>{children}</Text>
           ) : (
             children
           )}
+          {iconRight ? <Icon name={iconRight} size={20} strokeWidth={2.4} color={iconColor} /> : null}
         </View>
       )}
     </Pressable>

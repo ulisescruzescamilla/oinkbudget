@@ -25,7 +25,7 @@ npx jest path/to/test.file.ts
 ## Architecture
 
 ### Routing
-File-based routing via **Expo Router**. All screens live under `app/`. The main UI is a 4-tab layout (`app/(tabs)/`): Dashboard, History, Accounts, Budgets. A fifth route, `app/(tabs)/add.tsx` (quick-add), has no tab button: the tab bar's center FAB opens it and, while it is showing, closes it. The navigator uses `backBehavior="history"` so leaving it returns to the originating tab.
+File-based routing via **Expo Router**. All screens live under `app/`. The main UI is a 4-tab layout (`app/(tabs)/`): Dashboard, History, Accounts, Budgets. A fifth route, `app/(tabs)/add.tsx` (quick-add), has no tab button: the tab bar's center FAB opens it and, while it is showing, closes it. The navigator uses `backBehavior="history"` so leaving it returns to the originating tab. The plan wizard (`app/plan-wizard.tsx`) lives in the root stack, outside the tabs, so it shows without the tab bar; it is pushed from the Budgets screen and wraps itself in its own `BottomSheetModalProvider`. The categories screen (`app/categories.tsx`) follows the same pattern: a root-stack route pushed from the "Categorías" row of the settings drawer, with a back button instead of the tab bar. The recurrent budgets screen (`app/recurrent-budgets.tsx`, "Presupuestos recurrentes") works the same way, pushed from its own drawer row.
 
 ### API Layer
 HTTP communication via **Axios**. Follows a strict 4-layer separation — screens never call axios directly.
@@ -40,8 +40,9 @@ utils/errorHandler.ts  ← Normalizes any thrown value into AppError
 
 **Core rules:**
 - `api/` handles HTTP config only — no business logic.
-- `services/` map 1:1 to backend resources: `authService`, `accountService`, `budgetService`, `expenseService`.
-- `hooks/` expose state + mutation functions to UI: `useAuth`, `useAccounts`, `useBudgets`, `useExpenses`.
+- `services/` map 1:1 to backend resources: `authService`, `accountService`, `budgetService`, `expenseService`, `categoryService`, `recurrentBudgetService` (`/recurrent-budgets`).
+- `hooks/` expose state + mutation functions to UI: `useAuth`, `useAccounts`, `useBudgets`, `useExpenses`, `useCategories`, `useRecurrentBudgets`.
+- Category mutations (`POST/PUT/DELETE /categories`) require connectivity — there is no offline queue for them; the local `categories` table is a read-through cache updated after each successful call. Each category has a `type` (`expense | income`, fixed after creation) that is sent on create/update; `CategoriesScreen` splits the list with Gastos/Ingresos tabs (`design/src/txcats.jsx`). Recurrent budgets (`/recurrent-budgets`) have no local cache at all: every call, reads included, requires connectivity.
 - Screens call hooks only — never `fetch`/`axios` directly.
 - Auth token is stored in the native keychain via `expo-secure-store` and attached automatically by the request interceptor.
 
@@ -75,14 +76,22 @@ No global state library. Each screen fetches its own data via `useFocusEffect` (
 - Custom "Aurora" design system ported from the `design/` prototype.
 - Icons are a custom line set rendered with `react-native-svg` (no `react-native-iconify`).
 
+### Design-First Workflow
+The `design/` folder (HTML/JSX prototype: `design/OinkBudget.html`, `design/OinkBudget Plan Wizard.html`, sources in `design/src/`, styles in `design/styles.css` / `design/wizard.css`) is the source of truth for all UI. **Every new frontend feature or visual change must exist in `design/` before it is implemented in the app.**
+
+1. **Check the design first.** Before touching `components/`, `screens/` or `navigation/`, find the matching screen/component in `design/src/` and port layout, copy (Spanish strings), spacing, colors and states from it.
+2. **No design, no implementation.** If the feature or change is not in `design/`, stop and add it to the prototype first (or ask the user to), get it validated there, then port it. Do not invent UI directly in React Native.
+3. **Keep them in sync.** If an implementation detail forces a deviation from the design, update `design/` to match (or flag it to the user) so the prototype never drifts from the app.
+4. **Follow `design/CLAUDE.md`.** Its UI rules (e.g. never two buttons side by side except Gasto/Ingreso on Home; deletes go through a confirm modal) apply to the app too.
+
 Component organization (all at the repo root — there is no `src/`):
-- `components/ui/` — dumb primitives: `Icon`/`OinkMark`, `Button`, `Card`/`CardHeader`, `IconButton`, `IconTile`, `Pill`, `ProgressBar`, `Ring`, `TrendBars`, `Chip`, `Segmented`, `Sheet`, `Field`/`Input`, `Text`/`Heading`. Barrel: `components/ui/index.ts`.
-- `components/features/` — business components: `TransactionRow`, `AccountCard`, `BudgetAccordionCard`, `AllocationBar`, `QuickAddForm`, `NewBudgetForm`, `NewAccountForm`, `ManageTxSheet`, `EmptyState`.
-- `screens/` — one component per route (`DashboardScreen`, `HistoryScreen`, `AccountsScreen`, `BudgetsScreen`, `QuickAddScreen`); the `app/(tabs)/*.tsx` route files are thin wrappers that render them.
-- `navigation/` — `AppBar`, `CustomTabBar` (bottom nav + center FAB), `ScreenLayout`, `QuickAddProvider` (`open(mode)`/`close()` navigation for the quick-add screen), and React Navigation `theme`.
+- `components/ui/` — dumb primitives: `Icon`/`OinkMark`, `Brandmark`, `Button`, `Card`/`CardHeader`, `IconButton`, `IconTile`, `Pill`, `ProgressBar`, `Ring`, `TrendBars`, `Chip`, `Segmented`, `Sheet`, `Field`/`Input`, `Text`/`Heading`, `Keypad`, `StackedBar`, `Slider`, `StepProgress`, `OptionCard`, `HappyOink`, `ConfirmDialog` (`askConfirm()` + `ConfirmHost`, mounted once in `app/_layout.tsx`; every delete goes through it, never `Alert.alert`). Barrel: `components/ui/index.ts`.
+- `components/features/` — business components: `TransactionRow`, `AccountCard`, `BudgetAccordionCard`, `BudgetRow` (budget share row with optional slider, shared by the wizard split step and `NewBudgetForm`), `AllocationBar`, `QuickAddForm`, `NewBudgetForm`, `NewAccountForm`, `CategoryForm` (expense/income type picker when given a `kind`; also used for recurrent budgets via its `copy` prop), `TypeTabs` (Gasto/Ingreso pill tabs shared by `QuickAddForm` and `CategoriesScreen`), `ManageTxSheet`, `EmptyState`, `SuccessState`, `SuccessHost` (`notifySuccess()`), and the plan wizard steps `PlanPeriodStep`, `PlanAccountsStep`, `PlanIncomeStep`, `PlanSplitStep`, `PlanCongrats`.
+- `screens/` — one component per route (`DashboardScreen`, `HistoryScreen`, `AccountsScreen`, `BudgetsScreen`, `QuickAddScreen`, `PlanWizardScreen`, `CategoriesScreen`, `RecurrentBudgetsScreen`); the `app/(tabs)/*.tsx` route files are thin wrappers that render them.
+- `navigation/` — `AppBar` (settings button opens `SideMenu`, the right-side settings drawer with the dark-mode toggle), `SideMenu`, `CustomTabBar` (bottom nav + center FAB), `ScreenLayout`, `QuickAddProvider` (`open(mode)`/`close()` navigation for the quick-add screen), and React Navigation `theme`.
 
 ### Styling
-Tailwind via NativeWind. Theme defined in `tailwind.config.js` with semantic Aurora tokens (`primary`, `income`, `expense`, `surface`, `card`, `text`, `muted`, `border`, …) backed by CSS variables in `global.css` for light/dark. Raw token values + radii/shadows live in `styles/theme.ts`; the category palette in `styles/categories.ts`; account-type visuals in `styles/accounts.ts`. Use `useTheme()`/`useIsDark()` from `styles/useTheme.ts` for raw colors (SVG, gradients). The display font is Plus Jakarta Sans (`font-display`/`font-bold`/`font-semibold`/`font-sans`). Dark mode toggles via NativeWind `useColorScheme()` (the AppBar has a toggle).
+Tailwind via NativeWind. Theme defined in `tailwind.config.js` with semantic Aurora tokens (`primary`, `income`, `expense`, `surface`, `card`, `text`, `muted`, `border`, …) backed by CSS variables in `global.css` for light/dark. Raw token values + radii/shadows live in `styles/theme.ts`; the category form's color swatches, icon set and default-category ("Otro") helpers in `styles/categories.ts`; account-type visuals in `styles/accounts.ts`. Use `useTheme()`/`useIsDark()` from `styles/useTheme.ts` for raw colors (SVG, gradients). The display font is Plus Jakarta Sans (`font-display`/`font-bold`/`font-semibold`/`font-sans`). Dark mode toggles via NativeWind `useColorScheme()` (from the "Modo oscuro" row in the AppBar settings drawer).
 
 ### Types
 All shared entity interfaces live in `types/` and are the single source of truth across the entire app:
@@ -91,6 +100,8 @@ All shared entity interfaces live in `types/` and are the single source of truth
 - `types/ExpenseType.ts` — `ExpenseType`
 - `types/IncomeType.ts` — `IncomeType`
 - `types/BalanceType.ts` — `BalanceType`
+- `types/RecurrentBudgetType.ts` — `RecurrentBudgetType`
+- `types/PlanType.ts` — `PlanPeriodType`, `PlanSplitMode`, `PlanRowType` (plan wizard draft; not an API resource)
 
 **Rule:** never define duplicate entity interfaces in `services/`, `hooks/`, or components. Services map API responses to these types; hooks work with them directly. If a new entity is needed, add it to `types/` first.
 
@@ -100,9 +111,11 @@ All shared entity interfaces live in `types/` and are the single source of truth
 ## Key Notes
 
 - The app is in Spanish — keep UI strings in Spanish.
+- After every successful CRUD mutation (create, update, delete), show a confirmation message, per the rule in `design/CLAUDE.md`: call `notifySuccess({ title, subtitle, tone })` from `components/features/SuccessHost.tsx` (mounted once in `app/_layout.tsx`; it closes itself after `SUCCESS_DELAY_MS`, 900 ms). Use `tone: 'expense'` for deletes. Call it only when the hook reports success (the mutation returned the record, `true`, or didn't throw) — see `AccountsScreen`, `BudgetsScreen`, `CategoriesScreen`. Flows that swap their own content to `SuccessState` (`QuickAddForm`) keep doing so. Never use `Alert.alert` for a success message.
 - All functions should be documented with TypeDoc comments.
 - Currency is formatted as MXN (Mexican Peso) — see `utils/formatting.ts`.
-- Date formatting helpers live in `utils/formatting.ts`: use `formatApiDate(date)` to serialize `Date` → `Y-m-d` string before sending in API payloads. Never define date formatters inline in services.
+- Date formatting helpers live in `utils/formatting.ts`: use `formatApiDate(date)` to serialize `Date` → `Y-m-d` string before sending in API payloads. Never define date formatters inline in services. `periodRange(period)` gives the start/end of the current budget period and `formatDateRange(start, end)` renders it.
+- The plan wizard (`hooks/usePlanWizard.ts`, helpers in `utils/plan.ts`) has no backend resource of its own. Its split step (step 4) rows are recurrent budgets from `useRecurrentBudgets` (`/recurrent-budgets`); finishing it upserts budgets through `useBudgets`, matched by name since budgets have no link to recurrent budgets (update the budget whose name equals the recurrent budget's, keeping its category; otherwise create one named after it). Its suggested split matches `PLAN_TEMPLATE` to recurrent budgets by name.
 - UI components live in `components/ui/` (primitives) and `components/features/` (business components); screens in `screens/`, nav config in `navigation/`. Keep the flat root layout — do not introduce a `src/` folder.
 - SQLite is initialized in the root layout; the Drizzle Studio plugin is available for DB inspection during development.
 - New React Native Architecture is enabled (`app.json`).

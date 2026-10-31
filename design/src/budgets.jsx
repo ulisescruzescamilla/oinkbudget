@@ -68,7 +68,7 @@ function Budgets({ dark, onAdd }) {
         return (
           <div key={b.id} className="card" style={{ padding: 0, overflow: "hidden" }}>
             <div className="row" style={{ padding: "15px 16px" }} onClick={() => setOpen(isOpen ? null : b.id)}>
-              <IconTile icon={catIcon(b.cat)} hue={CATS[b.cat].hue} dark={dark} />
+              <IconTile icon={catIcon(b.cat)} hue={catHue(b.cat)} dark={dark} />
               <div className="mid">
                 <div className="t1">{b.name}</div>
                 <div className="t2 money">{fmt(b.spent)} de {fmt(b.max)}</div>
@@ -96,9 +96,15 @@ function Budgets({ dark, onAdd }) {
                 <div className="rowflex gap8 fs13 t-muted fw7" style={{ marginBottom: 14 }}>
                   <Icon name="cal" size={16} sw={2} /> Periodo: <span className="fw8" style={{ color: "var(--text)" }}>4 – 30 jun 2026</span>
                 </div>
-                <div className="rowflex gap10">
+                <div className="stack" style={{ gap: 4 }}>
                   <button className="btn btn-soft btn-block"><Icon name="edit" size={17} sw={2.2} /> Editar</button>
-                  <button className="btn btn-danger-soft" style={{ flex: "none", width: 52, padding: 0 }}><Icon name="trash" size={18} sw={2.2} /></button>
+                  <button className="btn btn-text danger btn-block"
+                    onClick={() => askConfirm({
+                      title: `¿Eliminar el presupuesto ${b.name}?`,
+                      message: "Tus movimientos se conservan, pero dejarán de contar contra este presupuesto. Esta acción no se puede deshacer.",
+                      confirmLabel: "Eliminar presupuesto",
+                      onConfirm: () => { const i = BUDGETS.findIndex(x => x.id === b.id); if (i > -1) BUDGETS.splice(i, 1); setOpen(null); notifySuccess({ title: "Presupuesto eliminado", sub: b.name, tone: "expense" }); },
+                    })}><Icon name="trash" size={17} sw={2.2} /> Eliminar presupuesto</button>
                 </div>
               </div>
             )}

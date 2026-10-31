@@ -19,7 +19,7 @@ function Transactions({ dark }) {
     inRange(t.date) &&
     (type === "all" || (type === "in" ? t.amt > 0 : t.amt < 0)) &&
     (acct === "all" || t.acct === acct) &&
-    (q === "" || t.desc.toLowerCase().includes(q.toLowerCase()) || t.cat.toLowerCase().includes(q.toLowerCase()))
+    (q === "" || t.desc.toLowerCase().includes(q.toLowerCase()) || txCat(t.tcat).name.toLowerCase().includes(q.toLowerCase()))
   );
 
   const income = filtered.filter(t => t.amt > 0).reduce((s, t) => s + t.amt, 0);
@@ -102,14 +102,14 @@ function Transactions({ dark }) {
             <div className="card flush">
               {items.map(t => (
                 <div className="row" key={t.id} onClick={() => setSel(t)}>
-                  <IconTile icon={catIcon(t.cat)} hue={CATS[t.cat].hue} dark={dark} />
+                  <IconTile icon={txCat(t.tcat).icon} hue={txCat(t.tcat).hue} dark={dark} />
                   <div className="mid">
                     <div className="t1">{t.desc}</div>
                     <div className="t2">{t.acct} <span className="dot" /> {t.time}</div>
                   </div>
                   <div className="stack" style={{ alignItems: "flex-end", gap: 3 }}>
                     <div className={"amt money"} style={{ color: t.amt > 0 ? "var(--income)" : "var(--text)" }}>{fmt(t.amt, true)}</div>
-                    <span className="fs12 t-faint fw7">{t.cat}</span>
+                    <span className="fs12 t-faint fw7">{txCat(t.tcat).name}</span>
                   </div>
                 </div>
               ))}
@@ -139,9 +139,9 @@ function Transactions({ dark }) {
             ))}
           </div>
         </div>
-        <div className="rowflex gap10">
-          <button className="btn btn-ghost btn-block" onClick={() => { setType("all"); setAcct("all"); }}>Limpiar</button>
+        <div className="stack" style={{ gap: 4 }}>
           <button className="btn btn-primary btn-block" onClick={() => setFilterOpen(false)}>Aplicar</button>
+          <button className="btn btn-text btn-block" onClick={() => { setType("all"); setAcct("all"); }}>Limpiar filtros</button>
         </div>
       </Sheet>
 
@@ -158,14 +158,14 @@ function ManageTx({ t, dark, onClose }) {
     <div>
       <div style={{ textAlign: "center", padding: "4px 0 18px" }}>
         <div style={{ margin: "0 auto 12px", width: 60, height: 60 }}>
-          <IconTile icon={catIcon(t.cat)} hue={CATS[t.cat].hue} size={60} dark={dark} />
+          <IconTile icon={txCat(t.tcat).icon} hue={txCat(t.tcat).hue} size={60} dark={dark} />
         </div>
         <div className="money" style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-.03em",
           color: t.amt > 0 ? "var(--income)" : "var(--text)" }}>{fmt(t.amt, true)}</div>
         <div className="fw8 mt4" style={{ fontSize: 16, color: "var(--text)" }}>{t.desc}</div>
       </div>
       <div className="card-2" style={{ background: "var(--card-2)", borderRadius: "var(--r-inner)", padding: "4px 14px", marginBottom: 16 }}>
-        {[["Categoría", t.cat], ["Cuenta", t.acct], ["Fecha", (DAY_LABELS[t.date] || t.date)], ["Hora", t.time],
+        {[["Categoría", txCat(t.tcat).name], ["Cuenta", t.acct], ["Fecha", (DAY_LABELS[t.date] || t.date)], ["Hora", t.time],
           ["Tipo", t.amt > 0 ? "Ingreso" : "Gasto"]].map(([k, v], i, arr) => (
           <div key={k} className="rowflex between" style={{ padding: "11px 0", borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none" }}>
             <span className="fs13 t-muted fw7">{k}</span>
@@ -173,9 +173,14 @@ function ManageTx({ t, dark, onClose }) {
           </div>
         ))}
       </div>
-      <div className="rowflex gap10">
+      <div className="stack" style={{ gap: 4 }}>
         <button className="btn btn-soft btn-block" onClick={onClose}><Icon name="edit" size={18} sw={2.2} /> Editar</button>
-        <button className="btn btn-danger-soft btn-block" onClick={onClose}><Icon name="trash" size={18} sw={2.2} /> Eliminar</button>
+        <button className="btn btn-text danger btn-block" onClick={() => askConfirm({
+          title: "¿Eliminar este movimiento?",
+          message: `“${t.desc}” por ${fmt(t.amt, true)} se eliminará de tu historial y del saldo de ${t.acct}.`,
+          confirmLabel: "Eliminar movimiento",
+          onConfirm: () => { const i = TX.findIndex(x => x.id === t.id); if (i > -1) TX.splice(i, 1); onClose(); notifySuccess({ title: "Movimiento eliminado", sub: t.desc, tone: "expense" }); },
+        })}><Icon name="trash" size={17} sw={2.2} /> Eliminar movimiento</button>
       </div>
     </div>
   );

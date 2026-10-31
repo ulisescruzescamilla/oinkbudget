@@ -5,7 +5,7 @@
 import { Pressable, View } from 'react-native';
 import { Button, Card, Icon, IconTile, ProgressBar, Text, type IconName } from '@/components/ui';
 import { BudgetType } from '@/types/BudgetType';
-import { cashFormat } from '@/utils/formatting';
+import { cashFormat, formatDateRange } from '@/utils/formatting';
 import { useTheme } from '@/styles/useTheme';
 
 export interface BudgetAccordionCardProps {
@@ -17,15 +17,6 @@ export interface BudgetAccordionCardProps {
   onDelete: () => void;
 }
 
-/** Formats a budget period like "4 – 30 jun 2026". */
-function formatPeriod(start?: Date, end?: Date): string | null {
-  if (!start || !end) return null;
-  const s = new Date(start);
-  const e = new Date(end);
-  const month = e.toLocaleDateString('es-MX', { month: 'short' });
-  return `${s.getDate()} – ${e.getDate()} ${month} ${e.getFullYear()}`;
-}
-
 /** Expandable card representing a single budget. */
 export function BudgetAccordionCard({ budget, open, onToggle, onEdit, onDelete }: BudgetAccordionCardProps) {
   const t = useTheme();
@@ -34,7 +25,10 @@ export function BudgetAccordionCard({ budget, open, onToggle, onEdit, onDelete }
   const avail = max - spent;
   const pct = max > 0 ? Math.round((spent / max) * 100) : 0;
   const over = avail <= 0;
-  const period = formatPeriod(budget.start_date, budget.end_date);
+  const period =
+    budget.start_date && budget.end_date
+      ? formatDateRange(new Date(budget.start_date), new Date(budget.end_date))
+      : null;
 
   return (
     <Card flush>

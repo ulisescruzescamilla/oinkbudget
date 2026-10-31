@@ -1,3 +1,5 @@
+import type { BudgetPeriodType } from '@/types/BudgetType';
+
 /**
  * Formats a Date object into a Y-m-d string for API payloads.
  * Returns undefined if the value is absent.
@@ -138,6 +140,50 @@ export const dayLabel = (value: Date): string => {
   return `${value.getDate()} ${MONTH_ABBR_ES[value.getMonth()]}${year}`;
 };
 
+/**
+ * Start and end dates of the budget period that contains `reference`:
+ * the calendar month, its first/second half (1–15, 16–end), the Monday–Sunday
+ * week, or the calendar year.
+ *
+ * @param period - Budget cadence
+ * @param reference - Day the period must contain (defaults to today)
+ */
+export const periodRange = (period: BudgetPeriodType, reference: Date = new Date()): { start: Date; end: Date } => {
+  const y = reference.getFullYear();
+  const m = reference.getMonth();
+  const d = reference.getDate();
+  switch (period) {
+    case 'weekly': {
+      const sinceMonday = (reference.getDay() + 6) % 7;
+      return { start: new Date(y, m, d - sinceMonday), end: new Date(y, m, d - sinceMonday + 6) };
+    }
+    case 'biweekly':
+      return d <= 15
+        ? { start: new Date(y, m, 1), end: new Date(y, m, 15) }
+        : { start: new Date(y, m, 16), end: new Date(y, m + 1, 0) };
+    case 'yearly':
+      return { start: new Date(y, 0, 1), end: new Date(y, 11, 31) };
+    default:
+      return { start: new Date(y, m, 1), end: new Date(y, m + 1, 0) };
+  }
+};
+
+/**
+ * Formats a date range like "4 – 30 jun 2026". The start carries its own
+ * month (and year) only when it differs from the end's.
+ *
+ * @param start - First day of the range
+ * @param end - Last day of the range
+ */
+export const formatDateRange = (start: Date, end: Date): string => {
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const sameMonth = sameYear && start.getMonth() === end.getMonth();
+  const from = sameMonth
+    ? `${start.getDate()}`
+    : `${start.getDate()} ${MONTH_ABBR_ES[start.getMonth()]}${sameYear ? '' : ` ${start.getFullYear()}`}`;
+  return `${from} – ${end.getDate()} ${MONTH_ABBR_ES[end.getMonth()]} ${end.getFullYear()}`;
+};
+
 export const cashFormat = (amount: number | undefined): string => {
   if (!amount) {
     return '$ 0'
@@ -161,3 +207,12 @@ export const signedCash = (amount: number): string => {
   const sign = amount < 0 ? '−' : '+'
   return `${sign}${cashFormat(Math.abs(amount))}`
 }
+
+/**
+ * Formats an amount as MXN currency rounded to whole pesos ("$1,500").
+ * For planning figures where cents are noise.
+ *
+ * @param amount - Amount to format
+ */
+export const cashFormatRounded = (amount: number): string =>
+  Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(amount)

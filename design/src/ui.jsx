@@ -107,4 +107,65 @@ function Sheet({ open, onClose, children, title, right }) {
   );
 }
 
-Object.assign(window, { Ring, TrendBars, Progress, IconTile, Pill, Sheet });
+/* shared destructive-action confirmation — call askConfirm({ title, message, confirmLabel, onConfirm }) from anywhere */
+const confirmSubs = new Set();
+const askConfirm = (opts) => confirmSubs.forEach(f => f({ id: Date.now(), ...opts }));
+
+function ConfirmHost() {
+  const [s, set] = useStateUI(null);
+  React.useEffect(() => { confirmSubs.add(set); return () => confirmSubs.delete(set); }, []);
+  React.useEffect(() => {
+    if (!s) return;
+    const onKey = (e) => e.key === "Escape" && set(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [s]);
+  if (!s) return null;
+  const close = () => set(null);
+  return (
+    <div className="confirm-scrim" onClick={close}>
+      <div className="confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-t" onClick={(e) => e.stopPropagation()}>
+        <div className="confirm-ic"><Icon name={s.icon || "trash"} size={26} sw={2.2} /></div>
+        <h3 id="confirm-t">{s.title}</h3>
+        {s.message && <p>{s.message}</p>}
+        <div className="confirm-actions">
+          <button className="btn btn-danger btn-block" onClick={() => { close(); s.onConfirm && s.onConfirm(); }}>
+            {s.confirmLabel || "Eliminar"}
+          </button>
+          <button className="btn btn-text btn-block" onClick={close} autoFocus>{s.cancelLabel || "Cancelar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* shared success confirmation — call notifySuccess({ title, sub, tone }) after any create / update / delete.
+   tone: "primary" (create/update, default) | "income" | "expense" (delete). Closes on its own after 900 ms. */
+const successSubs = new Set();
+const notifySuccess = (opts) => successSubs.forEach(f => f({ id: Date.now(), ...opts }));
+
+function SuccessHost() {
+  const [s, set] = useStateUI(null);
+  React.useEffect(() => { successSubs.add(set); return () => successSubs.delete(set); }, []);
+  React.useEffect(() => {
+    if (!s) return;
+    const t = setTimeout(() => set(null), 900);
+    return () => clearTimeout(t);
+  }, [s]);
+  const tone = (s && s.tone) || "primary";
+  return (
+    <Sheet open={!!s} onClose={() => set(null)}>
+      {s && (
+        <div className="done" role="status" aria-live="polite">
+          <div className="done-ic" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone})` }}>
+            <Icon name="check" size={30} sw={2.6} />
+          </div>
+          <div className="done-t">{s.title}</div>
+          {s.sub && <div className="done-s money">{s.sub}</div>}
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
+Object.assign(window, { Ring, TrendBars, Progress, IconTile, Pill, Sheet, askConfirm, ConfirmHost, notifySuccess, SuccessHost });

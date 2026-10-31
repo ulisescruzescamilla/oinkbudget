@@ -65,7 +65,7 @@ function Dashboard({ onAdd, onNav, dark }) {
               <div key={b.id} className="stack" style={{ gap: 7 }}>
                 <div className="rowflex between">
                   <div className="rowflex gap8">
-                    <IconTile icon={catIcon(b.cat)} hue={CATS[b.cat].hue} size={26} dark={dark} />
+                    <IconTile icon={catIcon(b.cat)} hue={catHue(b.cat)} size={26} dark={dark} />
                     <span className="fw8 fs14" style={{ color: "var(--text)" }}>{b.name}</span>
                   </div>
                   <span className="money fw8 fs14" style={{ color: over ? "var(--expense)" : "var(--income)" }}>
@@ -94,10 +94,10 @@ function Dashboard({ onAdd, onNav, dark }) {
         <div>
           {recent.map(t => (
             <div className="row" key={t.id} onClick={() => onNav("tx")}>
-              <IconTile icon={catIcon(t.cat)} hue={CATS[t.cat].hue} dark={dark} />
+              <IconTile icon={txCat(t.tcat).icon} hue={txCat(t.tcat).hue} dark={dark} />
               <div className="mid">
                 <div className="t1">{t.desc}</div>
-                <div className="t2">{t.cat} <span className="dot" /> {t.acct}</div>
+                <div className="t2">{txCat(t.tcat).name} <span className="dot" /> {t.acct}</div>
               </div>
               <div className={"amt money " + (t.amt > 0 ? "pos" : "")} style={{ color: t.amt > 0 ? "var(--income)" : "var(--text)" }}>
                 {fmt(t.amt, true)}
