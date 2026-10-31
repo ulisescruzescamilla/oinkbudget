@@ -30,7 +30,7 @@ const ADD_ROUTE = 'add';
 export type CustomTabBarProps = BottomTabBarProps;
 
 /** Renders the bottom tab bar plus the center add button. */
-export function CustomTabBar({ state, navigation }: CustomTabBarProps) {
+export function CustomTabBar({ state, emitter, navigateToTab }: CustomTabBarProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { open, close } = useQuickAdd();
@@ -47,15 +47,16 @@ export function CustomTabBar({ state, navigation }: CustomTabBarProps) {
 
   const renderTab = (name: string) => {
     const meta = TAB_META[name];
-    if (!meta) return null;
+    const route = state.routes.find((r) => r.name === name);
+    if (!meta || !route) return null;
     const focused = activeName === name;
     return (
       <Pressable
         key={name}
         className="flex-1 items-center gap-1 rounded-[14px] px-2.5 py-1"
         onPress={() => {
-          const event = navigation.emit({ type: 'tabPress', target: name, canPreventDefault: true });
-          if (!focused && !event.defaultPrevented) navigation.navigate(name);
+          const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!focused && !event.defaultPrevented) navigateToTab(route.key);
         }}
       >
         <Icon
