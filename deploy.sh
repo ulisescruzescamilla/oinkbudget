@@ -3,13 +3,15 @@ set -e
 
 # ---- config ----
 REMOTE_USER="uli"
-REMOTE_HOST="192.168.0.13"
+REMOTE_HOST="berryhost.home"
 REMOTE_PATH="/home/uli"
 APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
 BUILD_GRADLE="android/app/build.gradle"
 APP_JSON="app.json"
 PACKAGE_JSON="package.json"
 PACKAGE_LOCK="package-lock.json"
+BACKEND_API="http://berryhost.home:8081/api"
+NETWORK_SECURITY_CONFIG="android/app/src/main/res/xml/network_security_config.xml"
 # ----------------
 
 # Always run from the repo root so the relative paths above resolve.
@@ -52,7 +54,7 @@ fi
 
 echo "==> Ensuring .env points at the release API..."
 ENV_FILE=".env"
-API_URL_LINE="EXPO_PUBLIC_API_URL=http://app.home.lab:8081/api"
+API_URL_LINE="EXPO_PUBLIC_API_URL=$BACKEND_API"
 touch "$ENV_FILE"
 if grep -q '^EXPO_PUBLIC_API_URL=' "$ENV_FILE"; then
   sed -i "s|^EXPO_PUBLIC_API_URL=.*|$API_URL_LINE|" "$ENV_FILE"
@@ -60,6 +62,20 @@ else
   echo "$API_URL_LINE" >> "$ENV_FILE"
 fi
 echo "    $API_URL_LINE"
+
+echo "==> Allowing cleartext HTTP to the API host..."
+# Android release builds block plain http:// unless the host is listed in
+# the network security config, so it is regenerated from BACKEND_API.
+API_HOST=$(echo "$BACKEND_API" | sed -E 's|^[a-z]+://([^/:]+).*|\1|')
+cat > "$NETWORK_SECURITY_CONFIG" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">$API_HOST</domain>
+    </domain-config>
+</network-security-config>
+XML
+echo "    cleartext allowed for $API_HOST"
 
 echo "==> Building release APK..."
 cd android

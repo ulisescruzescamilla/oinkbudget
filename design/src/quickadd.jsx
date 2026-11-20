@@ -16,6 +16,7 @@ function QuickAdd({ mode: initMode, onClose, onSave, onNewTxCat, dark }) {
   const [tcat, setTcat] = useStateQA(txCatsByKind(initMode === "income" ? "income" : "expense")[0].id);
   useTxCatsVersion();
   const [acct, setAcct] = useStateQA("BBVA");
+  const [budget, setBudget] = useStateQA(BUDGETS[0].id);
   const [desc, setDesc] = useStateQA("");
   const [date, setDate] = useStateQA(isoDay(0));
 
@@ -38,7 +39,7 @@ function QuickAdd({ mode: initMode, onClose, onSave, onNewTxCat, dark }) {
 
   const doSave = () => {
     const n = parseFloat(amount) || 0;
-    onSave && onSave({ mode, amount: n, tcat, acct, desc, date });
+    onSave && onSave({ mode, amount: n, tcat, acct, budget: isInc ? null : budget, desc, date });
     onClose();
     notifySuccess({ title: isInc ? "Ingreso registrado" : "Gasto registrado", sub: `${fmt(n)} · ${txCat(tcat).name}`, tone: isInc ? "income" : "primary" });
   };
@@ -67,27 +68,13 @@ function QuickAdd({ mode: initMode, onClose, onSave, onNewTxCat, dark }) {
       </div>
 
       <div className="qa-fields">
-        <div className="field">
-          <label>Categoría</label>
-          <div className="chips" style={{ flexWrap: "wrap" }}>
-            {tcats.map(c => (
-              <button key={c.id} className={"chip" + (tcat === c.id ? " on" : "")} onClick={() => setTcat(c.id)}>
-                <Icon name={c.icon} size={15} sw={2.2} /> {c.name}
-              </button>
-            ))}
-            {onNewTxCat && <button className="chip chip-new" onClick={() => onNewTxCat(isInc ? "income" : "expense", setTcat)}><Icon name="plus" size={15} sw={2.4} /> Nueva</button>}
-          </div>
-        </div>
-        <div className="field">
-          <label>Cuenta</label>
-          <div className="chips" style={{ flexWrap: "wrap" }}>
-            {ACCOUNTS.map(a => (
-              <button key={a.id} className={"chip" + (acct === a.name ? " on" : "")} onClick={() => setAcct(a.name)}>
-                <Icon name={a.icon} size={15} sw={2.2} /> {a.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <PillPicker key={"cat-" + mode} label="Categoría" recentKey={"tcat-" + mode} value={tcat} onChange={setTcat}
+          items={tcats.map(c => ({ id: c.id, name: c.name, icon: c.icon }))}
+          onNew={onNewTxCat && ((done) => onNewTxCat(isInc ? "income" : "expense", (id) => { setTcat(id); done(id); }))} newLabel="Nueva categoría" />
+        <PillPicker label="Cuenta" recentKey="acct" value={acct} onChange={setAcct}
+          items={ACCOUNTS.map(a => ({ id: a.name, name: a.name, icon: a.icon, sub: `${a.type} · ${fmt(a.balance)}` }))} />
+        {!isInc && <PillPicker label="Presupuesto" recentKey="budget" value={budget} onChange={setBudget}
+          items={BUDGETS.map(b => ({ id: b.id, name: b.name, icon: catIcon(b.cat), sub: `Disponible ${fmt0(b.max - b.spent)} de ${fmt0(b.max)}` }))} />}
         <div className="field">
           <label>Fecha</label>
           <div className="daterow">

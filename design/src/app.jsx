@@ -239,12 +239,9 @@ function NewBudgetForm({ onClose, dark, onNewCat }) {
     <div className="stack" style={{ gap: 16 }}>
       <div className="field"><label>Nombre</label>
         <input className="input" placeholder={cat} value={name} onChange={e=>setName(e.target.value)} /></div>
-      <div className="field"><label>Presupuesto recurrente</label>
-        <div className="chips" style={{ flexWrap: "wrap" }}>
-          {cats.map(c => <button key={c} className={"chip"+(cat===c?" on":"")} onClick={()=>setCat(c)}>
-            <Icon name={catIcon(c)} size={15} sw={2.2} /> {c}</button>)}
-          {onNewCat && <button className="chip chip-new" onClick={() => onNewCat("expense", setCat)}><Icon name="plus" size={15} sw={2.4} /> Nueva</button>}
-        </div></div>
+      <PillPicker label="Presupuesto recurrente" recentKey="rcat" value={cat} onChange={setCat}
+        items={cats.map(c => ({ id: c, name: c, icon: catIcon(c) }))}
+        onNew={onNewCat && ((done) => onNewCat("expense", (c) => { setCat(c); done(c); }))} newLabel="Nuevo presupuesto recurrente" />
       <div className="field">
         <div className="rowflex between" style={{ alignItems: "center" }}>
           <label className="field-label">Monto máximo</label>

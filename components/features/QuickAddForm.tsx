@@ -6,14 +6,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { ScrollView, View } from 'react-native';
-import { Button, Card, Chip, Field, Keypad, Text } from '@/components/ui';
+import { Button, Card, Field, Keypad, Text } from '@/components/ui';
 import { DateField } from './DateField';
+import { PillPicker, type PillPickerItem } from './PillPicker';
 import { SuccessState } from './SuccessState';
 import { TypeTabs } from './TypeTabs';
 import { AccountType } from '@/types/AccountType';
 import { BudgetType } from '@/types/BudgetType';
 import { TypeBalance } from '@/types/BalanceType';
-import { cashFormat, dayOffset } from '@/utils/formatting';
+import { CategoryType } from '@/types/CategoryType';
+import { getAccountTypeStyle } from '@/styles/accounts';
+import { cashFormat, cashFormatRounded, dayOffset } from '@/utils/formatting';
+import { pushRecentPick } from '@/utils/recentPicks';
 import { useTheme } from '@/styles/useTheme';
 import { FieldErrors, getFieldError } from '@/utils/errorHandler';
 import type { IconName } from '@/components/ui';
@@ -25,6 +29,7 @@ export interface QuickAddEntry {
   description: string;
   account: AccountType;
   budget?: BudgetType;
+  categoryId: number | null;
   date: Date;
 }
 
@@ -34,6 +39,7 @@ export interface QuickAddInitial {
   description: string;
   accountId: number | null;
   budgetId: number | null;
+  categoryId: number | null;
 }
 
 export interface QuickAddFormProps {
@@ -41,6 +47,10 @@ export interface QuickAddFormProps {
   mode?: TypeBalance;
   accounts: AccountType[];
   budgets: BudgetType[];
+  /** Every category; the form offers those matching its type. */
+  categories: CategoryType[];
+  /** Opens the new-category form; `onCreated` receives the saved category. */
+  onNewCategory?: (type: TypeBalance, onCreated: (category: CategoryType) => void) => void;
   /** Resolves to whether the entry was saved; `false` keeps the form up so errors can be shown. */
   onSubmit: (entry: QuickAddEntry) => Promise<boolean>;
   /** Called once the success confirmation has been shown, to leave the screen. */
@@ -98,6 +108,8 @@ export function QuickAddForm({
   mode = 'expense',
   accounts,
   budgets,
+  categories,
+  onNewCategory,
   onSubmit,
   onSaved,
   serverFieldErrors,
@@ -109,6 +121,7 @@ export function QuickAddForm({
   const [amount, setAmount] = useState(initial ? String(initial.amount) : '0');
   const [accountId, setAccountId] = useState<number | null>(initial?.accountId ?? accounts[0]?.id ?? null);
   const [budgetId, setBudgetId] = useState<number | null>(initial?.budgetId ?? budgets[0]?.id ?? null);
+  const [categoryId, setCategoryId] = useState<number | null>(initial?.categoryId ?? null);
   const [description, setDescription] = useState(initial?.description ?? '');
   const [date, setDate] = useState<Date>(dayOffset(0));
   const [saving, setSaving] = useState(false);
@@ -126,6 +139,12 @@ export function QuickAddForm({
   useEffect(() => {
     setBudgetId((current) => current ?? budgets[0]?.id ?? null);
   }, [budgets]);
+
+  // An edited movement keeps the category it has, even when it has none.
+  useEffect(() => {
+    if (editing) return;
+    setCategoryId((current) => current ?? categories.find((c) => c.type === type)?.id ?? null);
+  }, [categories, type, editing]);
 
   useEffect(() => {
     return () => {
@@ -150,6 +169,37 @@ export function QuickAddForm({
     return undefined;
   };
 
+  const switchType = (next: TypeBalance) => {
+    setType(next);
+    setCategoryId(categories.find((c) => c.type === next)?.id ?? null);
+  };
+
+  const categoryItems: PillPickerItem[] = categories
+    .filter((c) => c.type === type)
+    .map((c) => ({ id: c.id, name: c.name, icon: c.icon_code as IconName }));
+  // Records still waiting to sync have no server id, so they can't be referenced here.
+  const accountItems: PillPickerItem[] = accounts.flatMap((a) =>
+    a.id == null
+      ? []
+      : [{
+          id: a.id,
+          name: a.name,
+          icon: getAccountTypeStyle(a.type).icon,
+          sub: `${getAccountTypeStyle(a.type).label} · ${cashFormat(Number(a.amount))}`,
+        }]
+  );
+  const budgetItems: PillPickerItem[] = budgets.flatMap((b) => {
+    if (b.id == null) return [];
+    const max = Number(b.max_limit);
+    const available = max - Number(b.expense_amount ?? 0);
+    return [{
+      id: b.id,
+      name: b.name,
+      icon: (b.category?.icon_code ?? 'tag') as IconName,
+      sub: `Disponible ${cashFormatRounded(available)} de ${cashFormatRounded(max)}`,
+    }];
+  });
+
   const press = (k: string) => {
     setAmount((prev) => {
       if (k === 'del') return prev.length <= 1 ? '0' : prev.slice(0, -1);
@@ -173,7 +223,7 @@ export function QuickAddForm({
     const budget = isIncome ? undefined : budgets.find((b) => b.id === budgetId);
     setSaving(true);
     try {
-      const saved = await onSubmit({ type, amount: value, description, account, budget, date });
+      const saved = await onSubmit({ type, amount: value, description, account, budget, categoryId, date });
       if (saved) {
         setSuccess(true);
         closeTimeout.current = setTimeout(onSaved, SUCCESS_DELAY_MS);
@@ -206,7 +256,7 @@ export function QuickAddForm({
         showsVerticalScrollIndicator={false}
       >
         {/* Gasto / Ingreso */}
-        {!editing && <TypeTabs value={type} onChange={setType} labels={MODE_LABELS} />}
+        {!editing && <TypeTabs value={type} onChange={switchType} labels={MODE_LABELS} />}
 
         {/* Amount */}
         <View className="items-center pt-1.5">
@@ -223,51 +273,60 @@ export function QuickAddForm({
         <Keypad keys={KEYS} onPress={press} />
 
         <Card className="gap-4">
-          {/* Select budget */}
-          {!isIncome && (
+          {/* Select category */}
+          <PillPicker
+            key={`category-${type}`}
+            label="Categoría"
+            recentKey={`category-${type}`}
+            items={categoryItems}
+            value={categoryId}
+            onChange={setCategoryId}
+            onNew={
+              onNewCategory &&
+              (() =>
+                onNewCategory(type, (category) => {
+                  if (category.type !== type) return;
+                  pushRecentPick(`category-${type}`, category.id);
+                  setCategoryId(category.id);
+                }))
+            }
+            newLabel="Nueva categoría"
+          />
+
+          {/* Select account */}
+          {hasAccounts ? (
+            <PillPicker
+              label="Cuenta"
+              recentKey="account"
+              items={accountItems}
+              value={accountId}
+              onChange={setAccountId}
+              error={submitted ? errorFor('accountId', 'account_id') : undefined}
+            />
+          ) : (
             <View className="gap-[7px]">
-              <Text className="text-[12.5px] font-strong text-muted">Presupuesto</Text>
-              {hasBudgets ? (
-                <>
-                  <View className="flex-row flex-wrap gap-2">
-                    {budgets.map((b) => (
-                      <Chip
-                        key={b.id}
-                        label={b.name}
-                        icon={b.category?.icon_code as IconName | undefined}
-                        active={budgetId === b.id}
-                        onPress={() => setBudgetId(b.id)}
-                      />
-                    ))}
-                  </View>
-                  {submitted && errorFor('budgetId', 'budget_id') ? (
-                    <Text className="text-[12px] font-semi text-danger">{errorFor('budgetId', 'budget_id')}</Text>
-                  ) : null}
-                </>
-              ) : (
-                <Text className="text-[12px] font-semi text-danger">No existen presupuestos, por favor genere uno.</Text>
-              )}
+              <Text className="text-[12.5px] font-strong text-muted">Cuenta</Text>
+              <Text className="text-[12px] font-semi text-danger">No existen cuentas, por favor genere uno.</Text>
             </View>
           )}
 
-          {/* Select account */}
-          <View className="gap-[7px]">
-            <Text className="text-[12.5px] font-strong text-muted">Cuenta</Text>
-            {hasAccounts ? (
-              <>
-                <View className="flex-row flex-wrap gap-2">
-                  {accounts.map((a) => (
-                    <Chip key={a.id} label={a.name} active={accountId === a.id} onPress={() => setAccountId(a.id)} />
-                  ))}
-                </View>
-                {submitted && errorFor('accountId', 'account_id') ? (
-                  <Text className="text-[12px] font-semi text-danger">{errorFor('accountId', 'account_id')}</Text>
-                ) : null}
-              </>
+          {/* Select budget */}
+          {!isIncome &&
+            (hasBudgets ? (
+              <PillPicker
+                label="Presupuesto"
+                recentKey="budget"
+                items={budgetItems}
+                value={budgetId}
+                onChange={setBudgetId}
+                error={submitted ? errorFor('budgetId', 'budget_id') : undefined}
+              />
             ) : (
-              <Text className="text-[12px] font-semi text-danger">No existen cuentas, por favor genere uno.</Text>
-            )}
-          </View>
+              <View className="gap-[7px]">
+                <Text className="text-[12.5px] font-strong text-muted">Presupuesto</Text>
+                <Text className="text-[12px] font-semi text-danger">No existen presupuestos, por favor genere uno.</Text>
+              </View>
+            ))}
 
           {/* Date */}
           {!editing && <DateField value={date} onChange={setDate} />}

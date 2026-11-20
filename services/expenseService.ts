@@ -16,7 +16,7 @@ import { notifyQueueChanged } from '@/services/syncService';
 type ApiExpense = Omit<ExpenseType, 'id' | 'created_at'> & { id: string; created_at: string };
 
 /** Fields required to create an expense. */
-export type ExpensePayload = Pick<ExpenseType, 'amount' | 'description' | 'account_id' | 'budget_id'> & {
+export type ExpensePayload = Pick<ExpenseType, 'amount' | 'description' | 'account_id' | 'budget_id' | 'category_id'> & {
   created_at?: Date;
 };
 
@@ -129,6 +129,7 @@ export const expenseService = {
         description: payload.description,
         account_id: payload.account_id,
         budget_id: payload.budget_id,
+        category_id: payload.category_id,
       });
       recordApiOutcome(true);
       const updated = toExpenseType(data);

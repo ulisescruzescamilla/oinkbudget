@@ -1,7 +1,12 @@
 import { getDBConnection } from '.';
 import { replaceAllFromServer } from './categoryRepository';
 
-jest.mock('.', () => ({ getDBConnection: jest.fn() }));
+jest.mock('.', () => ({
+  getDBConnection: jest.fn(),
+  withSerialTransaction: jest.fn((db: { withTransactionAsync: (t: () => Promise<void>) => Promise<void> }, task: () => Promise<void>) =>
+    db.withTransactionAsync(task)
+  ),
+}));
 
 describe('categoryRepository.replaceAllFromServer', () => {
   it('rewrites the cache inside a transaction on the shared connection', async () => {

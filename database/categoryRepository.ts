@@ -1,5 +1,5 @@
 import { CategoryType } from '@/types/CategoryType';
-import { getDBConnection } from '.';
+import { getDBConnection, withSerialTransaction } from '.';
 
 /** Returns the cached categories. Read-through cache only — category mutations require connectivity, so there's no offline mutation path. */
 export async function getAll(): Promise<CategoryType[]> {
@@ -10,7 +10,7 @@ export async function getAll(): Promise<CategoryType[]> {
 /**
  * Replaces the cached categories with the server's list in one transaction.
  *
- * Runs on the shared connection (`withTransactionAsync`), not
+ * Runs on the shared connection (`withSerialTransaction`), not
  * `withExclusiveTransactionAsync`: the exclusive variant opens a second
  * connection, and while it holds the write lock every other write on the shared
  * connection fails with "database is locked" — e.g. the accounts and budgets
@@ -20,7 +20,7 @@ export async function getAll(): Promise<CategoryType[]> {
  */
 export async function replaceAllFromServer(categories: CategoryType[]): Promise<void> {
   const db = await getDBConnection();
-  await db.withTransactionAsync(async () => {
+  await withSerialTransaction(db, async () => {
     await db.runAsync('DELETE FROM categories;');
     for (const category of categories) {
       await db.runAsync('INSERT INTO categories (id, name, icon_code, color, type) VALUES (?,?,?,?,?);', [

@@ -14,7 +14,7 @@ import { notifyQueueChanged } from '@/services/syncService';
 type ApiIncome = Omit<IncomeType, 'id' | 'created_at'> & { id: string; created_at: string };
 
 /** Fields required to create an income. */
-export type IncomePayload = Pick<IncomeType, 'amount' | 'description' | 'account_id'> & {
+export type IncomePayload = Pick<IncomeType, 'amount' | 'description' | 'account_id' | 'category_id'> & {
   created_at?: Date;
 };
 
@@ -109,6 +109,7 @@ export const incomeService = {
         amount: payload.amount,
         description: payload.description,
         account_id: payload.account_id,
+        category_id: payload.category_id,
       });
       recordApiOutcome(true);
       const updated = toIncomeType(data);

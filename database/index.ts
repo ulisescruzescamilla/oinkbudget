@@ -3,6 +3,27 @@ import { generateClientId } from './clientId';
 
 let db: SQLite.SQLiteDatabase | null = null;
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+/** Tail of the transaction queue: each `withSerialTransaction` call waits on the previous one. */
+let transactionQueue: Promise<unknown> = Promise.resolve();
+
+/**
+ * Runs `task` in a transaction on the shared connection, one transaction at a
+ * time. SQLite can't nest transactions on a connection, so two overlapping
+ * `withTransactionAsync` calls (e.g. two category refreshes fired together)
+ * fail with "cannot start a transaction within a transaction" and then
+ * "cannot commit - no transaction is active". Queueing them avoids that while
+ * staying on the shared connection (see `categoryRepository.replaceAllFromServer`
+ * for why the exclusive variant isn't used).
+ *
+ * @param db - The shared connection from `getDBConnection`
+ * @param task - The statements to run inside the transaction
+ */
+export function withSerialTransaction(db: SQLite.SQLiteDatabase, task: () => Promise<void>): Promise<void> {
+  const run = transactionQueue.then(() => db.withTransactionAsync(task));
+  // A failed transaction must not block the ones queued after it.
+  transactionQueue = run.catch(() => undefined);
+  return run;
+}
 
 /**
  * Lazily opens (once) and returns the shared SQLite connection. Concurrent
@@ -72,6 +93,7 @@ const TABLE_DDL: Record<string, string> = {
       account_client_id TEXT NOT NULL,
       budget_id INTEGER,
       budget_client_id TEXT NOT NULL,
+      category_id INTEGER,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       sync_status TEXT NOT NULL DEFAULT 'synced',
       deleted INTEGER NOT NULL DEFAULT 0,
@@ -90,6 +112,7 @@ const TABLE_DDL: Record<string, string> = {
       description TEXT NOT NULL,
       account_id INTEGER,
       account_client_id TEXT NOT NULL,
+      category_id INTEGER,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       sync_status TEXT NOT NULL DEFAULT 'synced',
       deleted INTEGER NOT NULL DEFAULT 0,
@@ -147,7 +170,7 @@ const SYNC_QUEUE_DDL = `
   CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status, created_at);
 `;
 
-const LATEST_SCHEMA_VERSION = 5;
+const LATEST_SCHEMA_VERSION = 6;
 
 async function tableExists(database: SQLite.SQLiteDatabase, name: string): Promise<boolean> {
   const row = await database.getFirstAsync<{ name: string }>(
@@ -470,6 +493,15 @@ async function migrateCategoriesV5(database: SQLite.SQLiteDatabase): Promise<voi
   }
 }
 
+/** Adds the `category_id` column to the expense and income mirrors. Existing rows stay uncategorized until the next refresh from the API. */
+async function migrateMovementCategoriesV6(database: SQLite.SQLiteDatabase): Promise<void> {
+  for (const table of ['expenses', 'incomes']) {
+    if (!(await hasColumn(database, table, 'category_id'))) {
+      await database.execAsync(`ALTER TABLE ${table} ADD COLUMN category_id INTEGER;`);
+    }
+  }
+}
+
 export const initDatabase = async () => {
   const database = await getDBConnection();
   await database.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
@@ -508,6 +540,13 @@ export const initDatabase = async () => {
       await migrateCategoriesV5(database);
     } catch (error) {
       console.error('[database] migrateCategoriesV5 failed', error);
+    }
+  }
+  if (version < 6) {
+    try {
+      await migrateMovementCategoriesV6(database);
+    } catch (error) {
+      console.error('[database] migrateMovementCategoriesV6 failed', error);
     }
   }
   if (version < LATEST_SCHEMA_VERSION) {

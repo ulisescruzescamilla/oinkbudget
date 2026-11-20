@@ -10,5 +10,7 @@ export interface ExpenseType {
   budget_id: number;
   account: AccountType;
   account_id: number;
+  /** Category the movement is classified under; null on movements saved before categories applied to them. */
+  category_id?: number | null;
   // TODO file attached
 }

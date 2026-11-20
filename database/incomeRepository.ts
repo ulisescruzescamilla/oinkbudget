@@ -2,7 +2,7 @@ import type * as SQLite from 'expo-sqlite';
 import { AccountType } from '@/types/AccountType';
 import { IncomeType } from '@/types/IncomeType';
 import type { IncomePayload } from '@/services/incomeService';
-import { getDBConnection } from '.';
+import { getDBConnection, withSerialTransaction } from '.';
 import { generateClientId } from './clientId';
 import { appendMirrorRow } from './balanceRepository';
 
@@ -13,6 +13,7 @@ interface IncomeRow {
   description: string;
   account_id: number | null;
   account_client_id: string;
+  category_id: number | null;
   created_at: string;
   acct_id: number | null;
   acct_client_id: string | null;
@@ -35,6 +36,7 @@ const toIncomeType = (row: IncomeRow): IncomeType => ({
   description: row.description,
   created_at: new Date(row.created_at),
   account_id: row.account_id ?? 0,
+  category_id: row.category_id,
   account: {
     id: row.acct_id,
     client_id: row.acct_client_id ?? undefined,
@@ -72,15 +74,15 @@ export async function upsertFromServer(income: IncomeType): Promise<void> {
   const existing = income.id != null ? await findByServerId(income.id) : null;
   if (existing?.client_id) {
     await db.runAsync(
-      `UPDATE incomes SET amount = ?, description = ?, account_id = ?, account_client_id = ?, created_at = ?,
+      `UPDATE incomes SET amount = ?, description = ?, account_id = ?, account_client_id = ?, category_id = ?, created_at = ?,
        sync_status = 'synced', deleted = 0, updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;`,
-      [income.amount, income.description, income.account_id, account.client_id, income.created_at.toISOString(), existing.client_id]
+      [income.amount, income.description, income.account_id, account.client_id, income.category_id ?? null, income.created_at.toISOString(), existing.client_id]
     );
   } else {
     await db.runAsync(
-      `INSERT INTO incomes (client_id, id, amount, description, account_id, account_client_id, created_at, sync_status)
-       VALUES (?,?,?,?,?,?,?,'synced');`,
-      [generateClientId(), income.id, income.amount, income.description, income.account_id, account.client_id, income.created_at.toISOString()]
+      `INSERT INTO incomes (client_id, id, amount, description, account_id, account_client_id, category_id, created_at, sync_status)
+       VALUES (?,?,?,?,?,?,?,?,'synced');`,
+      [generateClientId(), income.id, income.amount, income.description, income.account_id, account.client_id, income.category_id ?? null, income.created_at.toISOString()]
     );
   }
 }
@@ -97,7 +99,7 @@ export async function createLocal(payload: IncomePayload, accountClientId: strin
   const clientId = generateClientId();
   const createdAt = payload.created_at ?? new Date();
 
-  await db.withTransactionAsync(async () => {
+  await withSerialTransaction(db, async () => {
     // Resolve the account's server id up front — one synced before this income was created
     // offline already has one, and it must be stored now: attachServerId only backfills
     // incomes that depended on an account which was *itself* still pending.
@@ -107,9 +109,9 @@ export async function createLocal(payload: IncomePayload, accountClientId: strin
     );
 
     await db.runAsync(
-      `INSERT INTO incomes (client_id, id, amount, description, account_id, account_client_id, created_at, sync_status)
-       VALUES (?, NULL, ?, ?, ?, ?, ?, 'pending');`,
-      [clientId, payload.amount, payload.description, account?.id ?? null, accountClientId, createdAt.toISOString()]
+      `INSERT INTO incomes (client_id, id, amount, description, account_id, account_client_id, category_id, created_at, sync_status)
+       VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 'pending');`,
+      [clientId, payload.amount, payload.description, account?.id ?? null, accountClientId, payload.category_id ?? null, createdAt.toISOString()]
     );
 
     if (account) {
@@ -158,7 +160,7 @@ async function revertLocalEffects(db: SQLite.SQLiteDatabase, clientId: string): 
 /** Soft-deletes an income offline (tombstoned until its queued 'delete' op confirms synced) and reverts its account amount in the same transaction. */
 export async function markDeletedLocal(clientId: string): Promise<void> {
   const db = await getDBConnection();
-  await db.withTransactionAsync(async () => {
+  await withSerialTransaction(db, async () => {
     await revertLocalEffects(db, clientId);
     await db.runAsync("UPDATE incomes SET deleted = 1, sync_status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE client_id = ?;", [
       clientId,
@@ -169,7 +171,7 @@ export async function markDeletedLocal(clientId: string): Promise<void> {
 /** Removes an income that never reached the server, reverting its account amount in the same transaction. */
 export async function removePendingLocal(clientId: string): Promise<void> {
   const db = await getDBConnection();
-  await db.withTransactionAsync(async () => {
+  await withSerialTransaction(db, async () => {
     await revertLocalEffects(db, clientId);
     await db.runAsync('DELETE FROM incomes WHERE client_id = ?;', [clientId]);
   });

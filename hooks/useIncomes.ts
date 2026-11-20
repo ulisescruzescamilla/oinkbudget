@@ -56,6 +56,7 @@ export function useIncomes() {
         amount: income.amount,
         description: income.description,
         account_id: income.account_id,
+        category_id: income.category_id,
         created_at: income.created_at,
       };
       const created = await incomeService.create(payload, income.account);
@@ -86,6 +87,7 @@ export function useIncomes() {
         amount: income.amount,
         description: income.description,
         account_id: income.account_id,
+        category_id: income.category_id,
       });
       setState((s) => ({
         ...s,

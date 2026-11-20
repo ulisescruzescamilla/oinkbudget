@@ -42,7 +42,7 @@ utils/errorHandler.ts  ← Normalizes any thrown value into AppError
 - `api/` handles HTTP config only — no business logic.
 - `services/` map 1:1 to backend resources: `authService`, `accountService`, `budgetService`, `expenseService`, `categoryService`, `recurrentBudgetService` (`/recurrent-budgets`).
 - `hooks/` expose state + mutation functions to UI: `useAuth`, `useAccounts`, `useBudgets`, `useExpenses`, `useCategories`, `useRecurrentBudgets`.
-- Category mutations (`POST/PUT/DELETE /categories`) require connectivity — there is no offline queue for them; the local `categories` table is a read-through cache updated after each successful call. Each category has a `type` (`expense | income`, fixed after creation) that is sent on create/update; `CategoriesScreen` splits the list with Gastos/Ingresos tabs (`design/src/txcats.jsx`). Recurrent budgets (`/recurrent-budgets`) have no local cache at all: every call, reads included, requires connectivity.
+- Category mutations (`POST/PUT/DELETE /categories`) require connectivity — there is no offline queue for them; the local `categories` table is a read-through cache updated after each successful call. Each category has a `type` (`expense | income`, fixed after creation) that is sent on create/update; `CategoriesScreen` splits the list with Gastos/Ingresos tabs (`design/src/txcats.jsx`). Expenses and incomes carry an optional `category_id` matching their type; a budget is required on expenses and doesn't apply to incomes. Recurrent budgets (`/recurrent-budgets`) have no local cache at all: every call, reads included, requires connectivity.
 - Screens call hooks only — never `fetch`/`axios` directly.
 - Auth token is stored in the native keychain via `expo-secure-store` and attached automatically by the request interceptor.
 
@@ -64,8 +64,8 @@ Raw SQL queries via `expo-sqlite` — no ORM. The `database/` directory contains
 **Schema:**
 - `budgets` — name, max_limit, expense_amount, percentage_value, color, start_date, end_date
 - `accounts` — name, amount, type (`cash | debit_card | credit_card`), hidden
-- `expenses` — amount, description, account_id, budget_id, created_at
-- `incomes` — amount, description, account_id, created_at
+- `expenses` — amount, description, account_id, budget_id, category_id, created_at
+- `incomes` — amount, description, account_id, category_id, created_at
 - `balances` — denormalized transaction log (amount, type `expense | income`, current_balance, budget_name, account_name, created_at)
 
 ### State Management
@@ -86,7 +86,7 @@ The `design/` folder (HTML/JSX prototype: `design/OinkBudget.html`, `design/Oink
 
 Component organization (all at the repo root — there is no `src/`):
 - `components/ui/` — dumb primitives: `Icon`/`OinkMark`, `Brandmark`, `Button`, `Card`/`CardHeader`, `IconButton`, `IconTile`, `Pill`, `ProgressBar`, `Ring`, `TrendBars`, `Chip`, `Segmented`, `Sheet`, `Field`/`Input`, `Text`/`Heading`, `Keypad`, `StackedBar`, `Slider`, `StepProgress`, `OptionCard`, `HappyOink`, `ConfirmDialog` (`askConfirm()` + `ConfirmHost`, mounted once in `app/_layout.tsx`; every delete goes through it, never `Alert.alert`). Barrel: `components/ui/index.ts`.
-- `components/features/` — business components: `TransactionRow`, `AccountCard`, `BudgetAccordionCard`, `BudgetRow` (budget share row with optional slider, shared by the wizard split step and `NewBudgetForm`), `AllocationBar`, `QuickAddForm`, `NewBudgetForm`, `NewAccountForm`, `CategoryForm` (expense/income type picker when given a `kind`; also used for recurrent budgets via its `copy` prop), `TypeTabs` (Gasto/Ingreso pill tabs shared by `QuickAddForm` and `CategoriesScreen`), `ManageTxSheet`, `EmptyState`, `SuccessState`, `SuccessHost` (`notifySuccess()`), and the plan wizard steps `PlanPeriodStep`, `PlanAccountsStep`, `PlanIncomeStep`, `PlanSplitStep`, `PlanCongrats`.
+- `components/features/` — business components: `TransactionRow`, `AccountCard`, `BudgetAccordionCard`, `BudgetRow` (budget share row with optional slider, shared by the wizard split step and `NewBudgetForm`), `AllocationBar`, `QuickAddForm`, `NewBudgetForm`, `NewAccountForm`, `PillPicker` (2 most recent options + searchable sheet; recents in `utils/recentPicks.ts`, used by `QuickAddForm`), `CategoryForm` (expense/income type picker when given a `kind`; also used for recurrent budgets via its `copy` prop), `TypeTabs` (Gasto/Ingreso pill tabs shared by `QuickAddForm` and `CategoriesScreen`), `ManageTxSheet`, `EmptyState`, `SuccessState`, `SuccessHost` (`notifySuccess()`), and the plan wizard steps `PlanPeriodStep`, `PlanAccountsStep`, `PlanIncomeStep`, `PlanSplitStep`, `PlanCongrats`.
 - `screens/` — one component per route (`DashboardScreen`, `HistoryScreen`, `AccountsScreen`, `BudgetsScreen`, `QuickAddScreen`, `PlanWizardScreen`, `CategoriesScreen`, `RecurrentBudgetsScreen`); the `app/(tabs)/*.tsx` route files are thin wrappers that render them.
 - `navigation/` — `AppBar` (settings button opens `SideMenu`, the right-side settings drawer with the dark-mode toggle), `SideMenu`, `CustomTabBar` (bottom nav + center FAB), `ScreenLayout`, `QuickAddProvider` (`open(mode)`/`close()` navigation for the quick-add screen), and React Navigation `theme`.
 

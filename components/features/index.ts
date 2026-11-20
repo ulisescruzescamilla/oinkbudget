@@ -20,6 +20,7 @@ export { PlanCongrats, type PlanCongratsProps } from './PlanCongrats';
 export { PlanIncomeStep, type PlanIncomeStepProps } from './PlanIncomeStep';
 export { PlanPeriodStep, type PlanPeriodStepProps } from './PlanPeriodStep';
 export { PlanSplitStep, type PlanSplitStepProps } from './PlanSplitStep';
+export { PillPicker, type PillPickerItem, type PillPickerProps } from './PillPicker';
 export { QuickAddForm, type QuickAddEntry, type QuickAddFormProps, type QuickAddInitial } from './QuickAddForm';
 export { SuccessHost, notifySuccess, SUCCESS_DELAY_MS, type SuccessOptions, type SuccessTone } from './SuccessHost';
 export { SuccessState, type SuccessStateProps } from './SuccessState';

@@ -60,6 +60,7 @@ export function useExpenses() {
         description: expense.description,
         account_id: expense.account_id,
         budget_id: expense.budget_id,
+        category_id: expense.category_id,
         created_at: expense.created_at,
       };
       const created = await expenseService.create(payload, expense.account, budget);
@@ -91,6 +92,7 @@ export function useExpenses() {
         description: expense.description,
         account_id: expense.account_id,
         budget_id: expense.budget_id,
+        category_id: expense.category_id,
       });
       setState((s) => ({
         ...s,

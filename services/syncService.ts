@@ -136,6 +136,7 @@ async function replayExpense(item: SyncQueueItem): Promise<void> {
     description: local.description,
     account_id: local.account_id,
     budget_id: local.budget_id,
+    category_id: local.category_id,
     created_at: formatApiDateTime(local.created_at),
   };
   const { data } = await apiClient.post<{ id: string }>('/expenses', payload);
@@ -160,6 +161,7 @@ async function replayIncome(item: SyncQueueItem): Promise<void> {
     amount: local.amount,
     description: local.description,
     account_id: local.account_id,
+    category_id: local.category_id,
     created_at: formatApiDateTime(local.created_at),
   };
   const { data } = await apiClient.post<{ id: string }>('/incomes', payload);

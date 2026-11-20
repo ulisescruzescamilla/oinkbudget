@@ -5,18 +5,21 @@
  * through `useExpenses` / `useIncomes`. `useQuickAdd().edit(tx)` opens the
  * same screen prefilled to update an existing movement.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, QuickAddEntry, QuickAddForm } from '@/components/features';
+import { CategoryForm, EmptyState, notifySuccess, QuickAddEntry, QuickAddForm, type CategoryFormPayload } from '@/components/features';
+import { Sheet } from '@/components/ui';
 import { AppBar } from '@/navigation/AppBar';
 import { useQuickAdd } from '@/navigation/QuickAddProvider';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBudgets } from '@/hooks/useBudgets';
+import { useCategories } from '@/hooks/useCategories';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useIncomes } from '@/hooks/useIncomes';
 import { TypeBalance } from '@/types/BalanceType';
+import { CategoryKind, CategoryType } from '@/types/CategoryType';
 import { ExpenseType } from '@/types/ExpenseType';
 import { IncomeType } from '@/types/IncomeType';
 import { useTheme } from '@/styles/useTheme';
@@ -27,6 +30,15 @@ export function QuickAddScreen() {
   const { mode, editing, close } = useQuickAdd();
   const { accounts, refresh: refreshAccounts } = useAccounts();
   const { budgets, refresh: refreshBudgets } = useBudgets();
+  const {
+    categories,
+    loading: categoriesLoading,
+    error: categoryError,
+    fieldErrors: categoryFieldErrors,
+    refresh: refreshCategories,
+    clearFieldErrors: clearCategoryFieldErrors,
+    createCategory,
+  } = useCategories();
   const {
     expenses,
     createExpense,
@@ -48,6 +60,12 @@ export function QuickAddScreen() {
   const [lastType, setLastType] = useState<TypeBalance>('expense');
   // Whether the expense/income lists were re-pulled for the movement being edited.
   const [sourceReady, setSourceReady] = useState(false);
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
+  const [categoryKind, setCategoryKind] = useState<CategoryKind>('expense');
+  // Bumped on every open so the category form remounts empty.
+  const [categoryFormKey, setCategoryFormKey] = useState(0);
+  // Hands the saved category back to the form that asked for it.
+  const onCategoryCreated = useRef<((category: CategoryType) => void) | null>(null);
 
   // A balance row only points at its source record; the record itself (which
   // also carries the budget) is what gets prefilled and updated.
@@ -66,6 +84,7 @@ export function QuickAddScreen() {
       clearIncomeFieldErrors();
       refreshAccounts();
       refreshBudgets();
+      refreshCategories();
       if (!editing) return;
 
       let active = true;
@@ -81,6 +100,7 @@ export function QuickAddScreen() {
       clearIncomeFieldErrors,
       refreshAccounts,
       refreshBudgets,
+      refreshCategories,
       refreshExpenses,
       refreshIncomes,
       editing,
@@ -100,6 +120,7 @@ export function QuickAddScreen() {
               description: entry.description,
               account_id: entry.account?.id ?? expenseSource.account_id,
               budget_id: entry.budget?.id ?? expenseSource.budget_id,
+              category_id: entry.categoryId,
             })
           : incomeSource
             ? await updateIncome({
@@ -107,6 +128,7 @@ export function QuickAddScreen() {
                 amount: entry.amount,
                 description: entry.description,
                 account_id: entry.account?.id ?? incomeSource.account_id,
+                category_id: entry.categoryId,
               })
             : undefined;
         if (!updated) {
@@ -123,6 +145,7 @@ export function QuickAddScreen() {
           // Placeholder when the budget hasn't synced yet (id: null); the real
           // link is resolved via `entry.budget.client_id` inside createExpense.
           budget_id: entry.budget?.id ?? 0,
+          category_id: entry.categoryId,
           account: entry.account,
           // Placeholder when the account hasn't synced yet (id: null); the real
           // link is resolved via `entry.account.client_id` inside createExpense.
@@ -139,6 +162,7 @@ export function QuickAddScreen() {
           // Placeholder when the account hasn't synced yet (id: null); the real
           // link is resolved via `entry.account.client_id` inside createIncome.
           account_id: entry.account.id ?? 0,
+          category_id: entry.categoryId,
           created_at: entry.date,
         };
         const created = await createIncome(income);
@@ -148,6 +172,37 @@ export function QuickAddScreen() {
     },
     [createExpense, createIncome, updateExpense, updateIncome, editing, expenseSource, incomeSource]
   );
+
+  /** Opens the new-category sheet; the saved category goes to `onCreated`. */
+  const openCategoryForm = useCallback(
+    (kind: TypeBalance, onCreated: (category: CategoryType) => void) => {
+      onCategoryCreated.current = onCreated;
+      setCategoryKind(kind);
+      clearCategoryFieldErrors();
+      setCategoryFormKey((k) => k + 1);
+      setCategoryFormOpen(true);
+    },
+    [clearCategoryFieldErrors]
+  );
+
+  const closeCategoryForm = () => {
+    setCategoryFormOpen(false);
+    clearCategoryFieldErrors();
+  };
+
+  /** Creates the category, selects it in the form and confirms the change. */
+  const submitCategory = async (values: CategoryFormPayload) => {
+    const saved = await createCategory({ ...values, type: values.type ?? categoryKind });
+    if (saved) {
+      onCategoryCreated.current?.(saved);
+      notifySuccess({
+        title: 'Categoría creada',
+        subtitle: saved.name,
+        tone: saved.type === 'income' ? 'income' : 'primary',
+      });
+    }
+    return saved;
+  };
 
   const serverFieldErrors = lastType === 'income' ? incomeFieldErrors : expenseFieldErrors;
 
@@ -168,6 +223,8 @@ export function QuickAddScreen() {
           mode={mode}
           accounts={accounts}
           budgets={budgets}
+          categories={categories}
+          onNewCategory={openCategoryForm}
           onSubmit={handleSubmit}
           onSaved={close}
           serverFieldErrors={serverFieldErrors}
@@ -179,11 +236,24 @@ export function QuickAddScreen() {
                   description: source.description,
                   accountId: Number(source.account_id),
                   budgetId: expenseSource ? Number(expenseSource.budget_id) : null,
+                  categoryId: source.category_id != null ? Number(source.category_id) : null,
                 }
               : undefined
           }
         />
       )}
+      <Sheet open={categoryFormOpen} onClose={closeCategoryForm} title="Nueva categoría">
+        <CategoryForm
+          key={categoryFormKey}
+          categories={categories}
+          kind={categoryKind}
+          onSubmit={submitCategory}
+          onDone={closeCategoryForm}
+          fieldErrors={categoryFieldErrors}
+          errorMessage={categoryError?.message}
+          loading={categoriesLoading}
+        />
+      </Sheet>
     </SafeAreaView>
   );
 }
